@@ -38,3 +38,6 @@ out/
 
 ### Application Secrets ###
 src/main/resources/application-db.yml
+
+### Claude ###
+.claude
