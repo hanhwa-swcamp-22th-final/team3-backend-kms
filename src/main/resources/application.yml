@@ -3,7 +3,7 @@ spring:
     name: team3-backend-admin
 
   profiles:
-    include: db
+    include: db, secret
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -22,3 +22,8 @@ mybatis:
   type-aliases-package: com.ohgiraffers.team3backendadmin
   configuration:
     map-underscore-to-camel-case: true
+
+# JWT
+jwt:
+  expiration: 1800000 # 30 minutes
+  refresh-expiration: 604800000 # 7 days
