@@ -29,11 +29,11 @@ class KnowledgeArticleTest {
     // =========================================================
 
     @Nested
-    @DisplayName("submit() - 지식 문서 제출")
+    @DisplayName("지식 문서 제출 (submit)")
     class SubmitTest {
 
         @Test
-        @DisplayName("DRAFT 상태에서 submit() 호출 시 PENDING으로 변경된다")
+        @DisplayName("DRAFT 상태의 문서를 제출하면 PENDING 상태로 바뀐다")
         void submit_Success() {
             // given
             // setUp()에서 DRAFT 상태의 article 준비됨
@@ -46,7 +46,7 @@ class KnowledgeArticleTest {
         }
 
         @Test
-        @DisplayName("DRAFT가 아닌 상태에서 submit() 호출 시 IllegalStateException이 발생한다")
+        @DisplayName("DRAFT가 아닌 문서를 제출하면 예외가 발생한다")
         void submit_NotDraft_ThrowsException() {
             // given
             article.submit(); // PENDING 상태로 전환
@@ -61,7 +61,7 @@ class KnowledgeArticleTest {
     // =========================================================
 
     @Nested
-    @DisplayName("approve() - 지식 문서 승인")
+    @DisplayName("지식 문서 승인 (approve)")
     class ApproveTest {
 
         @BeforeEach
@@ -70,7 +70,7 @@ class KnowledgeArticleTest {
         }
 
         @Test
-        @DisplayName("PENDING 상태에서 approve() 호출 시 APPROVED로 변경되고 승인자·승인일시가 저장된다")
+        @DisplayName("PENDING 상태의 문서를 승인하면 APPROVED로 바뀌고 승인자·승인일시가 저장된다")
         void approve_Success() {
             // given
             Long approvedBy = 99L;
@@ -87,7 +87,7 @@ class KnowledgeArticleTest {
         }
 
         @Test
-        @DisplayName("PENDING이 아닌 상태에서 approve() 호출 시 IllegalStateException이 발생한다 (APPROVAL_003)")
+        @DisplayName("이미 승인된 문서를 다시 승인하면 예외가 발생한다 (APPROVAL_003)")
         void approve_NotPending_ThrowsException() {
             // given
             article.approve(99L, "승인합니다."); // APPROVED 상태로 전환
@@ -97,7 +97,7 @@ class KnowledgeArticleTest {
         }
 
         @Test
-        @DisplayName("승인 의견이 500자를 초과하면 IllegalArgumentException이 발생한다 (APPROVAL_002)")
+        @DisplayName("승인 의견이 500자를 넘으면 예외가 발생한다 (APPROVAL_002)")
         void approve_OpinionTooLong_ThrowsException() {
             // given
             String longOpinion = "a".repeat(501);
@@ -112,7 +112,7 @@ class KnowledgeArticleTest {
     // =========================================================
 
     @Nested
-    @DisplayName("reject() - 지식 문서 반려")
+    @DisplayName("지식 문서 반려 (reject)")
     class RejectTest {
 
         @BeforeEach
@@ -121,7 +121,7 @@ class KnowledgeArticleTest {
         }
 
         @Test
-        @DisplayName("PENDING 상태에서 reject() 호출 시 REJECTED로 변경되고 반려 사유가 저장된다")
+        @DisplayName("PENDING 상태의 문서를 반려하면 REJECTED로 바뀌고 반려 사유가 저장된다")
         void reject_Success() {
             // given
             String reason = "내용이 충분하지 않습니다. 보완 후 재제출해주세요.";
@@ -135,7 +135,7 @@ class KnowledgeArticleTest {
         }
 
         @Test
-        @DisplayName("반려 사유가 10자 미만이면 IllegalArgumentException이 발생한다 (APPROVAL_001)")
+        @DisplayName("반려 사유가 10자 미만이면 예외가 발생한다 (APPROVAL_001)")
         void reject_ReasonTooShort_ThrowsException() {
             // given
             String shortReason = "짧음";
@@ -145,7 +145,7 @@ class KnowledgeArticleTest {
         }
 
         @Test
-        @DisplayName("반려 사유가 500자를 초과하면 IllegalArgumentException이 발생한다 (APPROVAL_001)")
+        @DisplayName("반려 사유가 500자를 넘으면 예외가 발생한다 (APPROVAL_001)")
         void reject_ReasonTooLong_ThrowsException() {
             // given
             String longReason = "a".repeat(501);
@@ -155,7 +155,7 @@ class KnowledgeArticleTest {
         }
 
         @Test
-        @DisplayName("PENDING이 아닌 상태에서 reject() 호출 시 IllegalStateException이 발생한다 (APPROVAL_003)")
+        @DisplayName("이미 반려된 문서를 다시 반려하면 예외가 발생한다 (APPROVAL_003)")
         void reject_NotPending_ThrowsException() {
             // given
             article.reject("내용이 충분하지 않습니다. 보완 후 재제출해주세요."); // REJECTED 상태로 전환
@@ -170,11 +170,11 @@ class KnowledgeArticleTest {
     // =========================================================
 
     @Nested
-    @DisplayName("softDelete() - 지식 문서 소프트 딜리트")
+    @DisplayName("지식 문서 삭제 (softDelete)")
     class SoftDeleteTest {
 
         @Test
-        @DisplayName("softDelete() 호출 시 is_deleted=true, deletedAt이 저장된다")
+        @DisplayName("문서를 삭제하면 삭제 여부와 삭제 일시가 저장된다")
         void softDelete_Success() {
             // given
             // setUp()에서 DRAFT 상태의 article 준비됨
@@ -188,7 +188,7 @@ class KnowledgeArticleTest {
         }
 
         @Test
-        @DisplayName("APPROVED 상태의 문서를 직접 삭제하면 IllegalStateException이 발생한다 (ARTICLE_009)")
+        @DisplayName("승인 완료된 문서를 삭제하면 예외가 발생한다 (ARTICLE_009)")
         void softDelete_Approved_ThrowsException() {
             // given
             article.submit();
@@ -199,7 +199,7 @@ class KnowledgeArticleTest {
         }
 
         @Test
-        @DisplayName("이미 삭제된 문서를 재삭제하면 IllegalStateException이 발생한다 (ARTICLE_008)")
+        @DisplayName("이미 삭제된 문서를 다시 삭제하면 예외가 발생한다 (ARTICLE_008)")
         void softDelete_AlreadyDeleted_ThrowsException() {
             // given
             article.softDelete(); // 첫 번째 삭제
