@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 public class KnowledgeArticle {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long articleId;
 
     private Long authorId;

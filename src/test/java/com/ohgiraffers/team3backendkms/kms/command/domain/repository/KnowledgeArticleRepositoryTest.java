@@ -3,32 +3,31 @@ package com.ohgiraffers.team3backendkms.kms.command.domain.repository;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.KnowledgeArticle;
+import com.ohgiraffers.team3backendkms.common.idgenerator.TimeBasedIdGenerator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect"
-})
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("KnowledgeArticleRepository")
 class KnowledgeArticleRepositoryTest {
 
     @Autowired
     private KnowledgeArticleRepository knowledgeArticleRepository;
 
+    private final TimeBasedIdGenerator idGenerator = new TimeBasedIdGenerator();
+
     private KnowledgeArticle buildArticle(ArticleStatus status) {
         return KnowledgeArticle.builder()
+                .articleId(idGenerator.generate())
                 .authorId(1L)
                 .equipmentId(1L)
                 .articleTitle("테스트 지식 문서 제목입니다")
@@ -49,8 +48,8 @@ class KnowledgeArticleRepositoryTest {
     class SaveTest {
 
         @Test
-        @DisplayName("저장하면 ID가 자동 생성된다")
-        void save_GeneratesId() {
+        @DisplayName("저장하면 ID가 그대로 유지된다")
+        void save_PersistsId() {
             // given
             KnowledgeArticle article = buildArticle(ArticleStatus.PENDING);
 

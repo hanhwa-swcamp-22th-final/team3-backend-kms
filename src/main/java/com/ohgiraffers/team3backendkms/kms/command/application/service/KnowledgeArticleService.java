@@ -1,5 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.service;
 
+import com.ohgiraffers.team3backendkms.common.idgenerator.IdGenerator;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.KnowledgeArticle;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class KnowledgeArticleService {
 
     private final KnowledgeArticleRepository knowledgeArticleRepository;
+    private final IdGenerator idGenerator;
 
     private static final String ERR_TITLE_LENGTH   = "[ARTICLE_001] 제목은 5자 이상 200자 이하여야 합니다.";
     private static final String ERR_CONTENT_SHORT  = "[ARTICLE_002] 본문은 50자 이상이어야 합니다.";
@@ -78,6 +80,7 @@ public class KnowledgeArticleService {
                                           String title, ArticleCategory category,
                                           String content, ArticleStatus status) {
         return KnowledgeArticle.builder()
+                .articleId(idGenerator.generate())
                 .authorId(authorId)
                 .equipmentId(equipmentId)
                 .articleTitle(title)
