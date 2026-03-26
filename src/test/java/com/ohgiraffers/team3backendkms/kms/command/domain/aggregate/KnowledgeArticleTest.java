@@ -16,7 +16,7 @@ class KnowledgeArticleTest {
         article = KnowledgeArticle.builder()
                 .authorId(1L)
                 .articleTitle("테스트 지식 문서 제목입니다")
-                .articleCategory(ArticleCategory.장애조치)
+                .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent("테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
                 .articleStatus(ArticleStatus.DRAFT)
                 .isDeleted(false)
