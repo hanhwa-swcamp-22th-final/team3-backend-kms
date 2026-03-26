@@ -8,12 +8,19 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.test.context.TestPropertySource;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
+@TestPropertySource(properties = {
+        "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect"
+})
 @DisplayName("KnowledgeArticleRepository")
 class KnowledgeArticleRepositoryTest {
 
@@ -25,7 +32,7 @@ class KnowledgeArticleRepositoryTest {
                 .authorId(1L)
                 .equipmentId(1L)
                 .articleTitle("테스트 지식 문서 제목입니다")
-                .articleCategory(ArticleCategory.장애조치)
+                .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent("테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
                 .articleStatus(status)
                 .isDeleted(false)
@@ -66,7 +73,7 @@ class KnowledgeArticleRepositoryTest {
             // then
             assertEquals(ArticleStatus.PENDING, saved.getArticleStatus());
             assertEquals("테스트 지식 문서 제목입니다", saved.getArticleTitle());
-            assertEquals(ArticleCategory.장애조치, saved.getArticleCategory());
+            assertEquals(ArticleCategory.TROUBLESHOOTING, saved.getArticleCategory());
             assertFalse(saved.getIsDeleted());
         }
     }

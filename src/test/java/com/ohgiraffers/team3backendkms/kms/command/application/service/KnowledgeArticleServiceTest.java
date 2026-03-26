@@ -39,7 +39,7 @@ class KnowledgeArticleServiceTest {
                 .articleId(1L)
                 .authorId(1L)
                 .articleTitle("테스트 지식 문서 제목입니다")
-                .articleCategory(ArticleCategory.장애조치)
+                .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent("테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
                 .articleStatus(ArticleStatus.PENDING)
                 .isDeleted(false)
@@ -50,7 +50,7 @@ class KnowledgeArticleServiceTest {
                 .articleId(2L)
                 .authorId(1L)
                 .articleTitle("임시저장 문서 제목입니다")
-                .articleCategory(ArticleCategory.공정개선)
+                .articleCategory(ArticleCategory.PROCESS_IMPROVEMENT)
                 .articleContent("임시저장 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
                 .articleStatus(ArticleStatus.DRAFT)
                 .isDeleted(false)
@@ -77,7 +77,7 @@ class KnowledgeArticleServiceTest {
             knowledgeArticleService.register(
                     1L, 1L,
                     "테스트 지식 문서 제목입니다",
-                    ArticleCategory.장애조치,
+                    ArticleCategory.TROUBLESHOOTING,
                     "테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 추가로 작성한 내용입니다."
             );
 
@@ -98,7 +98,7 @@ class KnowledgeArticleServiceTest {
                     knowledgeArticleService.register(
                             1L, 1L,
                             shortTitle,
-                            ArticleCategory.장애조치,
+                            ArticleCategory.TROUBLESHOOTING,
                             "테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다."
                     )
             );
@@ -115,7 +115,7 @@ class KnowledgeArticleServiceTest {
                     knowledgeArticleService.register(
                             1L, 1L,
                             "테스트 지식 문서 제목입니다",
-                            ArticleCategory.장애조치,
+                            ArticleCategory.TROUBLESHOOTING,
                             shortContent
                     )
             );
@@ -132,7 +132,7 @@ class KnowledgeArticleServiceTest {
                     knowledgeArticleService.register(
                             1L, 1L,
                             "테스트 지식 문서 제목입니다",
-                            ArticleCategory.장애조치,
+                            ArticleCategory.TROUBLESHOOTING,
                             longContent
                     )
             );
@@ -158,7 +158,7 @@ class KnowledgeArticleServiceTest {
             knowledgeArticleService.draft(
                     1L, 1L,
                     "임시저장 문서 제목입니다",
-                    ArticleCategory.공정개선,
+                    ArticleCategory.PROCESS_IMPROVEMENT,
                     "임시저장 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 추가로 작성한 내용입니다."
             );
 
