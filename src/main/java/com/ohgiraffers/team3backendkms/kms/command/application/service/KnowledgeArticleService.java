@@ -26,40 +26,16 @@ public class KnowledgeArticleService {
     public void register(Long authorId, Long equipmentId,
                          String title, ArticleCategory category, String content) {
         validateInput(title, content);
-
-        KnowledgeArticle article = KnowledgeArticle.builder()
-                .authorId(authorId)
-                .equipmentId(equipmentId)
-                .articleTitle(title)
-                .articleCategory(category)
-                .articleContent(content)
-                .articleStatus(ArticleStatus.PENDING)
-                .isDeleted(false)
-                .viewCount(0)
-                .build();
-
-        knowledgeArticleRepository.save(article);
+        knowledgeArticleRepository.save(buildArticle(authorId, equipmentId, title, category, content, ArticleStatus.PENDING));
     }
 
-    /* 지식 문서 임시저장 (DRAFT) */
+    /* 지식 문서 임시저장 (DRAFT) — 임시저장은 길이 검증 없이 허용 */
     public void draft(Long authorId, Long equipmentId,
                       String title, ArticleCategory category, String content) {
-        KnowledgeArticle article = KnowledgeArticle.builder()
-                .authorId(authorId)
-                .equipmentId(equipmentId)
-                .articleTitle(title)
-                .articleCategory(category)
-                .articleContent(content)
-                .articleStatus(ArticleStatus.DRAFT)
-                .isDeleted(false)
-                .viewCount(0)
-                .build();
-
-        knowledgeArticleRepository.save(article);
+        knowledgeArticleRepository.save(buildArticle(authorId, equipmentId, title, category, content, ArticleStatus.DRAFT));
     }
 
     /* 지식 문서 상세 조회 */
-    @Transactional
     public KnowledgeArticle getDetail(Long articleId) {
         KnowledgeArticle article = findArticleById(articleId);
 
@@ -97,6 +73,21 @@ public class KnowledgeArticleService {
     // =========================================================
     // private 공통 메서드
     // =========================================================
+
+    private KnowledgeArticle buildArticle(Long authorId, Long equipmentId,
+                                          String title, ArticleCategory category,
+                                          String content, ArticleStatus status) {
+        return KnowledgeArticle.builder()
+                .authorId(authorId)
+                .equipmentId(equipmentId)
+                .articleTitle(title)
+                .articleCategory(category)
+                .articleContent(content)
+                .articleStatus(status)
+                .isDeleted(false)
+                .viewCount(0)
+                .build();
+    }
 
     private void validateInput(String title, String content) {
         if (title == null || title.length() < 5 || title.length() > 200) {
