@@ -1,7 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.command.domain.repository;
 
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.KnowledgeArticle;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.ohgiraffers.team3backendkms.kms.command.infrastructure.repository.JpaKnowledgeArticleRepository;
 
-public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArticle, Long> {
+public interface KnowledgeArticleRepository extends JpaKnowledgeArticleRepository {
 }
