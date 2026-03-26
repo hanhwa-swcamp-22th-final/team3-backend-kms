@@ -98,6 +98,11 @@ public class KnowledgeArticle {
         this.articleRejectionReason = reason;
     }
 
+    /* 조회수 증가 */
+    public void incrementViewCount() {
+        this.viewCount = (this.viewCount == null ? 0 : this.viewCount) + 1;
+    }
+
     /* 소프트 딜리트 */
     public void softDelete() {
         if (Boolean.TRUE.equals(this.isDeleted)) {
