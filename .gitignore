@@ -41,6 +41,7 @@ out/
 
 ### Application Secrets ###
 src/main/resources/application-db.yml
-src/main/resources/application-secret.ym
+src/main/resources/application-secret.yml
+
 ### Local-only docs ###
 kmsSummary/

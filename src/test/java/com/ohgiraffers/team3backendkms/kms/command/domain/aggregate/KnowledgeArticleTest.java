@@ -15,13 +15,13 @@ class KnowledgeArticleTest {
     void setUp() {
         article = KnowledgeArticle.builder()
                 .authorId(1L)
-                .articleTitle("테스트 지식 문서 제목입니다")
-                .articleCategory(ArticleCategory.TROUBLESHOOTING)
-                .articleContent("테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
-                .articleStatus(ArticleStatus.DRAFT)
-                .isDeleted(false)
-                .viewCount(0)
-                .build();
+                .articleTitle("테스트 지식 문서 제목입니다") // 제목
+                .articleCategory(ArticleCategory.TROUBLESHOOTING) // 카테고리
+                .articleContent("테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.") // 내용
+                .articleStatus(ArticleStatus.DRAFT) // 상태
+                .isDeleted(false) // 삭제여부
+                .viewCount(0) // 조회수
+                .build(); // 객체 생성 완료 (builder에 값을 기반으로 KnowledgeArticle 객체를 실제로 생성)
     }
 
     // =========================================================
