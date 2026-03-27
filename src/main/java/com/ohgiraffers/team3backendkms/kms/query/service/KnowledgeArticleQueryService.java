@@ -1,5 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.query.service;
 
+import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
@@ -21,6 +22,6 @@ public class KnowledgeArticleQueryService {
 
     public ArticleDetailDto getArticleDetail(Long articleId) {
         return knowledgeArticleMapper.findArticleById(articleId)
-                .orElseThrow(() -> new IllegalArgumentException("문서를 찾을 수 없습니다. id=" + articleId));
+                .orElseThrow(() -> new ResourceNotFoundException("문서를 찾을 수 없습니다. id=" + articleId));
     }
 }
