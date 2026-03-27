@@ -4,18 +4,17 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCateg
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
-
-import org.junit.jupiter.api.Disabled;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled("knowledge_article.file_group_id NOT NULL 제약 조건 해결 전 비활성화 — DB 컬럼 nullable 처리 또는 파일 그룹 연동 후 활성화")
 @SpringBootTest
 @Transactional
 @DisplayName("KnowledgeArticleService 통합 테스트")
@@ -27,12 +26,35 @@ class KnowledgeArticleServiceIntegrationTest {
     @Autowired
     private KnowledgeArticleRepository knowledgeArticleRepository;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     private static final String TITLE   = "통합테스트 지식 문서 제목입니다";
     private static final String CONTENT = "통합테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.가나다하마바사아자퍄퍄";
 
-    // =========================================================
-    // register()
-    // =========================================================
+    private static final Long TEST_EQUIPMENT_ID   = 9000000091L;
+    private static final Long TEST_FILE_GROUP_ID  = 0L;
+
+    private Long validAuthorId;
+
+    @BeforeEach
+    void setUpTestData() {
+        // FK 체크 비활성화 후 테스트용 데이터 삽입
+        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=0");
+        jdbcTemplate.execute(
+            "INSERT IGNORE INTO attachment_file_group (file_group_id, reference_type) VALUES (0, 'KNOWLEDGE')"
+        );
+        jdbcTemplate.execute(
+            "INSERT IGNORE INTO equipment " +
+            "(equipment_id, equipment_process_id, environment_standard_id, equipment_code, equipment_name, equipment_status, equipment_grade) " +
+            "VALUES (" + TEST_EQUIPMENT_ID + ", 1, 1, 'TEST-EQ-INTG', '통합테스트 설비', 'OPERATING', 'A')"
+        );
+        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=1");
+
+        // 실제 employee ID 조회 (DB에 데이터 있음)
+        validAuthorId = jdbcTemplate.queryForObject(
+                "SELECT employee_id FROM employee LIMIT 1", Long.class);
+    }
 
     @Nested
     @DisplayName("지식 문서 등록 (register)")
@@ -42,7 +64,7 @@ class KnowledgeArticleServiceIntegrationTest {
         @DisplayName("등록하면 PENDING 상태로 DB에 저장된다")
         void register_SavedAsPending() {
             // given & when
-            knowledgeArticleService.register(1L, 1L, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
+            knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
 
             // then
             KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
@@ -55,20 +77,15 @@ class KnowledgeArticleServiceIntegrationTest {
         }
     }
 
-    // =========================================================
-    // draft()
-    // =========================================================
-
     @Nested
     @DisplayName("지식 문서 임시저장 (draft)")
-
     class DraftTest {
 
         @Test
         @DisplayName("임시저장하면 DRAFT 상태로 DB에 저장된다")
         void draft_SavedAsDraft() {
             // given & when
-            knowledgeArticleService.draft(1L, 1L, TITLE, ArticleCategory.PROCESS_IMPROVEMENT, CONTENT);
+            knowledgeArticleService.draft(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.PROCESS_IMPROVEMENT, CONTENT);
 
             // then
             KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
@@ -80,10 +97,6 @@ class KnowledgeArticleServiceIntegrationTest {
         }
     }
 
-    // =========================================================
-    // getDetail()
-    // =========================================================
-
     @Nested
     @DisplayName("지식 문서 상세 조회 (getDetail)")
     class GetDetailTest {
@@ -92,7 +105,7 @@ class KnowledgeArticleServiceIntegrationTest {
         @DisplayName("조회하면 조회수가 1 증가한다")
         void getDetail_IncrementsViewCount() {
             // given
-            knowledgeArticleService.register(1L, 1L, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
+            knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
             KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
                     .filter(a -> TITLE.equals(a.getArticleTitle()))
                     .findFirst()
@@ -106,10 +119,6 @@ class KnowledgeArticleServiceIntegrationTest {
         }
     }
 
-    // =========================================================
-    // approve()
-    // =========================================================
-
     @Nested
     @DisplayName("지식 문서 승인 (approve)")
     class ApproveTest {
@@ -118,7 +127,7 @@ class KnowledgeArticleServiceIntegrationTest {
         @DisplayName("PENDING 문서를 승인하면 APPROVED 상태로 DB에 반영된다")
         void approve_StatusChangedToApproved() {
             // given
-            knowledgeArticleService.register(1L, 1L, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
+            knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
             KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
                     .filter(a -> TITLE.equals(a.getArticleTitle()))
                     .findFirst()
@@ -132,10 +141,6 @@ class KnowledgeArticleServiceIntegrationTest {
         }
     }
 
-    // =========================================================
-    // reject()
-    // =========================================================
-
     @Nested
     @DisplayName("지식 문서 반려 (reject)")
     class RejectTest {
@@ -145,7 +150,7 @@ class KnowledgeArticleServiceIntegrationTest {
         void reject_StatusChangedToRejected() {
             // given
             String reason = "내용이 충분하지 않습니다. 보완 후 재제출해주세요.";
-            knowledgeArticleService.register(1L, 1L, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
+            knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
             KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
                     .filter(a -> TITLE.equals(a.getArticleTitle()))
                     .findFirst()
@@ -160,10 +165,6 @@ class KnowledgeArticleServiceIntegrationTest {
         }
     }
 
-    // =========================================================
-    // delete()
-    // =========================================================
-
     @Nested
     @DisplayName("지식 문서 삭제 (delete)")
     class DeleteTest {
@@ -172,14 +173,14 @@ class KnowledgeArticleServiceIntegrationTest {
         @DisplayName("본인 DRAFT 문서를 삭제하면 isDeleted가 true로 DB에 반영된다")
         void delete_SoftDeletedInDB() {
             // given
-            knowledgeArticleService.draft(1L, 1L, TITLE, ArticleCategory.PROCESS_IMPROVEMENT, CONTENT);
+            knowledgeArticleService.draft(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.PROCESS_IMPROVEMENT, CONTENT);
             KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
                     .filter(a -> TITLE.equals(a.getArticleTitle()))
                     .findFirst()
                     .orElseThrow();
 
             // when
-            knowledgeArticleService.delete(saved.getArticleId(), 1L);
+            knowledgeArticleService.delete(saved.getArticleId(), validAuthorId);
 
             // then
             assertTrue(saved.getIsDeleted());

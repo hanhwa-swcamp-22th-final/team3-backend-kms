@@ -83,6 +83,7 @@ public class KnowledgeArticleService {
                 .articleId(idGenerator.generate())
                 .authorId(authorId)
                 .equipmentId(equipmentId)
+                .fileGroupId(0L) // TODO: 파일 그룹 연동 후 실제 fileGroupId로 교체
                 .articleTitle(title)
                 .articleCategory(category)
                 .articleContent(content)

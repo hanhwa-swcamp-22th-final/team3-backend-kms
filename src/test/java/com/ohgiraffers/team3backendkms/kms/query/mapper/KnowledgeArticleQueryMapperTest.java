@@ -9,13 +9,12 @@ import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -24,7 +23,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled("employee/equipment 테스트 데이터 없음 — 참조 테이블에 데이터 삽입 후 활성화")
 @SpringBootTest
 @Transactional
 class KnowledgeArticleQueryMapperTest {
@@ -47,13 +45,26 @@ class KnowledgeArticleQueryMapperTest {
     private static final Long TEST_ARTICLE_ID_1 = 9000000000001L;
     private static final Long TEST_ARTICLE_ID_2 = 9000000000002L;
     private static final Long TEST_ARTICLE_ID_3 = 9000000000003L;
+    private static final Long TEST_EQUIPMENT_ID = 9000000099L;
 
     @BeforeEach
     void setUp() {
+        // FK 체크 비활성화 후 테스트용 equipment, file_group 삽입
+        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=0");
+        jdbcTemplate.execute(
+            "INSERT IGNORE INTO attachment_file_group (file_group_id, reference_type) VALUES (0, 'KNOWLEDGE')"
+        );
+        jdbcTemplate.execute(
+            "INSERT IGNORE INTO equipment " +
+            "(equipment_id, equipment_process_id, environment_standard_id, equipment_code, equipment_name, equipment_status, equipment_grade) " +
+            "VALUES (" + TEST_EQUIPMENT_ID + ", 1, 1, 'TEST-EQ-MAPPER', '매퍼테스트 설비', 'OPERATING', 'A')"
+        );
+        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=1");
+
+        // 실제 employee ID 조회
         validAuthorId = jdbcTemplate.queryForObject(
                 "SELECT employee_id FROM employee LIMIT 1", Long.class);
-        validEquipmentId = jdbcTemplate.queryForObject(
-                "SELECT equipment_id FROM equipment LIMIT 1", Long.class);
+        validEquipmentId = TEST_EQUIPMENT_ID;
 
         KnowledgeArticle article1 = KnowledgeArticle.builder()
                 .articleId(TEST_ARTICLE_ID_1)
@@ -118,7 +129,6 @@ class KnowledgeArticleQueryMapperTest {
 
             // then
             assertNotNull(result);
-            // 삭제된 문서(article3)는 포함되지 않아야 함
             boolean deletedIncluded = result.stream()
                     .anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_3));
             assertFalse(deletedIncluded, "삭제된 문서는 목록에 포함되지 않아야 합니다");
@@ -153,7 +163,6 @@ class KnowledgeArticleQueryMapperTest {
 
             // then
             assertNotNull(result);
-            // 조회수 내림차순 정렬 확인
             for (int i = 0; i < result.size() - 1; i++) {
                 assertTrue(
                         result.get(i).getViewCount() >= result.get(i + 1).getViewCount(),
