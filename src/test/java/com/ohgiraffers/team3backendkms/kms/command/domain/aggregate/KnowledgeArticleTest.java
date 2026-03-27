@@ -11,7 +11,7 @@ class KnowledgeArticleTest {
 
     private KnowledgeArticle article;
 
-    @BeforeEach
+    @BeforeEach // 밑에 실행전마다 반복됨
     void setUp() {
         article = KnowledgeArticle.builder()
                 .authorId(1L)
