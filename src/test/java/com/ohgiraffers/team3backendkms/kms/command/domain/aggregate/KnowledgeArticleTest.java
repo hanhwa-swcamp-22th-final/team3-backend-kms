@@ -73,7 +73,7 @@ class KnowledgeArticleTest {
         @DisplayName("PENDING 상태의 문서를 승인하면 APPROVED로 바뀌고 승인자·승인일시가 저장된다")
         void approve_Success() {
             // given
-            Long approvedBy = 99L;
+            Long approvedBy = 99L; // long type 승인자 ID
             String opinion = "잘 작성된 문서입니다.";
 
             // when
