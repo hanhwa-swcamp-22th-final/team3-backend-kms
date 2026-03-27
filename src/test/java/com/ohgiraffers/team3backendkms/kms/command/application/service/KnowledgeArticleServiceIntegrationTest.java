@@ -58,6 +58,7 @@ class KnowledgeArticleServiceIntegrationTest {
 
     @Nested
     @DisplayName("지식 문서 임시저장 (draft)")
+
     class DraftTest {
 
         @Test
