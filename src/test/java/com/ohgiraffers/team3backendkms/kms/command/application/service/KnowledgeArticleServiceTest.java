@@ -1,5 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.service;
 
+import com.ohgiraffers.team3backendkms.common.idgenerator.IdGenerator;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.KnowledgeArticle;
@@ -29,6 +30,9 @@ class KnowledgeArticleServiceTest {
 
     @Mock
     private KnowledgeArticleRepository knowledgeArticleRepository;
+
+    @Mock
+    private IdGenerator idGenerator;
 
     private KnowledgeArticle pendingArticle;
     private KnowledgeArticle draftArticle;

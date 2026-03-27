@@ -1,4 +1,4 @@
-package com.ohgiraffers.team3backendkms.common;
+package com.ohgiraffers.team3backendkms.common.dto;
 
 import lombok.Builder;
 import lombok.Getter;
