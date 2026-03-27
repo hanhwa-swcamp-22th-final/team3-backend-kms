@@ -7,7 +7,10 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeAr
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,6 +24,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Disabled("employee/equipment 테스트 데이터 없음 — 참조 테이블에 데이터 삽입 후 활성화")
 @SpringBootTest
 @Transactional
 class KnowledgeArticleQueryMapperTest {
@@ -31,15 +35,31 @@ class KnowledgeArticleQueryMapperTest {
     @Autowired
     private KnowledgeArticleRepository knowledgeArticleRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    private Long validAuthorId;
+    private Long validEquipmentId;
+
     private static final Long TEST_ARTICLE_ID_1 = 9000000000001L;
     private static final Long TEST_ARTICLE_ID_2 = 9000000000002L;
     private static final Long TEST_ARTICLE_ID_3 = 9000000000003L;
 
     @BeforeEach
     void setUp() {
+        validAuthorId = jdbcTemplate.queryForObject(
+                "SELECT employee_id FROM employee LIMIT 1", Long.class);
+        validEquipmentId = jdbcTemplate.queryForObject(
+                "SELECT equipment_id FROM equipment LIMIT 1", Long.class);
+
         KnowledgeArticle article1 = KnowledgeArticle.builder()
                 .articleId(TEST_ARTICLE_ID_1)
-                .authorId(1L)
+                .authorId(validAuthorId)
+                .equipmentId(validEquipmentId)
+                .fileGroupId(0L)
                 .articleTitle("테스트 문서 제목 첫번째")
                 .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent("첫번째 문서 본문 내용입니다.")
@@ -51,7 +71,9 @@ class KnowledgeArticleQueryMapperTest {
 
         KnowledgeArticle article2 = KnowledgeArticle.builder()
                 .articleId(TEST_ARTICLE_ID_2)
-                .authorId(1L)
+                .authorId(validAuthorId)
+                .equipmentId(validEquipmentId)
+                .fileGroupId(0L)
                 .articleTitle("테스트 문서 제목 두번째")
                 .articleCategory(ArticleCategory.SAFETY)
                 .articleContent("두번째 문서 본문 내용입니다.")
@@ -63,7 +85,9 @@ class KnowledgeArticleQueryMapperTest {
 
         KnowledgeArticle article3 = KnowledgeArticle.builder()
                 .articleId(TEST_ARTICLE_ID_3)
-                .authorId(1L)
+                .authorId(validAuthorId)
+                .equipmentId(validEquipmentId)
+                .fileGroupId(0L)
                 .articleTitle("삭제된 문서 제목")
                 .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent("삭제된 문서 본문 내용입니다.")
@@ -76,6 +100,7 @@ class KnowledgeArticleQueryMapperTest {
         knowledgeArticleRepository.save(article1);
         knowledgeArticleRepository.save(article2);
         knowledgeArticleRepository.save(article3);
+        entityManager.flush(); // JPA → MyBatis 간 데이터 가시성 보장
     }
 
     @Nested
