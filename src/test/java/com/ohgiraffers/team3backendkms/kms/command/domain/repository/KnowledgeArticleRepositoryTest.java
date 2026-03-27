@@ -8,15 +8,25 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+<<<<<<< HEAD
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+=======
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+>>>>>>> 248ac6c5ff229c44c65e16dc96960ee10d6c8bd7
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+<<<<<<< HEAD
 @SpringBootTest
 @Transactional
+=======
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+>>>>>>> 248ac6c5ff229c44c65e16dc96960ee10d6c8bd7
 @DisplayName("KnowledgeArticleRepository")
 class KnowledgeArticleRepositoryTest {
 

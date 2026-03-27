@@ -12,9 +12,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
+<<<<<<< HEAD
 
 @SpringBootTest
 @Transactional
+=======
+>>>>>>> 248ac6c5ff229c44c65e16dc96960ee10d6c8bd7
 @DisplayName("KnowledgeArticleService 통합 테스트")
 class KnowledgeArticleServiceIntegrationTest {
 
