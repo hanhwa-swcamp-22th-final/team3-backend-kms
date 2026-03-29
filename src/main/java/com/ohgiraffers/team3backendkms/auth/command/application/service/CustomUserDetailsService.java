@@ -20,7 +20,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Employee employee = this.employeeRepository.findByEmployeeEmail(username)
+        Employee employee = this.employeeRepository.findByEmployeeCode(username)
                 .orElseThrow(() -> new UsernameNotFoundException("회원을 찾을 수 없습니다"));
 
         return new CustomUserDetails(
