@@ -2,9 +2,9 @@ package com.ohgiraffers.team3backendkms.auth.command.application.service;
 
 import com.ohgiraffers.team3backendkms.auth.command.domain.aggregate.Employee;
 import com.ohgiraffers.team3backendkms.auth.command.domain.repository.EmployeeRepository;
+import com.ohgiraffers.team3backendkms.config.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -23,10 +23,11 @@ public class CustomUserDetailsService implements UserDetailsService {
         Employee employee = this.employeeRepository.findByEmployeeEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("회원을 찾을 수 없습니다"));
 
-        return new User(
+        return new CustomUserDetails(
                 employee.getEmployeeCode(),
                 employee.getEmployeePassword(),
-                Collections.singleton(new SimpleGrantedAuthority(employee.getEmployeeRole().name()))
+                Collections.singleton(new SimpleGrantedAuthority(employee.getEmployeeRole().name())),
+                employee.getEmployeeId()
         );
     }
 
