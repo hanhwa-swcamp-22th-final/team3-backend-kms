@@ -5,6 +5,7 @@ import com.ohgiraffers.team3backendkms.config.security.CustomUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleApproveRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRejectRequest;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.KnowledgeArticle;
@@ -211,6 +212,36 @@ class KnowledgeArticleIntegrationTest {
 
             // then
             assertEquals(ArticleStatus.APPROVED, saved.getArticleStatus());
+        }
+    }
+
+    // =========================================================
+    // POST /api/kms/approval/{articleId}/reject
+    // =========================================================
+
+    @Nested
+    @DisplayName("POST /api/kms/approval/{articleId}/reject — 지식 문서 반려")
+    class Reject {
+
+        @Test
+        @DisplayName("PENDING 문서 반려 시 200 OK 응답과 함께 DB에 REJECTED 상태와 반려 사유가 반영된다")
+        void reject_statusChangedToRejected() throws Exception {
+            // given
+            KnowledgeArticle saved = savePendingArticle();
+            String reason = "내용이 충분하지 않습니다. 보완 후 재제출해주세요.";
+            ArticleRejectRequest request = new ArticleRejectRequest(reason);
+
+            // when
+            mockMvc.perform(post("/api/kms/approval/" + saved.getArticleId() + "/reject")
+                            .with(user(tlUser))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+
+            // then
+            assertEquals(ArticleStatus.REJECTED, saved.getArticleStatus());
+            assertEquals(reason, saved.getArticleRejectionReason());
         }
     }
 }
