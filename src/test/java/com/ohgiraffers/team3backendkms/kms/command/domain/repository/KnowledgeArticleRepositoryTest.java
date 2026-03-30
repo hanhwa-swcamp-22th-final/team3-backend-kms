@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("KnowledgeArticleRepository")
 class KnowledgeArticleRepositoryTest {
 
-    @Autowired
+    @Autowired // di ioc
     private KnowledgeArticleRepository knowledgeArticleRepository;
 
     private final TimeBasedIdGenerator idGenerator = new TimeBasedIdGenerator();
@@ -56,7 +56,7 @@ class KnowledgeArticleRepositoryTest {
             // when
             KnowledgeArticle saved = knowledgeArticleRepository.save(article);
 
-            // then
+            // then 적절 x 인서트 셀렉으로 변결ㅇ
             assertNotNull(saved.getArticleId());
         }
 

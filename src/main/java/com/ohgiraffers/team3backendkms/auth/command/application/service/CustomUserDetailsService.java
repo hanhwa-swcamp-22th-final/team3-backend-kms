@@ -23,6 +23,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         Employee employee = this.employeeRepository.findByEmployeeCode(username)
                 .orElseThrow(() -> new UsernameNotFoundException("회원을 찾을 수 없습니다"));
 
+        // JWT 필터가 토큰에서 직원번호를 꺼넨후 이름호출후 DB조회후 디테일만들어 반환
         return new CustomUserDetails(
                 employee.getEmployeeCode(),
                 employee.getEmployeePassword(),

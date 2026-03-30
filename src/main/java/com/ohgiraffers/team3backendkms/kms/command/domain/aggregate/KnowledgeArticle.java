@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "knowledge_article")
-@EntityListeners(AuditingEntityListener.class)
+@EntityListeners(AuditingEntityListener.class) // 이벤트리스너로 감지
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
@@ -48,6 +48,8 @@ public class KnowledgeArticle {
     private Boolean isDeleted;
 
     private Integer viewCount;
+
+    // 각 컬럼중 create.는 수정해도 업데이트 안한다고 (만약 덮어쓰기하면 setcreate같은 코드가잇었다)
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

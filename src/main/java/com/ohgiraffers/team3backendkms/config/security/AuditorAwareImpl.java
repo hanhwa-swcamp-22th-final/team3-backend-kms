@@ -10,6 +10,8 @@ import java.util.Optional;
 @Component("auditorProvider")
 public class AuditorAwareImpl implements AuditorAware<Long> {
 
+
+  // JPA가 savc()실행할때 여기 메서드를 호출해서 상태를 요청하고 답이없으면 DB에 null로 저장
     @Override
     public Optional<Long> getCurrentAuditor() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

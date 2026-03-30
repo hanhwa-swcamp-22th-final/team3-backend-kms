@@ -37,8 +37,7 @@ public class KnowledgeArticleCommandController {
     @PostMapping("/articles/drafts")
     public ResponseEntity<ApiResponse<Void>> draft(@RequestBody ArticleDraftRequest request) {
         knowledgeArticleService.draft(
-                request.getAuthorId(),
-                request.getEquipmentId(),
+                request.getAuthorId(),                request.getEquipmentId(),
                 request.getTitle(),
                 request.getCategory(),
                 request.getContent()
