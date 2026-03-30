@@ -35,6 +35,7 @@ class KnowledgeArticleServiceTest {
     private IdGenerator idGenerator;
 
     private KnowledgeArticle pendingArticle;
+    private KnowledgeArticle tlApprovedArticle;
     private KnowledgeArticle draftArticle;
 
     @BeforeEach
@@ -46,6 +47,17 @@ class KnowledgeArticleServiceTest {
                 .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent("테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
                 .articleStatus(ArticleStatus.PENDING)
+                .isDeleted(false)
+                .viewCount(0)
+                .build();
+
+        tlApprovedArticle = KnowledgeArticle.builder()
+                .articleId(3L)
+                .authorId(1L)
+                .articleTitle("TL 승인 완료 문서 제목입니다")
+                .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                .articleContent("TL 승인 완료 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
+                .articleStatus(ArticleStatus.TL_APPROVED)
                 .isDeleted(false)
                 .viewCount(0)
                 .build();
@@ -67,11 +79,13 @@ class KnowledgeArticleServiceTest {
     // =========================================================
 
     @Nested
-    @DisplayName("지식 문서 등록 (register)")
+    // 지식 문서 등록 (register)
+    @DisplayName("register()")
     class RegisterTest {
 
         @Test
-        @DisplayName("정상 등록 시 PENDING 상태로 저장된다")
+        // 정상 등록 시 PENDING 상태로 저장된다
+        @DisplayName("Saves article with PENDING status")
         void register_Success() {
             // given
             given(knowledgeArticleRepository.save(any(KnowledgeArticle.class)))
@@ -92,7 +106,8 @@ class KnowledgeArticleServiceTest {
         }
 
         @Test
-        @DisplayName("제목이 5자 미만이면 예외가 발생한다 (ARTICLE_001)")
+        // 제목이 5자 미만이면 예외가 발생한다 (ARTICLE_001)
+        @DisplayName("Throws exception when title is less than 5 characters (ARTICLE_001)")
         void register_TitleTooShort_ThrowsException() {
             // given
             String shortTitle = "짧음";
@@ -109,7 +124,8 @@ class KnowledgeArticleServiceTest {
         }
 
         @Test
-        @DisplayName("본문이 50자 미만이면 예외가 발생한다 (ARTICLE_002)")
+        // 본문이 50자 미만이면 예외가 발생한다 (ARTICLE_002)
+        @DisplayName("Throws exception when content is less than 50 characters (ARTICLE_002)")
         void register_ContentTooShort_ThrowsException() {
             // given
             String shortContent = "짧은 본문";
@@ -126,7 +142,8 @@ class KnowledgeArticleServiceTest {
         }
 
         @Test
-        @DisplayName("본문이 10,000자를 넘으면 예외가 발생한다 (ARTICLE_003)")
+        // 본문이 10,000자를 넘으면 예외가 발생한다 (ARTICLE_003)
+        @DisplayName("Throws exception when content exceeds 10000 characters (ARTICLE_003)")
         void register_ContentTooLong_ThrowsException() {
             // given
             String longContent = "a".repeat(10001);
@@ -148,11 +165,13 @@ class KnowledgeArticleServiceTest {
     // =========================================================
 
     @Nested
-    @DisplayName("지식 문서 임시저장 (draft)")
+    // 지식 문서 임시저장 (draft)
+    @DisplayName("draft()")
     class DraftTest {
 
         @Test
-        @DisplayName("임시저장 시 DRAFT 상태로 저장된다")
+        // 임시저장 시 DRAFT 상태로 저장된다
+        @DisplayName("Saves article with DRAFT status")
         void draft_Success() {
             // given
             given(knowledgeArticleRepository.save(any(KnowledgeArticle.class)))
@@ -174,45 +193,65 @@ class KnowledgeArticleServiceTest {
     }
 
     // =========================================================
-    // getDetail()
+    // incrementViewCount()
     // =========================================================
 
     @Nested
-    @DisplayName("지식 문서 상세 조회 (getDetail)")
-    class GetDetailTest {
+    // 조회수 증가 (incrementViewCount)
+    @DisplayName("incrementViewCount()")
+    class IncrementViewCountTest {
 
         @Test
-        @DisplayName("정상 조회 시 조회수가 1 증가한다")
-        void getDetail_Success() {
+        // 조회수가 1 증가한다
+        @DisplayName("Increments view count by 1")
+        void incrementViewCount_Success() {
             // given
             given(knowledgeArticleRepository.findById(1L))
                     .willReturn(Optional.of(pendingArticle));
 
             // when
-            knowledgeArticleService.getDetail(1L);
+            knowledgeArticleService.incrementViewCount(1L);
 
             // then
             assertEquals(1, pendingArticle.getViewCount());
         }
+    }
+
+    // =========================================================
+    // tlApprove()
+    // =========================================================
+
+    @Nested
+    // TL 1차 승인 (tlApprove)
+    @DisplayName("tlApprove()")
+    class TlApproveTest {
 
         @Test
-        @DisplayName("삭제된 문서를 조회하면 예외가 발생한다 (ARTICLE_008)")
-        void getDetail_DeletedArticle_ThrowsException() {
+        // PENDING 문서를 TL 승인하면 TL_APPROVED 상태로 바뀐다
+        @DisplayName("Changes status to TL_APPROVED")
+        void tlApprove_Success() {
             // given
-            KnowledgeArticle deletedArticle = KnowledgeArticle.builder()
-                    .articleId(3L)
-                    .authorId(1L)
-                    .articleStatus(ArticleStatus.DRAFT)
-                    .isDeleted(true)
-                    .viewCount(0)
-                    .build();
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
 
-            given(knowledgeArticleRepository.findById(3L))
-                    .willReturn(Optional.of(deletedArticle));
+            // when
+            knowledgeArticleService.tlApprove(1L, 99L, "1차 검토 완료입니다.");
+
+            // then
+            assertEquals(ArticleStatus.TL_APPROVED, pendingArticle.getArticleStatus());
+        }
+
+        @Test
+        // PENDING이 아닌 문서를 TL 승인하면 예외가 발생한다 (APPROVAL_003)
+        @DisplayName("Throws exception when status is not PENDING (APPROVAL_003)")
+        void tlApprove_NotPending_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(2L))
+                    .willReturn(Optional.of(draftArticle));
 
             // when & then
             assertThrows(IllegalStateException.class, () ->
-                    knowledgeArticleService.getDetail(3L)
+                    knowledgeArticleService.tlApprove(2L, 99L, "잘못된 승인 시도")
             );
         }
     }
@@ -222,41 +261,36 @@ class KnowledgeArticleServiceTest {
     // =========================================================
 
     @Nested
-    @DisplayName("지식 문서 승인 (approve)")
+    // DL 최종 승인 (approve)
+    @DisplayName("approve()")
     class ApproveTest {
 
         @Test
-        @DisplayName("PENDING 문서를 승인하면 APPROVED 상태로 바뀐다")
+        // TL_APPROVED 문서를 DL 승인하면 APPROVED 상태로 바뀐다
+        @DisplayName("Changes status to APPROVED")
         void approve_Success() {
+            // given
+            given(knowledgeArticleRepository.findById(3L))
+                    .willReturn(Optional.of(tlApprovedArticle));
+
+            // when
+            knowledgeArticleService.approve(3L, 99L, "최종 승인합니다.");
+
+            // then
+            assertEquals(ArticleStatus.APPROVED, tlApprovedArticle.getArticleStatus());
+        }
+
+        @Test
+        // TL_APPROVED가 아닌 문서를 DL 승인하면 예외가 발생한다 (APPROVAL_004)
+        @DisplayName("Throws exception when status is not TL_APPROVED (APPROVAL_004)")
+        void approve_NotTlApproved_ThrowsException() {
             // given
             given(knowledgeArticleRepository.findById(1L))
                     .willReturn(Optional.of(pendingArticle));
 
-            // when
-            knowledgeArticleService.approve(1L, 99L, "잘 작성된 문서입니다.");
-
-            // then
-            assertEquals(ArticleStatus.APPROVED, pendingArticle.getArticleStatus());
-        }
-
-        @Test
-        @DisplayName("PENDING이 아닌 문서를 승인하면 예외가 발생한다 (APPROVAL_003)")
-        void approve_NotPending_ThrowsException() {
-            // given
-            KnowledgeArticle approvedArticle = KnowledgeArticle.builder()
-                    .articleId(4L)
-                    .authorId(1L)
-                    .articleStatus(ArticleStatus.APPROVED)
-                    .isDeleted(false)
-                    .viewCount(0)
-                    .build();
-
-            given(knowledgeArticleRepository.findById(4L))
-                    .willReturn(Optional.of(approvedArticle));
-
             // when & then
             assertThrows(IllegalStateException.class, () ->
-                    knowledgeArticleService.approve(4L, 99L, "재승인 시도")
+                    knowledgeArticleService.approve(1L, 99L, "잘못된 최종 승인 시도")
             );
         }
     }
@@ -266,11 +300,13 @@ class KnowledgeArticleServiceTest {
     // =========================================================
 
     @Nested
-    @DisplayName("지식 문서 반려 (reject)")
+    // 지식 문서 반려 (reject)
+    @DisplayName("reject()")
     class RejectTest {
 
         @Test
-        @DisplayName("PENDING 문서를 반려하면 REJECTED 상태로 바뀌고 반려 사유가 저장된다")
+        // PENDING 문서를 반려하면 REJECTED 상태로 바뀌고 반려 사유가 저장된다
+        @DisplayName("Changes status to REJECTED and saves rejection reason")
         void reject_Success() {
             // given
             String reason = "내용이 충분하지 않습니다. 보완 후 재제출해주세요.";
@@ -292,11 +328,13 @@ class KnowledgeArticleServiceTest {
     // =========================================================
 
     @Nested
-    @DisplayName("지식 문서 삭제 (delete)")
+    // 지식 문서 삭제 (delete)
+    @DisplayName("delete()")
     class DeleteTest {
 
         @Test
-        @DisplayName("본인 문서를 삭제하면 is_deleted가 true로 바뀐다")
+        // 본인 문서를 삭제하면 is_deleted가 true로 바뀐다
+        @DisplayName("Sets isDeleted to true")
         void delete_Success() {
             // given
             given(knowledgeArticleRepository.findById(2L))
@@ -310,7 +348,8 @@ class KnowledgeArticleServiceTest {
         }
 
         @Test
-        @DisplayName("타인의 문서를 삭제하면 예외가 발생한다 (ARTICLE_007)")
+        // 타인의 문서를 삭제하면 예외가 발생한다 (ARTICLE_007)
+        @DisplayName("Throws exception when requester is not the author (ARTICLE_007)")
         void delete_NotAuthor_ThrowsException() {
             // given
             given(knowledgeArticleRepository.findById(2L))
@@ -323,7 +362,8 @@ class KnowledgeArticleServiceTest {
         }
 
         @Test
-        @DisplayName("승인 완료된 문서를 삭제하면 예외가 발생한다 (ARTICLE_009)")
+        // 승인 완료된 문서를 삭제하면 예외가 발생한다 (ARTICLE_009)
+        @DisplayName("Throws exception when status is APPROVED (ARTICLE_009)")
         void delete_ApprovedArticle_ThrowsException() {
             // given
             KnowledgeArticle approvedArticle = KnowledgeArticle.builder()
