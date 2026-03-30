@@ -67,13 +67,10 @@ class KnowledgeArticleServiceIntegrationTest {
         @DisplayName("Saves article with PENDING status in DB")
         void register_SavedAsPending() {
             // when
-            knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
+            Long articleId = knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
 
             // then
-            KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
-                    .filter(a -> TITLE.equals(a.getArticleTitle()))
-                    .findFirst()
-                    .orElseThrow();
+            KnowledgeArticle saved = knowledgeArticleRepository.findById(articleId).orElseThrow();
 
             assertEquals(ArticleStatus.PENDING, saved.getArticleStatus());
             assertFalse(saved.getIsDeleted());
@@ -90,13 +87,10 @@ class KnowledgeArticleServiceIntegrationTest {
         @DisplayName("Saves article with DRAFT status in DB")
         void draft_SavedAsDraft() {
             // when
-            knowledgeArticleService.draft(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.PROCESS_IMPROVEMENT, CONTENT);
+            Long articleId = knowledgeArticleService.draft(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.PROCESS_IMPROVEMENT, CONTENT);
 
             // then
-            KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
-                    .filter(a -> TITLE.equals(a.getArticleTitle()))
-                    .findFirst()
-                    .orElseThrow();
+            KnowledgeArticle saved = knowledgeArticleRepository.findById(articleId).orElseThrow();
 
             assertEquals(ArticleStatus.DRAFT, saved.getArticleStatus());
         }
@@ -110,11 +104,8 @@ class KnowledgeArticleServiceIntegrationTest {
         @DisplayName("조회수가 1 증가한다")
         void incrementViewCount_IncrementsViewCount() {
             // given
-            knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
-            KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
-                    .filter(a -> TITLE.equals(a.getArticleTitle()))
-                    .findFirst()
-                    .orElseThrow();
+            Long articleId = knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
+            KnowledgeArticle saved = knowledgeArticleRepository.findById(articleId).orElseThrow();
 
             // when
             knowledgeArticleService.incrementViewCount(saved.getArticleId());
@@ -132,11 +123,8 @@ class KnowledgeArticleServiceIntegrationTest {
         @DisplayName("PENDING 문서를 승인하면 APPROVED 상태로 DB에 반영된다")
         void approve_StatusChangedToApproved() {
             // given
-            knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
-            KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
-                    .filter(a -> TITLE.equals(a.getArticleTitle()))
-                    .findFirst()
-                    .orElseThrow();
+            Long articleId = knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
+            KnowledgeArticle saved = knowledgeArticleRepository.findById(articleId).orElseThrow();
 
             // when
             knowledgeArticleService.approve(saved.getArticleId(), 99L, "잘 작성된 문서입니다.");
@@ -155,11 +143,8 @@ class KnowledgeArticleServiceIntegrationTest {
         void reject_StatusChangedToRejected() {
             // given
             String reason = "내용이 충분하지 않습니다. 보완 후 재제출해주세요.";
-            knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
-            KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
-                    .filter(a -> TITLE.equals(a.getArticleTitle()))
-                    .findFirst()
-                    .orElseThrow();
+            Long articleId = knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
+            KnowledgeArticle saved = knowledgeArticleRepository.findById(articleId).orElseThrow();
 
             // when
             knowledgeArticleService.reject(saved.getArticleId(), reason);
@@ -178,11 +163,8 @@ class KnowledgeArticleServiceIntegrationTest {
         @DisplayName("본인 DRAFT 문서를 삭제하면 isDeleted가 true로 DB에 반영된다")
         void delete_SoftDeletedInDB() {
             // given
-            knowledgeArticleService.draft(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.PROCESS_IMPROVEMENT, CONTENT);
-            KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
-                    .filter(a -> TITLE.equals(a.getArticleTitle()))
-                    .findFirst()
-                    .orElseThrow();
+            Long articleId = knowledgeArticleService.draft(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.PROCESS_IMPROVEMENT, CONTENT);
+            KnowledgeArticle saved = knowledgeArticleRepository.findById(articleId).orElseThrow();
 
             // when
             knowledgeArticleService.delete(saved.getArticleId(), validAuthorId);

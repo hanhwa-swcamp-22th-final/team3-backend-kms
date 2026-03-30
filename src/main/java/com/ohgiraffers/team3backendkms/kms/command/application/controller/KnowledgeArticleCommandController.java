@@ -21,28 +21,29 @@ public class KnowledgeArticleCommandController {
     /* 지식 문서 등록 (PENDING) */
     @PreAuthorize("hasAnyAuthority('WORKER')")
     @PostMapping("/articles")
-    public ResponseEntity<ApiResponse<Void>> register(@RequestBody ArticleRegisterRequest request) {
-        knowledgeArticleService.register(
+    public ResponseEntity<ApiResponse<Long>> register(@RequestBody ArticleRegisterRequest request) {
+        Long articleId = knowledgeArticleService.register(
                 request.getAuthorId(),
                 request.getEquipmentId(),
                 request.getTitle(),
                 request.getCategory(),
                 request.getContent()
         );
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success(articleId));
     }
 
     /* 지식 문서 임시저장 (DRAFT) */
     @PreAuthorize("hasAnyAuthority('WORKER')")
     @PostMapping("/articles/drafts")
-    public ResponseEntity<ApiResponse<Void>> draft(@RequestBody ArticleDraftRequest request) {
-        knowledgeArticleService.draft(
-                request.getAuthorId(),                request.getEquipmentId(),
+    public ResponseEntity<ApiResponse<Long>> draft(@RequestBody ArticleDraftRequest request) {
+        Long articleId = knowledgeArticleService.draft(
+                request.getAuthorId(),
+                request.getEquipmentId(),
                 request.getTitle(),
                 request.getCategory(),
                 request.getContent()
         );
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success(articleId));
     }
 
     /* 지식 문서 승인 */

@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -55,15 +56,17 @@ class KnowledgeArticleCommandControllerTest {
                     "category", "TROUBLESHOOTING",
                     "content", "본문 내용이 50자 이상이어야 합니다. 여기에 충분한 길이의 본문을 작성합니다."
             );
-            willDoNothing().given(knowledgeArticleService)
-                    .register(anyLong(), any(), anyString(), any(ArticleCategory.class), anyString());
+            given(knowledgeArticleService
+                    .register(anyLong(), any(), anyString(), any(ArticleCategory.class), anyString()))
+                    .willReturn(1L);
 
             // when & then
             mockMvc.perform(post("/api/kms/articles")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true));
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data").value(1));
         }
 
         @Test
@@ -129,15 +132,17 @@ class KnowledgeArticleCommandControllerTest {
                     "category", "ETC",
                     "content", "짧아도 됨"
             );
-            willDoNothing().given(knowledgeArticleService)
-                    .draft(anyLong(), any(), anyString(), any(ArticleCategory.class), anyString());
+            given(knowledgeArticleService
+                    .draft(anyLong(), any(), anyString(), any(ArticleCategory.class), anyString()))
+                    .willReturn(2L);
 
             // when & then
             mockMvc.perform(post("/api/kms/articles/drafts")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true));
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data").value(2));
         }
     }
 

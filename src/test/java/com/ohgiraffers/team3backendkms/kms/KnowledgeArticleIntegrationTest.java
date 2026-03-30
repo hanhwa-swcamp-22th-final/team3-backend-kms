@@ -98,7 +98,7 @@ class KnowledgeArticleIntegrationTest {
     // =========================================================
 
     private KnowledgeArticle savePendingArticle() {
-        knowledgeArticleRepository.save(
+        return knowledgeArticleRepository.save(
                 KnowledgeArticle.builder()
                         .articleId(new TimeBasedIdGenerator().generate())
                         .authorId(validAuthorId)
@@ -112,10 +112,6 @@ class KnowledgeArticleIntegrationTest {
                         .viewCount(0)
                         .build()
         );
-        return knowledgeArticleRepository.findAll().stream()
-                .filter(a -> TITLE.equals(a.getArticleTitle()))
-                .findFirst()
-                .orElseThrow();
     }
 
     // =========================================================
@@ -137,18 +133,17 @@ class KnowledgeArticleIntegrationTest {
             );
 
             // when
-            mockMvc.perform(post("/api/kms/articles")
+            String response = mockMvc.perform(post("/api/kms/articles")
                             .with(user(workerUser))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true));
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andReturn().getResponse().getContentAsString();
 
             // then
-            KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
-                    .filter(a -> TITLE.equals(a.getArticleTitle()))
-                    .findFirst()
-                    .orElseThrow();
+            Long articleId = objectMapper.readTree(response).get("data").asLong();
+            KnowledgeArticle saved = knowledgeArticleRepository.findById(articleId).orElseThrow();
 
             assertEquals(ArticleStatus.PENDING, saved.getArticleStatus());
             assertFalse(saved.getIsDeleted());
@@ -174,18 +169,17 @@ class KnowledgeArticleIntegrationTest {
             );
 
             // when
-            mockMvc.perform(post("/api/kms/articles/drafts")
+            String response = mockMvc.perform(post("/api/kms/articles/drafts")
                             .with(user(workerUser))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true));
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andReturn().getResponse().getContentAsString();
 
             // then
-            KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
-                    .filter(a -> TITLE.equals(a.getArticleTitle()))
-                    .findFirst()
-                    .orElseThrow();
+            Long articleId = objectMapper.readTree(response).get("data").asLong();
+            KnowledgeArticle saved = knowledgeArticleRepository.findById(articleId).orElseThrow();
 
             assertEquals(ArticleStatus.DRAFT, saved.getArticleStatus());
             assertFalse(saved.getIsDeleted());
@@ -268,7 +262,7 @@ class KnowledgeArticleIntegrationTest {
         @DisplayName("Returns 200 OK and sets isDeleted to true in DB")
         void delete_softDeletedInDB() throws Exception {
             // given
-            knowledgeArticleRepository.save(
+            KnowledgeArticle saved = knowledgeArticleRepository.save(
                     KnowledgeArticle.builder()
                             .articleId(new TimeBasedIdGenerator().generate())
                             .authorId(validAuthorId)
@@ -282,10 +276,6 @@ class KnowledgeArticleIntegrationTest {
                             .viewCount(0)
                             .build()
             );
-            KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
-                    .filter(a -> TITLE.equals(a.getArticleTitle()))
-                    .findFirst()
-                    .orElseThrow();
 
             // when
             mockMvc.perform(delete("/api/kms/articles/" + saved.getArticleId())

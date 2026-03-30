@@ -21,16 +21,20 @@ public class KnowledgeArticleService {
 
 
     /* 지식 문서 등록 (PENDING) */
-    public void register(Long authorId, Long equipmentId,
+    public Long register(Long authorId, Long equipmentId,
                          String title, ArticleCategory category, String content) {
         validateInput(title, content);
-        knowledgeArticleRepository.save(buildArticle(authorId, equipmentId, title, category, content, ArticleStatus.PENDING));
+        return knowledgeArticleRepository.save(
+                buildArticle(authorId, equipmentId, title, category, content, ArticleStatus.PENDING)
+        ).getArticleId();
     }
 
     /* 지식 문서 임시저장 (DRAFT) — 임시저장은 길이 검증 없이 허용 */
-    public void draft(Long authorId, Long equipmentId,
+    public Long draft(Long authorId, Long equipmentId,
                       String title, ArticleCategory category, String content) {
-        knowledgeArticleRepository.save(buildArticle(authorId, equipmentId, title, category, content, ArticleStatus.DRAFT));
+        return knowledgeArticleRepository.save(
+                buildArticle(authorId, equipmentId, title, category, content, ArticleStatus.DRAFT)
+        ).getArticleId();
     }
 
     /* 조회수 증가 */
