@@ -1,5 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.service;
 
+import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
 import com.ohgiraffers.team3backendkms.common.idgenerator.IdGenerator;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
@@ -18,12 +19,6 @@ public class KnowledgeArticleService {
     private final KnowledgeArticleRepository knowledgeArticleRepository;
     private final IdGenerator idGenerator;
 
-    private static final String ERR_TITLE_LENGTH   = "[ARTICLE_001] 제목은 5자 이상 200자 이하여야 합니다.";
-    private static final String ERR_CONTENT_SHORT  = "[ARTICLE_002] 본문은 50자 이상이어야 합니다.";
-    private static final String ERR_CONTENT_LONG   = "[ARTICLE_003] 본문은 10,000자 이하여야 합니다.";
-    private static final String ERR_NOT_AUTHOR     = "[ARTICLE_007] 본인이 작성한 문서만 삭제할 수 있습니다.";
-    private static final String ERR_ALREADY_DELETED = "[ARTICLE_008] 이미 삭제된 문서입니다.";
-    private static final String ERR_NOT_FOUND      = "문서를 찾을 수 없습니다.";
 
     /* 지식 문서 등록 (PENDING) */
     public void register(Long authorId, Long equipmentId,
@@ -43,7 +38,7 @@ public class KnowledgeArticleService {
         KnowledgeArticle article = findArticleById(articleId);
 
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
-            throw new IllegalStateException(ERR_ALREADY_DELETED);
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
         }
 
         article.incrementViewCount();
@@ -67,7 +62,7 @@ public class KnowledgeArticleService {
         KnowledgeArticle article = findArticleById(articleId);
 
         if (!article.getAuthorId().equals(requesterId)) {
-            throw new IllegalStateException(ERR_NOT_AUTHOR);
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_007.getMessage());
         }
 
         article.softDelete();
@@ -96,18 +91,18 @@ public class KnowledgeArticleService {
 
     private void validateInput(String title, String content) {
         if (title == null || title.length() < 5 || title.length() > 200) {
-            throw new IllegalArgumentException(ERR_TITLE_LENGTH);
+            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_001.getMessage());
         }
         if (content == null || content.length() < 50) {
-            throw new IllegalArgumentException(ERR_CONTENT_SHORT);
+            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_002.getMessage());
         }
         if (content.length() > 10000) {
-            throw new IllegalArgumentException(ERR_CONTENT_LONG);
+            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_003.getMessage());
         }
     }
 
     private KnowledgeArticle findArticleById(Long articleId) {
         return knowledgeArticleRepository.findById(articleId)
-                .orElseThrow(() -> new ResourceNotFoundException(ERR_NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND.getMessage()));
     }
 }

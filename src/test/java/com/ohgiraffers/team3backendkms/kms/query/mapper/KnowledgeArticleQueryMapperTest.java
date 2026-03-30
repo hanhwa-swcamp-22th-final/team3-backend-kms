@@ -30,6 +30,8 @@ class KnowledgeArticleQueryMapperTest {
     @Autowired
     private KnowledgeArticleMapper knowledgeArticleMapper;
 
+
+    // 왜  mybatis에 JPA (Repository, entityManager, jdbc)가 들어갔냐면
     @Autowired
     private KnowledgeArticleRepository knowledgeArticleRepository;
 
@@ -50,6 +52,8 @@ class KnowledgeArticleQueryMapperTest {
     @BeforeEach
     void setUp() {
         // FK 체크 비활성화 후 테스트용 equipment, file_group 삽입
+      // BeforeEach로 각 @Test 메서드 실행 직전마다 호출
+      // file_group_id - 더미 파일 삽입하고, INSERT IGNORE - 중복이면 건너뛰고,
         jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=0");
         jdbcTemplate.execute(
             "INSERT IGNORE INTO attachment_file_group (file_group_id, reference_type) VALUES (0, 'KNOWLEDGE')"
@@ -59,7 +63,7 @@ class KnowledgeArticleQueryMapperTest {
             "(equipment_id, equipment_process_id, environment_standard_id, equipment_code, equipment_name, equipment_status, equipment_grade) " +
             "VALUES (" + TEST_EQUIPMENT_ID + ", 1, 1, 'TEST-EQ-MAPPER', '매퍼테스트 설비', 'OPERATING', 'A')"
         );
-        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=1");
+        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=1"); // 테스트 끝나면 원래대로 복원
 
         // 실제 employee ID 조회
         validAuthorId = jdbcTemplate.queryForObject(
@@ -108,6 +112,7 @@ class KnowledgeArticleQueryMapperTest {
                 .createdAt(LocalDateTime.now())
                 .build();
 
+        // 여기쓸려고 위에서 JPA형식 사용
         knowledgeArticleRepository.save(article1);
         knowledgeArticleRepository.save(article2);
         knowledgeArticleRepository.save(article3);
@@ -123,31 +128,36 @@ class KnowledgeArticleQueryMapperTest {
         // 지식 목록 조회 성공: 전체 목록을 조회한다 (삭제된 문서 제외)
         @DisplayName("Returns list excluding deleted articles")
         void findArticles_success() {
-            // given
-            ArticleQueryRequest request = new ArticleQueryRequest();
 
-            // when
-            List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
+            // given - 지식게시글 조회조건을 가진 요청 객체 생성
+            ArticleQueryRequest request = new ArticleQueryRequest(); //
 
-            // then
-            assertNotNull(result);
-            boolean deletedIncluded = result.stream()
-                    .anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_3));
-            assertFalse(deletedIncluded, "삭제된 문서는 목록에 포함되지 않아야 합니다");
+
+          // when - findArticles 호출하여 동작확인
+          List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request); //
+
+          // then - stream은 list 안에 데이터를 하났기 꺼네서 검사하여 삭제된문서가 결과에없는지 검증
+          assertNotNull(result);
+          boolean deletedIncluded = result.stream()
+              .anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_3));
+          assertFalse(deletedIncluded, "삭제된 문서는 목록에 포함되지 않아야 합니다");
         }
+
 
         @Test
         // 지식 목록 조회 성공: 카테고리 필터가 반영된다
         @DisplayName("Filters by category")
         void findArticles_withCategoryFilter_success() {
-            // given
+
+          // given - 지식게시글 조회조건을 가진 요청 객체 생성
             ArticleQueryRequest request = new ArticleQueryRequest();
+            // 카테고리를 트러블슈팅으로 설정
             request.setCategory(ArticleCategory.TROUBLESHOOTING);
 
-            // when
+            // when - findArticles 호출하여 동작확인
             List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
 
-            // then
+          // then - stream은 list 안에 데이터를 하났기 꺼네서 검사하여 삭제된문서가 결과에없는지 검증
             assertNotNull(result);
             assertTrue(result.stream()
                     .allMatch(a -> a.getArticleCategory() == ArticleCategory.TROUBLESHOOTING),
@@ -158,14 +168,14 @@ class KnowledgeArticleQueryMapperTest {
         // 지식 목록 조회 성공: 정렬 조건이 반영된다 (popular)
         @DisplayName("Sorts by view count when sort=popular")
         void findArticles_withSort_success() {
-            // given
+            // given - 조회 요청 객체 생성, 정렬 기준을 "popular"로 설정
             ArticleQueryRequest request = new ArticleQueryRequest();
             request.setSort("popular");
 
-            // when
+            // when - DB에서 조회수 기준 내림차순으로 데이터 가져옴
             List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
 
-            // then
+            // then - 진짜 조회수가 내림차순인지 반복문으로 검증
             assertNotNull(result);
             for (int i = 0; i < result.size() - 1; i++) {
                 assertTrue(
@@ -189,10 +199,10 @@ class KnowledgeArticleQueryMapperTest {
             Optional<ArticleDetailDto> result = knowledgeArticleMapper.findArticleById(TEST_ARTICLE_ID_1);
 
             // then
-            assertTrue(result.isPresent(), "문서가 존재해야 합니다");
-            assertEquals(TEST_ARTICLE_ID_1, result.get().getArticleId());
-            assertEquals("테스트 문서 제목 첫번째", result.get().getArticleTitle());
-            assertEquals(ArticleCategory.TROUBLESHOOTING, result.get().getArticleCategory());
+            assertTrue(result.isPresent(), "문서가 존재해야 합니다"); // 존재 확인
+            assertEquals(TEST_ARTICLE_ID_1, result.get().getArticleId()); // ID 검증
+            assertEquals("테스트 문서 제목 첫번째", result.get().getArticleTitle()); // 제목 검증
+            assertEquals(ArticleCategory.TROUBLESHOOTING, result.get().getArticleCategory()); // 카테고리 검증
         }
 
         @Test

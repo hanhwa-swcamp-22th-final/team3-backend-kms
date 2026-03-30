@@ -8,6 +8,8 @@ import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -71,12 +73,6 @@ public class KnowledgeArticle {
     // 예외 메시지 상수
     // =========================================================
 
-    private static final String ERR_SUBMIT_NOT_DRAFT       = "[ARTICLE] DRAFT 상태에서만 제출할 수 있습니다.";
-    private static final String ERR_APPROVE_OPINION_LENGTH  = "[APPROVAL_002] 승인 의견은 500자 이하여야 합니다.";
-    private static final String ERR_NOT_PENDING             = "[APPROVAL_003] PENDING 상태에서만 처리할 수 있습니다.";
-    private static final String ERR_REJECT_REASON_LENGTH    = "[APPROVAL_001] 반려 사유는 10자 이상 500자 이하여야 합니다.";
-    private static final String ERR_ALREADY_DELETED         = "[ARTICLE_008] 이미 삭제된 문서입니다.";
-    private static final String ERR_DELETE_APPROVED         = "[ARTICLE_009] 승인 완료된 문서는 직접 삭제할 수 없습니다.";
 
     // =========================================================
     // 비즈니스 로직 메서드
@@ -85,7 +81,7 @@ public class KnowledgeArticle {
     /* DRAFT → PENDING */
     public void submit() {
         if (this.articleStatus != ArticleStatus.DRAFT) {
-            throw new IllegalStateException(ERR_SUBMIT_NOT_DRAFT);
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_SUBMIT_INVALID.getMessage());
         }
         this.articleStatus = ArticleStatus.PENDING;
     }
@@ -93,10 +89,10 @@ public class KnowledgeArticle {
     /* PENDING → APPROVED */
     public void approve(Long approvedBy, String opinion) {
         if (opinion != null && opinion.length() > 500) {
-            throw new IllegalArgumentException(ERR_APPROVE_OPINION_LENGTH);
+            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_002.getMessage());
         }
         if (this.articleStatus != ArticleStatus.PENDING) {
-            throw new IllegalStateException(ERR_NOT_PENDING);
+            throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
         }
         this.articleStatus = ArticleStatus.APPROVED;
         this.approvedBy = approvedBy;
@@ -107,10 +103,10 @@ public class KnowledgeArticle {
     /* PENDING → REJECTED */
     public void reject(String reason) {
         if (reason == null || reason.length() < 10 || reason.length() > 500) {
-            throw new IllegalArgumentException(ERR_REJECT_REASON_LENGTH);
+            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_001.getMessage());
         }
         if (this.articleStatus != ArticleStatus.PENDING) {
-            throw new IllegalStateException(ERR_NOT_PENDING);
+            throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
         }
         this.articleStatus = ArticleStatus.REJECTED;
         this.articleRejectionReason = reason;
@@ -124,10 +120,10 @@ public class KnowledgeArticle {
     /* 소프트 딜리트 */
     public void softDelete() {
         if (Boolean.TRUE.equals(this.isDeleted)) {
-            throw new IllegalStateException(ERR_ALREADY_DELETED);
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
         }
         if (this.articleStatus == ArticleStatus.APPROVED) {
-            throw new IllegalStateException(ERR_DELETE_APPROVED);
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_009.getMessage());
         }
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
