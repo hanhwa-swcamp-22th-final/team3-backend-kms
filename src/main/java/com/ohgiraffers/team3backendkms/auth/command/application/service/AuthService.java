@@ -8,6 +8,7 @@ import com.ohgiraffers.team3backendkms.auth.command.domain.aggregate.RefreshToke
 import com.ohgiraffers.team3backendkms.auth.command.domain.repository.AuthRepository;
 import com.ohgiraffers.team3backendkms.auth.command.domain.repository.DepartmentRepository;
 import com.ohgiraffers.team3backendkms.auth.command.domain.repository.EmployeeRepository;
+import com.ohgiraffers.team3backendkms.common.encryption.AesEncryptor;
 import com.ohgiraffers.team3backendkms.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -25,10 +26,11 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthRepository jpaAuthRepository;
+    private final AesEncryptor aesEncryptor;
 
     public TokenResponse login(LoginRequest loginRequest) {
-        // 1. 이메일로 조회
-        Employee employee = this.employeeRepository.findByEmployeeEmail(loginRequest.getEmployeeEmail())
+        // 1. 이메일 암호화 후 조회
+        Employee employee = this.employeeRepository.findByEmployeeEmail(aesEncryptor.encrypt(loginRequest.getEmployeeEmail()))
                 .orElseThrow(() -> new BadCredentialsException("아이디 또는 비밀번호가 일치하지 않습니다"));
 
         // 2. 비밀번호 매칭 확인

@@ -6,6 +6,7 @@ import com.ohgiraffers.team3backendkms.auth.command.domain.aggregate.*;
 import com.ohgiraffers.team3backendkms.auth.command.domain.repository.AuthRepository;
 import com.ohgiraffers.team3backendkms.auth.command.domain.repository.DepartmentRepository;
 import com.ohgiraffers.team3backendkms.auth.command.domain.repository.EmployeeRepository;
+import com.ohgiraffers.team3backendkms.common.encryption.AesEncryptor;
 import com.ohgiraffers.team3backendkms.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -47,6 +48,9 @@ class AuthServiceTest {
     @Mock
     private AuthRepository jpaAuthRepository;
 
+    @Mock
+    private AesEncryptor aesEncryptor;
+
     private Employee employee;
     private Department department;
 
@@ -82,7 +86,8 @@ class AuthServiceTest {
             // given
             LoginRequest request = new LoginRequest("admin@company.com", "rawPassword");
 
-            given(employeeRepository.findByEmployeeEmail("admin@company.com"))
+            given(aesEncryptor.encrypt("admin@company.com")).willReturn("encrypted-email");
+            given(employeeRepository.findByEmployeeEmail("encrypted-email"))
                     .willReturn(Optional.of(employee));
             given(passwordEncoder.matches("rawPassword", "$2a$10$encodedPassword"))
                     .willReturn(true);
@@ -112,7 +117,8 @@ class AuthServiceTest {
             // given
             LoginRequest request = new LoginRequest("unknown@company.com", "password");
 
-            given(employeeRepository.findByEmployeeEmail("unknown@company.com"))
+            given(aesEncryptor.encrypt("unknown@company.com")).willReturn("encrypted-unknown");
+            given(employeeRepository.findByEmployeeEmail("encrypted-unknown"))
                     .willReturn(Optional.empty());
 
             // when & then
@@ -129,7 +135,8 @@ class AuthServiceTest {
             // given
             LoginRequest request = new LoginRequest("admin@company.com", "wrongPassword");
 
-            given(employeeRepository.findByEmployeeEmail("admin@company.com"))
+            given(aesEncryptor.encrypt("admin@company.com")).willReturn("encrypted-email");
+            given(employeeRepository.findByEmployeeEmail("encrypted-email"))
                     .willReturn(Optional.of(employee));
             given(passwordEncoder.matches("wrongPassword", "$2a$10$encodedPassword"))
                     .willReturn(false);
@@ -148,7 +155,8 @@ class AuthServiceTest {
             // given
             LoginRequest request = new LoginRequest("admin@company.com", "rawPassword");
 
-            given(employeeRepository.findByEmployeeEmail("admin@company.com"))
+            given(aesEncryptor.encrypt("admin@company.com")).willReturn("encrypted-email");
+            given(employeeRepository.findByEmployeeEmail("encrypted-email"))
                     .willReturn(Optional.of(employee));
             given(passwordEncoder.matches("rawPassword", "$2a$10$encodedPassword"))
                     .willReturn(true);

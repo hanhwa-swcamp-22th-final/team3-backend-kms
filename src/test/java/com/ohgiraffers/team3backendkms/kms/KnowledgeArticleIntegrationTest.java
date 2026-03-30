@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -50,6 +51,9 @@ class KnowledgeArticleIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private EntityManager entityManager;
 
     // 테스트용 상수
     private static final String TITLE   = "통합테스트 지식 문서 제목입니다";
@@ -329,6 +333,7 @@ class KnowledgeArticleIntegrationTest {
         void getArticleDetail_returnsDetail() throws Exception {
             // given
             KnowledgeArticle saved = savePendingArticle();
+            entityManager.flush(); // JPA → DB 반영 후 MyBatis가 읽을 수 있도록
 
             // when & then
             mockMvc.perform(get("/api/kms/articles/" + saved.getArticleId())
