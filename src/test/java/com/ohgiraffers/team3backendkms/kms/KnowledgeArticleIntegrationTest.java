@@ -2,6 +2,7 @@ package com.ohgiraffers.team3backendkms.kms;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.config.security.CustomUserDetails;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
@@ -24,7 +25,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -119,6 +120,41 @@ class KnowledgeArticleIntegrationTest {
                     .orElseThrow();
 
             assertEquals(ArticleStatus.PENDING, saved.getArticleStatus());
+            assertFalse(saved.getIsDeleted());
+        }
+    }
+
+    // =========================================================
+    // POST /api/kms/articles/drafts
+    // =========================================================
+
+    @Nested
+    @DisplayName("POST /api/kms/articles/drafts — 지식 문서 임시저장")
+    class Draft {
+
+        @Test
+        @DisplayName("정상 요청 시 200 OK 응답과 함께 DB에 DRAFT 상태로 저장된다")
+        void draft_savedAsDraft() throws Exception {
+            // given
+            ArticleDraftRequest request = new ArticleDraftRequest(
+                    validAuthorId, TITLE, ArticleCategory.PROCESS_IMPROVEMENT, TEST_EQUIPMENT_ID, CONTENT
+            );
+
+            // when
+            mockMvc.perform(post("/api/kms/articles/drafts")
+                            .with(user(workerUser))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+
+            // then
+            KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
+                    .filter(a -> TITLE.equals(a.getArticleTitle()))
+                    .findFirst()
+                    .orElseThrow();
+
+            assertEquals(ArticleStatus.DRAFT, saved.getArticleStatus());
             assertFalse(saved.getIsDeleted());
         }
     }
