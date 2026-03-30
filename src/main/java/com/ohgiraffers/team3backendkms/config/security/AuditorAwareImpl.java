@@ -11,7 +11,7 @@ import java.util.Optional;
 public class AuditorAwareImpl implements AuditorAware<Long> {
 
 
-  // JPA가 savc()실행할때 여기 메서드를 호출해서 상태를 요청하고 답이없으면 DB에 null로 저장
+    // JPA save() 실행 시 호출 — SecurityContext에서 현재 사용자의 employeeId를 반환, 인증 없으면 null 저장
     @Override
     public Optional<Long> getCurrentAuditor() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

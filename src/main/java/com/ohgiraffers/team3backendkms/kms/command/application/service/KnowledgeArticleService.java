@@ -1,5 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.service;
 
+import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
 import com.ohgiraffers.team3backendkms.common.idgenerator.IdGenerator;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
@@ -107,6 +108,6 @@ public class KnowledgeArticleService {
 
     private KnowledgeArticle findArticleById(Long articleId) {
         return knowledgeArticleRepository.findById(articleId)
-                .orElseThrow(() -> new IllegalArgumentException(ERR_NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException(ERR_NOT_FOUND));
     }
 }

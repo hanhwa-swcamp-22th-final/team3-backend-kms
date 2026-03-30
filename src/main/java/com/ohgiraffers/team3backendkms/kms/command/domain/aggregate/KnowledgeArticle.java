@@ -49,7 +49,7 @@ public class KnowledgeArticle {
 
     private Integer viewCount;
 
-    // 각 컬럼중 create.는 수정해도 업데이트 안한다고 (만약 덮어쓰기하면 setcreate같은 코드가잇었다)
+    // @CreatedDate, @CreatedBy는 updatable=false — INSERT 시에만 세팅되고 UPDATE 시 변경되지 않음
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
