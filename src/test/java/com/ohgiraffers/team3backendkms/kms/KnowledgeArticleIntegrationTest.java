@@ -244,4 +244,47 @@ class KnowledgeArticleIntegrationTest {
             assertEquals(reason, saved.getArticleRejectionReason());
         }
     }
+
+    // =========================================================
+    // DELETE /api/kms/articles/{articleId}
+    // =========================================================
+
+    @Nested
+    @DisplayName("DELETE /api/kms/articles/{articleId} — 지식 문서 삭제")
+    class Delete {
+
+        @Test
+        @DisplayName("본인 DRAFT 문서 삭제 시 200 OK 응답과 함께 DB에 isDeleted=true로 반영된다")
+        void delete_softDeletedInDB() throws Exception {
+            // given
+            knowledgeArticleRepository.save(
+                    KnowledgeArticle.builder()
+                            .articleId(new TimeBasedIdGenerator().generate())
+                            .authorId(validAuthorId)
+                            .equipmentId(TEST_EQUIPMENT_ID)
+                            .fileGroupId(0L)
+                            .articleTitle(TITLE)
+                            .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                            .articleContent(CONTENT)
+                            .articleStatus(ArticleStatus.DRAFT)
+                            .isDeleted(false)
+                            .viewCount(0)
+                            .build()
+            );
+            KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
+                    .filter(a -> TITLE.equals(a.getArticleTitle()))
+                    .findFirst()
+                    .orElseThrow();
+
+            // when
+            mockMvc.perform(delete("/api/kms/articles/" + saved.getArticleId())
+                            .with(user(workerUser))
+                            .param("requesterId", String.valueOf(validAuthorId)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+
+            // then
+            assertTrue(saved.getIsDeleted());
+        }
+    }
 }
