@@ -115,11 +115,13 @@ class KnowledgeArticleQueryMapperTest {
     }
 
     @Nested
-    @DisplayName("findArticles 쿼리")
+    // findArticles 쿼리
+    @DisplayName("findArticles()")
     class FindArticles {
 
         @Test
-        @DisplayName("지식 목록 조회 성공: 전체 목록을 조회한다 (삭제된 문서 제외)")
+        // 지식 목록 조회 성공: 전체 목록을 조회한다 (삭제된 문서 제외)
+        @DisplayName("Returns list excluding deleted articles")
         void findArticles_success() {
             // given
             ArticleQueryRequest request = new ArticleQueryRequest();
@@ -135,7 +137,8 @@ class KnowledgeArticleQueryMapperTest {
         }
 
         @Test
-        @DisplayName("지식 목록 조회 성공: 카테고리 필터가 반영된다")
+        // 지식 목록 조회 성공: 카테고리 필터가 반영된다
+        @DisplayName("Filters by category")
         void findArticles_withCategoryFilter_success() {
             // given
             ArticleQueryRequest request = new ArticleQueryRequest();
@@ -152,7 +155,8 @@ class KnowledgeArticleQueryMapperTest {
         }
 
         @Test
-        @DisplayName("지식 목록 조회 성공: 정렬 조건이 반영된다 (popular)")
+        // 지식 목록 조회 성공: 정렬 조건이 반영된다 (popular)
+        @DisplayName("Sorts by view count when sort=popular")
         void findArticles_withSort_success() {
             // given
             ArticleQueryRequest request = new ArticleQueryRequest();
@@ -173,11 +177,13 @@ class KnowledgeArticleQueryMapperTest {
     }
 
     @Nested
-    @DisplayName("findArticleById 쿼리")
+    // findArticleById 쿼리
+    @DisplayName("findArticleById()")
     class FindArticleById {
 
         @Test
-        @DisplayName("지식 상세 조회 성공: 문서 상세를 조회한다")
+        // 지식 상세 조회 성공: 문서 상세를 조회한다
+        @DisplayName("Returns article detail by ID")
         void findArticleById_success() {
             // when
             Optional<ArticleDetailDto> result = knowledgeArticleMapper.findArticleById(TEST_ARTICLE_ID_1);
@@ -190,7 +196,8 @@ class KnowledgeArticleQueryMapperTest {
         }
 
         @Test
-        @DisplayName("지식 상세 조회 실패: 존재하지 않는 ID면 empty를 반환한다")
+        // 지식 상세 조회 실패: 존재하지 않는 ID면 empty를 반환한다
+        @DisplayName("Returns empty when ID does not exist")
         void findArticleById_whenUnknownId_thenEmpty() {
             // when
             Optional<ArticleDetailDto> result = knowledgeArticleMapper.findArticleById(9999999999999L);

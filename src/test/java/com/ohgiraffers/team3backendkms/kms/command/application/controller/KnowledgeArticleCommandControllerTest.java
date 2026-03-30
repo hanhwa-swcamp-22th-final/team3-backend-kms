@@ -45,7 +45,8 @@ class KnowledgeArticleCommandControllerTest {
     class Register {
 
         @Test
-        @DisplayName("지식 문서 등록 API 성공: 정상 응답을 반환한다")
+        // 지식 문서 등록 API 성공: 정상 응답을 반환한다
+        @DisplayName("Returns 200 OK on valid request")
         void register_success() throws Exception {
             // given
             Map<String, Object> body = Map.of(
@@ -66,7 +67,8 @@ class KnowledgeArticleCommandControllerTest {
         }
 
         @Test
-        @DisplayName("지식 문서 등록 API 실패: 제목이 짧으면 400을 반환한다")
+        // 지식 문서 등록 API 실패: 제목이 짧으면 400을 반환한다
+        @DisplayName("Returns 400 when title is too short")
         void register_whenTitleTooShort_thenBadRequest() throws Exception {
             // given
             Map<String, Object> body = Map.of(
@@ -89,7 +91,8 @@ class KnowledgeArticleCommandControllerTest {
         }
 
         @Test
-        @DisplayName("지식 문서 등록 API 실패: 본문이 짧으면 400을 반환한다")
+        // 지식 문서 등록 API 실패: 본문이 짧으면 400을 반환한다
+        @DisplayName("Returns 400 when content is too short")
         void register_whenContentTooShort_thenBadRequest() throws Exception {
             // given
             Map<String, Object> body = Map.of(
@@ -116,7 +119,8 @@ class KnowledgeArticleCommandControllerTest {
     class Draft {
 
         @Test
-        @DisplayName("지식 문서 임시저장 API 성공: 정상 응답을 반환한다")
+        // 지식 문서 임시저장 API 성공: 정상 응답을 반환한다
+        @DisplayName("Returns 200 OK on valid request")
         void draft_success() throws Exception {
             // given
             Map<String, Object> body = Map.of(
@@ -142,7 +146,8 @@ class KnowledgeArticleCommandControllerTest {
     class Approve {
 
         @Test
-        @DisplayName("지식 문서 승인 API 성공: 정상 응답을 반환한다")
+        // 지식 문서 승인 API 성공: 정상 응답을 반환한다
+        @DisplayName("Returns 200 OK on valid request")
         void approve_success() throws Exception {
             // given
             Map<String, Object> body = Map.of(
@@ -161,7 +166,8 @@ class KnowledgeArticleCommandControllerTest {
         }
 
         @Test
-        @DisplayName("지식 문서 승인 API 실패: PENDING이 아니면 400을 반환한다")
+        // 지식 문서 승인 API 실패: PENDING이 아니면 400을 반환한다
+        @DisplayName("Returns 400 when status is not PENDING")
         void approve_whenNotPending_thenBadRequest() throws Exception {
             // given
             Map<String, Object> body = Map.of(
@@ -186,7 +192,8 @@ class KnowledgeArticleCommandControllerTest {
     class Reject {
 
         @Test
-        @DisplayName("지식 문서 반려 API 성공: 정상 응답을 반환한다")
+        // 지식 문서 반려 API 성공: 정상 응답을 반환한다
+        @DisplayName("Returns 200 OK on valid request")
         void reject_success() throws Exception {
             // given
             Map<String, Object> body = Map.of("reviewComment", "반려 사유입니다. 내용을 보완해주세요.");
@@ -202,7 +209,8 @@ class KnowledgeArticleCommandControllerTest {
         }
 
         @Test
-        @DisplayName("지식 문서 반려 API 실패: 반려 사유가 없으면 400을 반환한다")
+        // 지식 문서 반려 API 실패: 반려 사유가 없으면 400을 반환한다
+        @DisplayName("Returns 400 when rejection reason is empty")
         void reject_whenNoReason_thenBadRequest() throws Exception {
             // given
             Map<String, Object> body = Map.of("reviewComment", "");
@@ -224,7 +232,8 @@ class KnowledgeArticleCommandControllerTest {
     class Delete {
 
         @Test
-        @DisplayName("지식 문서 삭제 API 성공: 정상 응답을 반환한다")
+        // 지식 문서 삭제 API 성공: 정상 응답을 반환한다
+        @DisplayName("Returns 200 OK on valid request")
         void delete_success() throws Exception {
             // given
             willDoNothing().given(knowledgeArticleService).delete(anyLong(), anyLong());
@@ -237,7 +246,8 @@ class KnowledgeArticleCommandControllerTest {
         }
 
         @Test
-        @DisplayName("지식 문서 삭제 API 실패: 본인 문서가 아니면 400을 반환한다")
+        // 지식 문서 삭제 API 실패: 본인 문서가 아니면 400을 반환한다
+        @DisplayName("Returns 400 when requester is not the author")
         void delete_whenNotAuthor_thenBadRequest() throws Exception {
             // given
             willThrow(new IllegalStateException("[ARTICLE_007] 본인이 작성한 문서만 삭제할 수 있습니다."))

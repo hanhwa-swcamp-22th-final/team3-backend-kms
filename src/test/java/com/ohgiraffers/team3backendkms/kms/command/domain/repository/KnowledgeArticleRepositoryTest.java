@@ -44,11 +44,13 @@ class KnowledgeArticleRepositoryTest {
     // =========================================================
 
     @Nested
-    @DisplayName("지식 문서 저장 (save)")
+    // 지식 문서 저장 (save)
+    @DisplayName("save()")
     class SaveTest {
 
         @Test
-        @DisplayName("저장하면 ID로 조회할 수 있다")
+        // 저장하면 ID로 조회할 수 있다
+        @DisplayName("Saves article and can be found by ID")
         void save_PersistsId() {
             // given
             KnowledgeArticle article = buildArticle(ArticleStatus.PENDING);
@@ -63,7 +65,8 @@ class KnowledgeArticleRepositoryTest {
         }
 
         @Test
-        @DisplayName("저장한 문서의 필드가 DB에 그대로 저장된다")
+        // 저장한 문서의 필드가 DB에 그대로 저장된다
+        @DisplayName("Persists all fields in DB")
         void save_PersistsFields() {
             // given
             KnowledgeArticle article = buildArticle(ArticleStatus.PENDING);
@@ -85,11 +88,13 @@ class KnowledgeArticleRepositoryTest {
     // =========================================================
 
     @Nested
-    @DisplayName("지식 문서 단건 조회 (findById)")
+    // 지식 문서 단건 조회 (findById)
+    @DisplayName("findById()")
     class FindByIdTest {
 
         @Test
-        @DisplayName("저장된 문서를 ID로 조회하면 정상 반환된다")
+        // 저장된 문서를 ID로 조회하면 정상 반환된다
+        @DisplayName("Returns saved article by ID")
         void findById_ReturnsSavedArticle() {
             // given
             KnowledgeArticle saved = knowledgeArticleRepository.save(buildArticle(ArticleStatus.DRAFT));
@@ -103,7 +108,8 @@ class KnowledgeArticleRepositoryTest {
         }
 
         @Test
-        @DisplayName("존재하지 않는 ID로 조회하면 empty가 반환된다")
+        // 존재하지 않는 ID로 조회하면 empty가 반환된다
+        @DisplayName("Returns empty when ID does not exist")
         void findById_ReturnsEmpty_WhenNotFound() {
             // given
             Long notExistId = 999L;
@@ -121,11 +127,13 @@ class KnowledgeArticleRepositoryTest {
     // =========================================================
 
     @Nested
-    @DisplayName("지식 문서 삭제 (delete)")
+    // 지식 문서 삭제 (delete)
+    @DisplayName("delete()")
     class DeleteTest {
 
         @Test
-        @DisplayName("삭제 후 조회하면 empty가 반환된다")
+        // 삭제 후 조회하면 empty가 반환된다
+        @DisplayName("Returns empty after deletion")
         void delete_ThenFindById_ReturnsEmpty() {
             // given
             KnowledgeArticle saved = knowledgeArticleRepository.save(buildArticle(ArticleStatus.DRAFT));

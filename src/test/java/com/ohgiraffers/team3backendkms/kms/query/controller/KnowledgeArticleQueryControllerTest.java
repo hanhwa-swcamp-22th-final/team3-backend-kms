@@ -45,7 +45,8 @@ class KnowledgeArticleQueryControllerTest {
     class GetArticles {
 
         @Test
-        @DisplayName("지식 목록 API 성공: 목록 JSON을 반환한다")
+        // 지식 목록 API 성공: 목록 JSON을 반환한다
+        @DisplayName("Returns 200 OK with list JSON")
         void getArticles_success() throws Exception {
             // given
             ArticleReadDto dto = new ArticleReadDto(
@@ -66,7 +67,8 @@ class KnowledgeArticleQueryControllerTest {
         }
 
         @Test
-        @DisplayName("지식 목록 API 성공: 쿼리 파라미터가 정상 바인딩된다")
+        // 지식 목록 API 성공: 쿼리 파라미터가 정상 바인딩된다
+        @DisplayName("Binds query parameters correctly")
         void getArticles_withQueryParams_success() throws Exception {
             // given
             given(knowledgeArticleQueryService.getArticles(any(ArticleQueryRequest.class)))
@@ -90,7 +92,8 @@ class KnowledgeArticleQueryControllerTest {
     class GetArticleDetail {
 
         @Test
-        @DisplayName("지식 상세 API 성공: 상세 JSON을 반환한다")
+        // 지식 상세 API 성공: 상세 JSON을 반환한다
+        @DisplayName("Returns 200 OK with detail JSON")
         void getArticleDetail_success() throws Exception {
             // given
             ArticleDetailDto dto = new ArticleDetailDto(
@@ -111,7 +114,8 @@ class KnowledgeArticleQueryControllerTest {
         }
 
         @Test
-        @DisplayName("지식 상세 API 실패: 문서가 없으면 404를 반환한다")
+        // 지식 상세 API 실패: 문서가 없으면 404를 반환한다
+        @DisplayName("Returns 404 when article not found")
         void getArticleDetail_whenNotFound_thenNotFound() throws Exception {
             // given
             given(knowledgeArticleQueryService.getArticleDetail(999L))

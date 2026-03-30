@@ -17,7 +17,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Transactional
-@DisplayName("KnowledgeArticleService 통합 테스트")
+// KnowledgeArticleService 통합 테스트
+@DisplayName("KnowledgeArticleService Integration Test")
 class KnowledgeArticleServiceIntegrationTest {
 
     @Autowired
@@ -57,11 +58,13 @@ class KnowledgeArticleServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("지식 문서 등록 (register)")
+    // 지식 문서 등록 (register)
+    @DisplayName("register()")
     class RegisterTest {
 
         @Test
-        @DisplayName("등록하면 PENDING 상태로 DB에 저장된다")
+        // 등록하면 PENDING 상태로 DB에 저장된다
+        @DisplayName("Saves article with PENDING status in DB")
         void register_SavedAsPending() {
             // when
             knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
@@ -78,11 +81,13 @@ class KnowledgeArticleServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("지식 문서 임시저장 (draft)")
+    // 지식 문서 임시저장 (draft)
+    @DisplayName("draft()")
     class DraftTest {
 
         @Test
-        @DisplayName("임시저장하면 DRAFT 상태로 DB에 저장된다")
+        // 임시저장하면 DRAFT 상태로 DB에 저장된다
+        @DisplayName("Saves article with DRAFT status in DB")
         void draft_SavedAsDraft() {
             // when
             knowledgeArticleService.draft(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.PROCESS_IMPROVEMENT, CONTENT);

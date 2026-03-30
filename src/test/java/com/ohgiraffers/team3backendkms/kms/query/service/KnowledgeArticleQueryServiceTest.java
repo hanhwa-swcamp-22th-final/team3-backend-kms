@@ -32,11 +32,13 @@ class KnowledgeArticleQueryServiceTest {
     private KnowledgeArticleMapper knowledgeArticleMapper;
 
     @Nested
-    @DisplayName("getArticles 메서드")
+    // getArticles 메서드
+    @DisplayName("getArticles()")
     class GetArticles {
 
         @Test
-        @DisplayName("지식 목록 조회 성공: 목록 응답 DTO를 반환한다")
+        // 지식 목록 조회 성공: 목록 응답 DTO를 반환한다
+        @DisplayName("Returns list of ArticleReadDto")
         void getArticles_success() {
             // given
             ArticleQueryRequest request = new ArticleQueryRequest();
@@ -58,7 +60,8 @@ class KnowledgeArticleQueryServiceTest {
         }
 
         @Test
-        @DisplayName("지식 목록 조회 성공: 데이터가 없으면 빈 목록을 반환한다")
+        // 지식 목록 조회 성공: 데이터가 없으면 빈 목록을 반환한다
+        @DisplayName("Returns empty list when no data")
         void getArticles_whenNoData_thenReturnEmptyList() {
             // given
             ArticleQueryRequest request = new ArticleQueryRequest();
@@ -74,11 +77,13 @@ class KnowledgeArticleQueryServiceTest {
     }
 
     @Nested
-    @DisplayName("getArticleDetail 메서드")
+    // getArticleDetail 메서드
+    @DisplayName("getArticleDetail()")
     class GetArticleDetail {
 
         @Test
-        @DisplayName("지식 상세 조회 성공: 상세 응답 DTO를 반환한다")
+        // 지식 상세 조회 성공: 상세 응답 DTO를 반환한다
+        @DisplayName("Returns ArticleDetailDto")
         void getArticleDetail_success() {
             // given
             ArticleDetailDto dto = new ArticleDetailDto(
@@ -100,7 +105,8 @@ class KnowledgeArticleQueryServiceTest {
         }
 
         @Test
-        @DisplayName("지식 상세 조회 실패: 문서가 없으면 예외가 발생한다")
+        // 지식 상세 조회 실패: 문서가 없으면 예외가 발생한다
+        @DisplayName("Throws exception when article not found")
         void getArticleDetail_whenNotFound_thenThrow() {
             // given
             given(knowledgeArticleMapper.findArticleById(999L)).willReturn(Optional.empty());

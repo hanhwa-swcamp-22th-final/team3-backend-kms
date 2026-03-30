@@ -35,7 +35,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-@DisplayName("KnowledgeArticle 전체 통합 테스트 (5-5)")
+// KnowledgeArticle 전체 통합 테스트
+@DisplayName("KnowledgeArticle Integration Test")
 class KnowledgeArticleIntegrationTest {
 
     @Autowired
@@ -122,11 +123,13 @@ class KnowledgeArticleIntegrationTest {
     // =========================================================
 
     @Nested
-    @DisplayName("POST /api/kms/articles — 지식 문서 등록")
+    // POST /api/kms/articles — 지식 문서 등록
+    @DisplayName("POST /api/kms/articles")
     class Register {
 
         @Test
-        @DisplayName("정상 요청 시 200 OK 응답과 함께 DB에 PENDING 상태로 저장된다")
+        // 정상 요청 시 200 OK 응답과 함께 DB에 PENDING 상태로 저장된다
+        @DisplayName("Returns 200 OK and saves article with PENDING status in DB")
         void register_savedAsPending() throws Exception {
             // given
             ArticleRegisterRequest request = new ArticleRegisterRequest(
@@ -157,11 +160,13 @@ class KnowledgeArticleIntegrationTest {
     // =========================================================
 
     @Nested
-    @DisplayName("POST /api/kms/articles/drafts — 지식 문서 임시저장")
+    // POST /api/kms/articles/drafts — 지식 문서 임시저장
+    @DisplayName("POST /api/kms/articles/drafts")
     class Draft {
 
         @Test
-        @DisplayName("정상 요청 시 200 OK 응답과 함께 DB에 DRAFT 상태로 저장된다")
+        // 정상 요청 시 200 OK 응답과 함께 DB에 DRAFT 상태로 저장된다
+        @DisplayName("Returns 200 OK and saves article with DRAFT status in DB")
         void draft_savedAsDraft() throws Exception {
             // given
             ArticleDraftRequest request = new ArticleDraftRequest(
@@ -192,11 +197,13 @@ class KnowledgeArticleIntegrationTest {
     // =========================================================
 
     @Nested
-    @DisplayName("POST /api/kms/approval/{articleId}/approve — 지식 문서 승인")
+    // POST /api/kms/approval/{articleId}/approve — 지식 문서 승인
+    @DisplayName("POST /api/kms/approval/{articleId}/approve")
     class Approve {
 
         @Test
-        @DisplayName("PENDING 문서 승인 시 200 OK 응답과 함께 DB에 APPROVED 상태로 반영된다")
+        // PENDING 문서 승인 시 200 OK 응답과 함께 DB에 APPROVED 상태로 반영된다
+        @DisplayName("Returns 200 OK and changes status to APPROVED in DB")
         void approve_statusChangedToApproved() throws Exception {
             // given
             KnowledgeArticle saved = savePendingArticle();
@@ -220,11 +227,13 @@ class KnowledgeArticleIntegrationTest {
     // =========================================================
 
     @Nested
-    @DisplayName("POST /api/kms/approval/{articleId}/reject — 지식 문서 반려")
+    // POST /api/kms/approval/{articleId}/reject — 지식 문서 반려
+    @DisplayName("POST /api/kms/approval/{articleId}/reject")
     class Reject {
 
         @Test
-        @DisplayName("PENDING 문서 반려 시 200 OK 응답과 함께 DB에 REJECTED 상태와 반려 사유가 반영된다")
+        // PENDING 문서 반려 시 200 OK 응답과 함께 DB에 REJECTED 상태와 반려 사유가 반영된다
+        @DisplayName("Returns 200 OK and changes status to REJECTED with rejection reason in DB")
         void reject_statusChangedToRejected() throws Exception {
             // given
             KnowledgeArticle saved = savePendingArticle();
@@ -250,11 +259,13 @@ class KnowledgeArticleIntegrationTest {
     // =========================================================
 
     @Nested
-    @DisplayName("DELETE /api/kms/articles/{articleId} — 지식 문서 삭제")
+    // DELETE /api/kms/articles/{articleId} — 지식 문서 삭제
+    @DisplayName("DELETE /api/kms/articles/{articleId}")
     class Delete {
 
         @Test
-        @DisplayName("본인 DRAFT 문서 삭제 시 200 OK 응답과 함께 DB에 isDeleted=true로 반영된다")
+        // 본인 DRAFT 문서 삭제 시 200 OK 응답과 함께 DB에 isDeleted=true로 반영된다
+        @DisplayName("Returns 200 OK and sets isDeleted to true in DB")
         void delete_softDeletedInDB() throws Exception {
             // given
             knowledgeArticleRepository.save(
@@ -293,11 +304,13 @@ class KnowledgeArticleIntegrationTest {
     // =========================================================
 
     @Nested
-    @DisplayName("GET /api/kms/articles — 지식 문서 목록 조회")
+    // GET /api/kms/articles — 지식 문서 목록 조회
+    @DisplayName("GET /api/kms/articles")
     class GetArticles {
 
         @Test
-        @DisplayName("문서가 존재할 때 200 OK 응답과 함께 목록 JSON을 반환한다")
+        // 문서가 존재할 때 200 OK 응답과 함께 목록 JSON을 반환한다
+        @DisplayName("Returns 200 OK with list JSON")
         void getArticles_returnsList() throws Exception {
             // given
             savePendingArticle();
@@ -316,11 +329,13 @@ class KnowledgeArticleIntegrationTest {
     // =========================================================
 
     @Nested
-    @DisplayName("GET /api/kms/articles/{articleId} — 지식 문서 상세 조회")
+    // GET /api/kms/articles/{articleId} — 지식 문서 상세 조회
+    @DisplayName("GET /api/kms/articles/{articleId}")
     class GetArticleDetail {
 
         @Test
-        @DisplayName("존재하는 문서 조회 시 200 OK 응답과 함께 상세 JSON을 반환한다")
+        // 존재하는 문서 조회 시 200 OK 응답과 함께 상세 JSON을 반환한다
+        @DisplayName("Returns 200 OK with detail JSON")
         void getArticleDetail_returnsDetail() throws Exception {
             // given
             KnowledgeArticle saved = savePendingArticle();
@@ -335,7 +350,8 @@ class KnowledgeArticleIntegrationTest {
         }
 
         @Test
-        @DisplayName("존재하지 않는 문서 조회 시 404 응답을 반환한다")
+        // 존재하지 않는 문서 조회 시 404 응답을 반환한다
+        @DisplayName("Returns 404 when article does not exist")
         void getArticleDetail_whenNotFound_returns404() throws Exception {
             // given
             Long notExistId = 999L;
