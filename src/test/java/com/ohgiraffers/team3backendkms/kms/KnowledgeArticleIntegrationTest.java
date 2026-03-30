@@ -287,4 +287,65 @@ class KnowledgeArticleIntegrationTest {
             assertTrue(saved.getIsDeleted());
         }
     }
+
+    // =========================================================
+    // GET /api/kms/articles
+    // =========================================================
+
+    @Nested
+    @DisplayName("GET /api/kms/articles — 지식 문서 목록 조회")
+    class GetArticles {
+
+        @Test
+        @DisplayName("문서가 존재할 때 200 OK 응답과 함께 목록 JSON을 반환한다")
+        void getArticles_returnsList() throws Exception {
+            // given
+            savePendingArticle();
+
+            // when & then
+            mockMvc.perform(get("/api/kms/articles")
+                            .with(user(workerUser)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data").isArray());
+        }
+    }
+
+    // =========================================================
+    // GET /api/kms/articles/{articleId}
+    // =========================================================
+
+    @Nested
+    @DisplayName("GET /api/kms/articles/{articleId} — 지식 문서 상세 조회")
+    class GetArticleDetail {
+
+        @Test
+        @DisplayName("존재하는 문서 조회 시 200 OK 응답과 함께 상세 JSON을 반환한다")
+        void getArticleDetail_returnsDetail() throws Exception {
+            // given
+            KnowledgeArticle saved = savePendingArticle();
+
+            // when & then
+            mockMvc.perform(get("/api/kms/articles/" + saved.getArticleId())
+                            .with(user(workerUser)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.articleId").value(saved.getArticleId()))
+                    .andExpect(jsonPath("$.data.articleTitle").value(TITLE));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 문서 조회 시 404 응답을 반환한다")
+        void getArticleDetail_whenNotFound_returns404() throws Exception {
+            // given
+            Long notExistId = 999L;
+
+            // when & then
+            mockMvc.perform(get("/api/kms/articles/" + notExistId)
+                            .with(user(workerUser)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"));
+        }
+    }
 }
