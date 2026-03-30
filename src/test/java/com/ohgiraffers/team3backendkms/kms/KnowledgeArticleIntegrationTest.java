@@ -2,11 +2,13 @@ package com.ohgiraffers.team3backendkms.kms;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.config.security.CustomUserDetails;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleApproveRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.KnowledgeArticle;
+import com.ohgiraffers.team3backendkms.common.idgenerator.TimeBasedIdGenerator;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -90,6 +92,31 @@ class KnowledgeArticleIntegrationTest {
     }
 
     // =========================================================
+    // 공통 헬퍼
+    // =========================================================
+
+    private KnowledgeArticle savePendingArticle() {
+        knowledgeArticleRepository.save(
+                KnowledgeArticle.builder()
+                        .articleId(new TimeBasedIdGenerator().generate())
+                        .authorId(validAuthorId)
+                        .equipmentId(TEST_EQUIPMENT_ID)
+                        .fileGroupId(0L)
+                        .articleTitle(TITLE)
+                        .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                        .articleContent(CONTENT)
+                        .articleStatus(ArticleStatus.PENDING)
+                        .isDeleted(false)
+                        .viewCount(0)
+                        .build()
+        );
+        return knowledgeArticleRepository.findAll().stream()
+                .filter(a -> TITLE.equals(a.getArticleTitle()))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    // =========================================================
     // POST /api/kms/articles
     // =========================================================
 
@@ -156,6 +183,34 @@ class KnowledgeArticleIntegrationTest {
 
             assertEquals(ArticleStatus.DRAFT, saved.getArticleStatus());
             assertFalse(saved.getIsDeleted());
+        }
+    }
+
+    // =========================================================
+    // POST /api/kms/approval/{articleId}/approve
+    // =========================================================
+
+    @Nested
+    @DisplayName("POST /api/kms/approval/{articleId}/approve — 지식 문서 승인")
+    class Approve {
+
+        @Test
+        @DisplayName("PENDING 문서 승인 시 200 OK 응답과 함께 DB에 APPROVED 상태로 반영된다")
+        void approve_statusChangedToApproved() throws Exception {
+            // given
+            KnowledgeArticle saved = savePendingArticle();
+            ArticleApproveRequest request = new ArticleApproveRequest(validAuthorId, "잘 작성된 문서입니다.");
+
+            // when
+            mockMvc.perform(post("/api/kms/approval/" + saved.getArticleId() + "/approve")
+                            .with(user(tlUser))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+
+            // then
+            assertEquals(ArticleStatus.APPROVED, saved.getArticleStatus());
         }
     }
 }
