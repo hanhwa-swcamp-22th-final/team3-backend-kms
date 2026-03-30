@@ -2,6 +2,7 @@ package com.ohgiraffers.team3backendkms.kms.query.controller;
 
 import com.ohgiraffers.team3backendkms.common.exception.GlobalExceptionHandler;
 import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
+import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
@@ -39,6 +40,9 @@ class KnowledgeArticleQueryControllerTest {
 
     @MockitoBean
     private KnowledgeArticleQueryService knowledgeArticleQueryService;
+
+    @MockitoBean
+    private KnowledgeArticleService knowledgeArticleService;
 
     @Nested
     @DisplayName("GET /api/kms/articles")

@@ -33,16 +33,10 @@ public class KnowledgeArticleService {
         knowledgeArticleRepository.save(buildArticle(authorId, equipmentId, title, category, content, ArticleStatus.DRAFT));
     }
 
-    /* 지식 문서 상세 조회 */
-    public KnowledgeArticle getDetail(Long articleId) {
+    /* 조회수 증가 */
+    public void incrementViewCount(Long articleId) {
         KnowledgeArticle article = findArticleById(articleId);
-
-        if (Boolean.TRUE.equals(article.getIsDeleted())) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-
         article.incrementViewCount();
-        return article;
     }
 
     /* 지식 문서 승인 */

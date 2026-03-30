@@ -103,12 +103,12 @@ class KnowledgeArticleServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("지식 문서 상세 조회 (getDetail)")
-    class GetDetailTest {
+    @DisplayName("조회수 증가 (incrementViewCount)")
+    class IncrementViewCountTest {
 
         @Test
-        @DisplayName("조회하면 조회수가 1 증가한다")
-        void getDetail_IncrementsViewCount() {
+        @DisplayName("조회수가 1 증가한다")
+        void incrementViewCount_IncrementsViewCount() {
             // given
             knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
             KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
@@ -117,7 +117,7 @@ class KnowledgeArticleServiceIntegrationTest {
                     .orElseThrow();
 
             // when
-            knowledgeArticleService.getDetail(saved.getArticleId());
+            knowledgeArticleService.incrementViewCount(saved.getArticleId());
 
             // then
             assertEquals(1, saved.getViewCount());

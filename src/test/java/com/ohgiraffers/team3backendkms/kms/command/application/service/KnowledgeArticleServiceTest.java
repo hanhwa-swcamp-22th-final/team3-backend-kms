@@ -181,49 +181,27 @@ class KnowledgeArticleServiceTest {
     }
 
     // =========================================================
-    // getDetail()
+    // incrementViewCount()
     // =========================================================
 
     @Nested
-    // 지식 문서 상세 조회 (getDetail)
-    @DisplayName("getDetail()")
-    class GetDetailTest {
+    // 조회수 증가 (incrementViewCount)
+    @DisplayName("incrementViewCount()")
+    class IncrementViewCountTest {
 
         @Test
-        // 정상 조회 시 조회수가 1 증가한다
+        // 조회수가 1 증가한다
         @DisplayName("Increments view count by 1")
-        void getDetail_Success() {
+        void incrementViewCount_Success() {
             // given
             given(knowledgeArticleRepository.findById(1L))
                     .willReturn(Optional.of(pendingArticle));
 
             // when
-            knowledgeArticleService.getDetail(1L);
+            knowledgeArticleService.incrementViewCount(1L);
 
             // then
             assertEquals(1, pendingArticle.getViewCount());
-        }
-
-        @Test
-        // 삭제된 문서를 조회하면 예외가 발생한다 (ARTICLE_008)
-        @DisplayName("Throws exception when article is deleted (ARTICLE_008)")
-        void getDetail_DeletedArticle_ThrowsException() {
-            // given
-            KnowledgeArticle deletedArticle = KnowledgeArticle.builder()
-                    .articleId(3L)
-                    .authorId(1L)
-                    .articleStatus(ArticleStatus.DRAFT)
-                    .isDeleted(true)
-                    .viewCount(0)
-                    .build();
-
-            given(knowledgeArticleRepository.findById(3L))
-                    .willReturn(Optional.of(deletedArticle));
-
-            // when & then
-            assertThrows(IllegalStateException.class, () ->
-                    knowledgeArticleService.getDetail(3L)
-            );
         }
     }
 
