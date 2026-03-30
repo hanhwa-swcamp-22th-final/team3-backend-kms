@@ -2,18 +2,31 @@ package com.ohgiraffers.team3backendkms.kms;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.config.security.CustomUserDetails;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -73,5 +86,40 @@ class KnowledgeArticleIntegrationTest {
             List.of(new SimpleGrantedAuthority("TL")),
             validAuthorId
         );
+    }
+
+    // =========================================================
+    // POST /api/kms/articles
+    // =========================================================
+
+    @Nested
+    @DisplayName("POST /api/kms/articles — 지식 문서 등록")
+    class Register {
+
+        @Test
+        @DisplayName("정상 요청 시 200 OK 응답과 함께 DB에 PENDING 상태로 저장된다")
+        void register_savedAsPending() throws Exception {
+            // given
+            ArticleRegisterRequest request = new ArticleRegisterRequest(
+                    validAuthorId, TITLE, ArticleCategory.TROUBLESHOOTING, TEST_EQUIPMENT_ID, CONTENT
+            );
+
+            // when
+            mockMvc.perform(post("/api/kms/articles")
+                            .with(user(workerUser))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+
+            // then
+            KnowledgeArticle saved = knowledgeArticleRepository.findAll().stream()
+                    .filter(a -> TITLE.equals(a.getArticleTitle()))
+                    .findFirst()
+                    .orElseThrow();
+
+            assertEquals(ArticleStatus.PENDING, saved.getArticleStatus());
+            assertFalse(saved.getIsDeleted());
+        }
     }
 }
