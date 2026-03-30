@@ -63,7 +63,7 @@ class KnowledgeArticleServiceIntegrationTest {
         @Test
         @DisplayName("등록하면 PENDING 상태로 DB에 저장된다")
         void register_SavedAsPending() {
-            // given & when
+            // when
             knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
 
             // then
@@ -84,7 +84,7 @@ class KnowledgeArticleServiceIntegrationTest {
         @Test
         @DisplayName("임시저장하면 DRAFT 상태로 DB에 저장된다")
         void draft_SavedAsDraft() {
-            // given & when
+            // when
             knowledgeArticleService.draft(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.PROCESS_IMPROVEMENT, CONTENT);
 
             // then

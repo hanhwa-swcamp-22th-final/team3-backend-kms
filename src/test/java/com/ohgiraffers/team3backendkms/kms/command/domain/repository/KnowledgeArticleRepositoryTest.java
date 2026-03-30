@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("KnowledgeArticleRepository")
 class KnowledgeArticleRepositoryTest {
 
-    @Autowired // di ioc
+    @Autowired
     private KnowledgeArticleRepository knowledgeArticleRepository;
 
     private final TimeBasedIdGenerator idGenerator = new TimeBasedIdGenerator();
@@ -48,32 +48,35 @@ class KnowledgeArticleRepositoryTest {
     class SaveTest {
 
         @Test
-        @DisplayName("저장하면 ID가 그대로 유지된다")
+        @DisplayName("저장하면 ID로 조회할 수 있다")
         void save_PersistsId() {
             // given
             KnowledgeArticle article = buildArticle(ArticleStatus.PENDING);
+            Long savedId = knowledgeArticleRepository.save(article).getArticleId();
 
             // when
-            KnowledgeArticle saved = knowledgeArticleRepository.save(article);
+            Optional<KnowledgeArticle> result = knowledgeArticleRepository.findById(savedId);
 
-            // then 적절 x 인서트 셀렉으로 변결ㅇ
-            assertNotNull(saved.getArticleId());
+            // then
+            assertTrue(result.isPresent());
+            assertEquals(savedId, result.get().getArticleId());
         }
 
         @Test
-        @DisplayName("저장한 문서의 필드가 그대로 유지된다")
+        @DisplayName("저장한 문서의 필드가 DB에 그대로 저장된다")
         void save_PersistsFields() {
             // given
             KnowledgeArticle article = buildArticle(ArticleStatus.PENDING);
+            Long savedId = knowledgeArticleRepository.save(article).getArticleId();
 
             // when
-            KnowledgeArticle saved = knowledgeArticleRepository.save(article);
+            KnowledgeArticle found = knowledgeArticleRepository.findById(savedId).orElseThrow();
 
             // then
-            assertEquals(ArticleStatus.PENDING, saved.getArticleStatus());
-            assertEquals("테스트 지식 문서 제목입니다", saved.getArticleTitle());
-            assertEquals(ArticleCategory.TROUBLESHOOTING, saved.getArticleCategory());
-            assertFalse(saved.getIsDeleted());
+            assertEquals(ArticleStatus.PENDING, found.getArticleStatus());
+            assertEquals("테스트 지식 문서 제목입니다", found.getArticleTitle());
+            assertEquals(ArticleCategory.TROUBLESHOOTING, found.getArticleCategory());
+            assertFalse(found.getIsDeleted());
         }
     }
 
