@@ -2,7 +2,7 @@ package com.ohgiraffers.team3backendkms.kms.query.service;
 
 import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
-import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleQueryRequest;
+import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeArticleMapper;
 import lombok.RequiredArgsConstructor;

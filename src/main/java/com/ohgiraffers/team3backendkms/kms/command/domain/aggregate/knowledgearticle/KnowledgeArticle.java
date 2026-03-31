@@ -1,4 +1,4 @@
-package com.ohgiraffers.team3backendkms.kms.command.domain.aggregate;
+package com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle;
 
 import jakarta.persistence.*;
 import lombok.*;

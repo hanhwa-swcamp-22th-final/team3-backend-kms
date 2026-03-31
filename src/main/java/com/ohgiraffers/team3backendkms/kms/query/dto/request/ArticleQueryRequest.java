@@ -1,7 +1,7 @@
-package com.ohgiraffers.team3backendkms.kms.query.dto;
+package com.ohgiraffers.team3backendkms.kms.query.dto.request;
 
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

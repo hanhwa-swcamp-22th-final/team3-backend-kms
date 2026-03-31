@@ -1,6 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.dto.request;
 
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 

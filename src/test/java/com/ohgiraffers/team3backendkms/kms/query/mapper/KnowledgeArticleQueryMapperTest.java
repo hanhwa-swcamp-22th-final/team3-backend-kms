@@ -1,11 +1,11 @@
 package com.ohgiraffers.team3backendkms.kms.query.mapper;
 
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.KnowledgeArticle;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
-import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleQueryRequest;
+import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;

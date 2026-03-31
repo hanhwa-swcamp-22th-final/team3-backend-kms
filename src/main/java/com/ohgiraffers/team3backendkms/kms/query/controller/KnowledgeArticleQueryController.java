@@ -3,7 +3,7 @@ package com.ohgiraffers.team3backendkms.kms.query.controller;
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
-import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleQueryRequest;
+import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleQueryService;
 import lombok.RequiredArgsConstructor;

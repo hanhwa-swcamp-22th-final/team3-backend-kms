@@ -3,7 +3,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.controller.worke
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.common.exception.GlobalExceptionHandler;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

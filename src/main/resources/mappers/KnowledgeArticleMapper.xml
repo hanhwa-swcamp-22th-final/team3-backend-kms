@@ -6,7 +6,7 @@
 
     <!-- 지식 목록 조회 -->
     <select id="findArticles"
-            parameterType="com.ohgiraffers.team3backendkms.kms.query.dto.ArticleQueryRequest"
+            parameterType="com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest"
             resultType="com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto">
         SELECT
             ka.article_id       AS articleId,

@@ -2,9 +2,9 @@ package com.ohgiraffers.team3backendkms.kms;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.config.security.CustomUserDetails;
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.KnowledgeArticle;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.common.idgenerator.TimeBasedIdGenerator;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
 import org.junit.jupiter.api.BeforeEach;
