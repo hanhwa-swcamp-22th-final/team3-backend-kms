@@ -1,0 +1,16 @@
+### 직원 등록 (ADMIN / HRM 전용)
+POST http://localhost:8080/api/v1/employees
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "departmentId": 1,
+  "employeeName": "홍길동",
+  "employeeEmail": "hong@company.com",
+  "employeePhone": "010-1234-5678",
+  "employeeAddress": "서울시 강남구",
+  "employeeEmergencyContact": "010-9999-0000",
+  "employeePassword": "rawPassword123!",
+  "employeeRole": "WORKER",
+  "employeeTier": "A"
+}
