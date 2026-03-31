@@ -60,13 +60,13 @@ class KnowledgeArticleTest {
     }
 
     // =========================================================
-    // approve()
+    // tlApprove()
     // =========================================================
 
     @Nested
-    // 지식 문서 승인 (approve)
-    @DisplayName("approve()")
-    class ApproveTest {
+    // 지식 문서 TL 1차 승인 (tlApprove)
+    @DisplayName("tlApprove()")
+    class TlApproveTest {
 
         @BeforeEach
         void setUpPending() {
@@ -74,32 +74,87 @@ class KnowledgeArticleTest {
         }
 
         @Test
-        // PENDING 상태의 문서를 승인하면 APPROVED로 바뀌고 승인자·승인일시가 저장된다
+        // PENDING 상태의 문서를 TL 승인하면 TL_APPROVED로 바뀌고 승인자가 저장된다
+        @DisplayName("Changes status to TL_APPROVED and saves approver info")
+        void tlApprove_Success() {
+            // given
+            Long approverId = 99L;
+            String opinion = "1차 검토 완료입니다.";
+
+            // when
+            article.tlApprove(approverId, opinion);
+
+            // then
+            assertEquals(ArticleStatus.TL_APPROVED, article.getArticleStatus());
+            assertEquals(approverId, article.getApprovedBy());
+            assertEquals(opinion, article.getArticleApprovalOpinion());
+        }
+
+        @Test
+        // 이미 TL 승인된 문서를 다시 TL 승인하면 예외가 발생한다 (APPROVAL_003)
+        @DisplayName("Throws exception when status is not PENDING (APPROVAL_003)")
+        void tlApprove_NotPending_ThrowsException() {
+            // given
+            article.tlApprove(99L, "1차 승인합니다."); // TL_APPROVED 상태로 전환
+
+            // when & then
+            assertThrows(IllegalStateException.class, () -> article.tlApprove(99L, "재승인 시도"));
+        }
+
+        @Test
+        // 승인 의견이 500자를 넘으면 예외가 발생한다 (APPROVAL_002)
+        @DisplayName("Throws exception when opinion exceeds 500 characters (APPROVAL_002)")
+        void tlApprove_OpinionTooLong_ThrowsException() {
+            // given
+            String longOpinion = "a".repeat(501);
+
+            // when & then
+            assertThrows(IllegalArgumentException.class, () -> article.tlApprove(99L, longOpinion));
+        }
+    }
+
+    // =========================================================
+    // approve()
+    // =========================================================
+
+    @Nested
+    // 지식 문서 DL 최종 승인 (approve)
+    @DisplayName("approve()")
+    class ApproveTest {
+
+        @BeforeEach
+        void setUpTlApproved() {
+            article.submit();              // PENDING 상태로 전환
+            article.tlApprove(99L, "1차 검토 완료입니다."); // TL_APPROVED 상태로 전환
+        }
+
+        @Test
+        // TL_APPROVED 상태의 문서를 DL 승인하면 APPROVED로 바뀌고 승인자·승인일시가 저장된다
         @DisplayName("Changes status to APPROVED and saves approver info")
         void approve_Success() {
             // given
-            Long approvedBy = 99L; // long type 승인자 ID
-            String opinion = "잘 작성된 문서입니다.";
+            Long approverId = 100L;
+            String opinion = "최종 승인합니다.";
 
             // when
-            article.approve(approvedBy, opinion);
+            article.approve(approverId, opinion);
 
             // then
             assertEquals(ArticleStatus.APPROVED, article.getArticleStatus());
-            assertEquals(approvedBy, article.getApprovedBy());
+            assertEquals(approverId, article.getApprovedBy());
             assertEquals(opinion, article.getArticleApprovalOpinion());
             assertNotNull(article.getApprovedAt());
         }
 
         @Test
-        // 이미 승인된 문서를 다시 승인하면 예외가 발생한다 (APPROVAL_003)
-        @DisplayName("Throws exception when status is not PENDING (APPROVAL_003)")
-        void approve_NotPending_ThrowsException() {
+        // 이미 승인된 문서를 다시 승인하면 예외가 발생한다 (APPROVAL_004)
+        @DisplayName("Throws exception when status is not TL_APPROVED (APPROVAL_004)")
+        void approve_NotTlApproved_ThrowsException() {
             // given
-            article.approve(99L, "승인합니다."); // APPROVED 상태로 전환
+            article.approve(100L, "최종 승인합니다."); // APPROVED 상태로 전환
 
             // when & then
-            assertThrows(IllegalStateException.class, () -> article.approve(99L, "재승인 시도"));
+            assertThrows(IllegalStateException.class, () -> article.approve(100L, "재승인 시도"));
         }
 
         @Test
@@ -110,7 +165,7 @@ class KnowledgeArticleTest {
             String longOpinion = "a".repeat(501);
 
             // when & then
-            assertThrows(IllegalArgumentException.class, () -> article.approve(99L, longOpinion));
+            assertThrows(IllegalArgumentException.class, () -> article.approve(100L, longOpinion));
         }
     }
 
@@ -207,7 +262,8 @@ class KnowledgeArticleTest {
         void softDelete_Approved_ThrowsException() {
             // given
             article.submit();
-            article.approve(99L, "승인합니다.");
+            article.tlApprove(99L, "1차 승인합니다.");
+            article.approve(100L, "최종 승인합니다.");
 
             // when & then
             assertThrows(IllegalStateException.class, () -> article.softDelete());

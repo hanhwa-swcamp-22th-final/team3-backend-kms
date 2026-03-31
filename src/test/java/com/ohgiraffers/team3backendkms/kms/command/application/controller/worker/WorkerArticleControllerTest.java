@@ -1,4 +1,4 @@
-package com.ohgiraffers.team3backendkms.kms.command.application.controller;
+package com.ohgiraffers.team3backendkms.kms.command.application.controller.worker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.common.exception.GlobalExceptionHandler;
@@ -26,11 +26,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(
-        controllers = KnowledgeArticleCommandController.class,
+        controllers = WorkerArticleController.class,
         excludeAutoConfiguration = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class}
 )
 @Import(GlobalExceptionHandler.class)
-class KnowledgeArticleCommandControllerTest {
+@DisplayName("WorkerArticleController")
+class WorkerArticleControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -46,10 +47,8 @@ class KnowledgeArticleCommandControllerTest {
     class Register {
 
         @Test
-        // 지식 문서 등록 API 성공: 정상 응답을 반환한다
         @DisplayName("Returns 200 OK on valid request")
         void register_success() throws Exception {
-            // given
             Map<String, Object> body = Map.of(
                     "authorId", 10,
                     "title", "정상적인 테스트 제목입니다",
@@ -60,7 +59,6 @@ class KnowledgeArticleCommandControllerTest {
                     .register(anyLong(), any(), anyString(), any(ArticleCategory.class), anyString()))
                     .willReturn(1L);
 
-            // when & then
             mockMvc.perform(post("/api/kms/articles")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
@@ -70,10 +68,8 @@ class KnowledgeArticleCommandControllerTest {
         }
 
         @Test
-        // 지식 문서 등록 API 실패: 제목이 짧으면 400을 반환한다
         @DisplayName("Returns 400 when title is too short")
         void register_whenTitleTooShort_thenBadRequest() throws Exception {
-            // given
             Map<String, Object> body = Map.of(
                     "authorId", 10,
                     "title", "짧",
@@ -84,7 +80,6 @@ class KnowledgeArticleCommandControllerTest {
                     .given(knowledgeArticleService)
                     .register(anyLong(), any(), anyString(), any(ArticleCategory.class), anyString());
 
-            // when & then
             mockMvc.perform(post("/api/kms/articles")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
@@ -94,10 +89,8 @@ class KnowledgeArticleCommandControllerTest {
         }
 
         @Test
-        // 지식 문서 등록 API 실패: 본문이 짧으면 400을 반환한다
         @DisplayName("Returns 400 when content is too short")
         void register_whenContentTooShort_thenBadRequest() throws Exception {
-            // given
             Map<String, Object> body = Map.of(
                     "authorId", 10,
                     "title", "정상적인 제목입니다",
@@ -108,7 +101,6 @@ class KnowledgeArticleCommandControllerTest {
                     .given(knowledgeArticleService)
                     .register(anyLong(), any(), anyString(), any(ArticleCategory.class), anyString());
 
-            // when & then
             mockMvc.perform(post("/api/kms/articles")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
@@ -122,10 +114,8 @@ class KnowledgeArticleCommandControllerTest {
     class Draft {
 
         @Test
-        // 지식 문서 임시저장 API 성공: 정상 응답을 반환한다
         @DisplayName("Returns 200 OK on valid request")
         void draft_success() throws Exception {
-            // given
             Map<String, Object> body = Map.of(
                     "authorId", 10,
                     "title", "임시 제목",
@@ -136,7 +126,6 @@ class KnowledgeArticleCommandControllerTest {
                     .draft(anyLong(), any(), anyString(), any(ArticleCategory.class), anyString()))
                     .willReturn(2L);
 
-            // when & then
             mockMvc.perform(post("/api/kms/articles/drafts")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
@@ -147,103 +136,14 @@ class KnowledgeArticleCommandControllerTest {
     }
 
     @Nested
-    @DisplayName("POST /api/kms/approval/{articleId}/approve")
-    class Approve {
-
-        @Test
-        // 지식 문서 승인 API 성공: 정상 응답을 반환한다
-        @DisplayName("Returns 200 OK on valid request")
-        void approve_success() throws Exception {
-            // given
-            Map<String, Object> body = Map.of(
-                    "approverId", 20,
-                    "reviewComment", "승인합니다."
-            );
-            willDoNothing().given(knowledgeArticleService)
-                    .approve(anyLong(), anyLong(), anyString());
-
-            // when & then
-            mockMvc.perform(post("/api/kms/approval/1/approve")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(body)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true));
-        }
-
-        @Test
-        // 지식 문서 승인 API 실패: PENDING이 아니면 400을 반환한다
-        @DisplayName("Returns 400 when status is not PENDING")
-        void approve_whenNotPending_thenBadRequest() throws Exception {
-            // given
-            Map<String, Object> body = Map.of(
-                    "approverId", 20,
-                    "reviewComment", "승인합니다."
-            );
-            willThrow(new IllegalStateException("[ARTICLE_004] PENDING 상태인 문서만 승인할 수 있습니다."))
-                    .given(knowledgeArticleService)
-                    .approve(anyLong(), anyLong(), anyString());
-
-            // when & then
-            mockMvc.perform(post("/api/kms/approval/1/approve")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(body)))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.success").value(false));
-        }
-    }
-
-    @Nested
-    @DisplayName("POST /api/kms/approval/{articleId}/reject")
-    class Reject {
-
-        @Test
-        // 지식 문서 반려 API 성공: 정상 응답을 반환한다
-        @DisplayName("Returns 200 OK on valid request")
-        void reject_success() throws Exception {
-            // given
-            Map<String, Object> body = Map.of("reviewComment", "반려 사유입니다. 내용을 보완해주세요.");
-            willDoNothing().given(knowledgeArticleService)
-                    .reject(anyLong(), anyString());
-
-            // when & then
-            mockMvc.perform(post("/api/kms/approval/1/reject")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(body)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true));
-        }
-
-        @Test
-        // 지식 문서 반려 API 실패: 반려 사유가 없으면 400을 반환한다
-        @DisplayName("Returns 400 when rejection reason is empty")
-        void reject_whenNoReason_thenBadRequest() throws Exception {
-            // given
-            Map<String, Object> body = Map.of("reviewComment", "");
-            willThrow(new IllegalArgumentException("[ARTICLE_005] 반려 사유는 10자 이상이어야 합니다."))
-                    .given(knowledgeArticleService)
-                    .reject(anyLong(), anyString());
-
-            // when & then
-            mockMvc.perform(post("/api/kms/approval/1/reject")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(body)))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.success").value(false));
-        }
-    }
-
-    @Nested
     @DisplayName("DELETE /api/kms/articles/{articleId}")
     class Delete {
 
         @Test
-        // 지식 문서 삭제 API 성공: 정상 응답을 반환한다
         @DisplayName("Returns 200 OK on valid request")
         void delete_success() throws Exception {
-            // given
             willDoNothing().given(knowledgeArticleService).delete(anyLong(), anyLong());
 
-            // when & then
             mockMvc.perform(delete("/api/kms/articles/1")
                             .param("requesterId", "10"))
                     .andExpect(status().isOk())
@@ -251,14 +151,11 @@ class KnowledgeArticleCommandControllerTest {
         }
 
         @Test
-        // 지식 문서 삭제 API 실패: 본인 문서가 아니면 400을 반환한다
         @DisplayName("Returns 400 when requester is not the author")
         void delete_whenNotAuthor_thenBadRequest() throws Exception {
-            // given
             willThrow(new IllegalStateException("[ARTICLE_007] 본인이 작성한 문서만 삭제할 수 있습니다."))
                     .given(knowledgeArticleService).delete(anyLong(), anyLong());
 
-            // when & then
             mockMvc.perform(delete("/api/kms/articles/1")
                             .param("requesterId", "99"))
                     .andExpect(status().isBadRequest())

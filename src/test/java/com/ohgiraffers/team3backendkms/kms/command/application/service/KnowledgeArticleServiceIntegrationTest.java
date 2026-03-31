@@ -116,18 +116,38 @@ class KnowledgeArticleServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("지식 문서 승인 (approve)")
-    class ApproveTest {
+    @DisplayName("지식 문서 TL 1차 승인 (tlApprove)")
+    class TlApproveTest {
 
         @Test
-        @DisplayName("PENDING 문서를 승인하면 APPROVED 상태로 DB에 반영된다")
-        void approve_StatusChangedToApproved() {
+        @DisplayName("PENDING 문서를 TL 승인하면 TL_APPROVED 상태로 DB에 반영된다")
+        void tlApprove_StatusChangedToTlApproved() {
             // given
             Long articleId = knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
             KnowledgeArticle saved = knowledgeArticleRepository.findById(articleId).orElseThrow();
 
             // when
-            knowledgeArticleService.approve(saved.getArticleId(), 99L, "잘 작성된 문서입니다.");
+            knowledgeArticleService.tlApprove(saved.getArticleId(), 99L, "1차 검토 완료입니다.");
+
+            // then
+            assertEquals(ArticleStatus.TL_APPROVED, saved.getArticleStatus());
+        }
+    }
+
+    @Nested
+    @DisplayName("지식 문서 DL 최종 승인 (approve)")
+    class ApproveTest {
+
+        @Test
+        @DisplayName("TL_APPROVED 문서를 DL 승인하면 APPROVED 상태로 DB에 반영된다")
+        void approve_StatusChangedToApproved() {
+            // given
+            Long articleId = knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
+            KnowledgeArticle saved = knowledgeArticleRepository.findById(articleId).orElseThrow();
+            knowledgeArticleService.tlApprove(saved.getArticleId(), 99L, "1차 검토 완료입니다.");
+
+            // when
+            knowledgeArticleService.approve(saved.getArticleId(), 100L, "최종 승인합니다.");
 
             // then
             assertEquals(ArticleStatus.APPROVED, saved.getArticleStatus());

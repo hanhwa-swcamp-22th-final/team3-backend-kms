@@ -17,7 +17,8 @@ public enum ArticleErrorCode {
     // 승인/반려
     APPROVAL_001("[APPROVAL_001] 반려 사유는 10자 이상 500자 이하여야 합니다."),
     APPROVAL_002("[APPROVAL_002] 승인 의견은 500자 이하여야 합니다."),
-    APPROVAL_003("[APPROVAL_003] PENDING 상태에서만 처리할 수 있습니다.");
+    APPROVAL_003("[APPROVAL_003] PENDING 상태에서만 처리할 수 있습니다."),
+    APPROVAL_004("[APPROVAL_004] TL_APPROVED 상태에서만 처리할 수 있습니다.");
 
     private final String message;
 

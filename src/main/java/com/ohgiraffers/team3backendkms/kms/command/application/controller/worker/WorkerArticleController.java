@@ -1,10 +1,8 @@
-package com.ohgiraffers.team3backendkms.kms.command.application.controller;
+package com.ohgiraffers.team3backendkms.kms.command.application.controller.worker;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleApproveRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRejectRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/kms")
-public class KnowledgeArticleCommandController {
+public class WorkerArticleController {
 
     private final KnowledgeArticleService knowledgeArticleService;
 
@@ -44,28 +42,6 @@ public class KnowledgeArticleCommandController {
                 request.getContent()
         );
         return ResponseEntity.ok(ApiResponse.success(articleId));
-    }
-
-    /* 지식 문서 승인 */
-    @PreAuthorize("hasAnyAuthority('TL', 'DL')")
-    @PostMapping("/approval/{articleId}/approve")
-    public ResponseEntity<ApiResponse<Void>> approve(
-            @PathVariable Long articleId,
-            @RequestBody ArticleApproveRequest request
-    ) {
-        knowledgeArticleService.approve(articleId, request.getApproverId(), request.getReviewComment());
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    /* 지식 문서 반려 */
-    @PreAuthorize("hasAnyAuthority('TL', 'DL')")
-    @PostMapping("/approval/{articleId}/reject")
-    public ResponseEntity<ApiResponse<Void>> reject(
-            @PathVariable Long articleId,
-            @RequestBody ArticleRejectRequest request
-    ) {
-        knowledgeArticleService.reject(articleId, request.getReviewComment());
-        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     /* 지식 문서 삭제 (soft delete) */

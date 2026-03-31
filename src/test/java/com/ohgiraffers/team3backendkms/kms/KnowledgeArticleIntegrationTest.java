@@ -63,8 +63,11 @@ class KnowledgeArticleIntegrationTest {
     // 인증 사용자 (WORKER — 등록, 임시저장, 삭제)
     protected CustomUserDetails workerUser;
 
-    // 인증 사용자 (TL — 승인, 반려)
+    // 인증 사용자 (TL — 1차 승인, 반려)
     protected CustomUserDetails tlUser;
+
+    // 인증 사용자 (DL — 최종 승인, 반려)
+    protected CustomUserDetails dlUser;
 
     private Long validAuthorId;
 
@@ -93,6 +96,12 @@ class KnowledgeArticleIntegrationTest {
         tlUser = new CustomUserDetails(
             "TL_TEST", "pw",
             List.of(new SimpleGrantedAuthority("TL")),
+            validAuthorId
+        );
+
+        dlUser = new CustomUserDetails(
+            "DL_TEST", "pw",
+            List.of(new SimpleGrantedAuthority("DL")),
             validAuthorId
         );
     }
@@ -195,23 +204,31 @@ class KnowledgeArticleIntegrationTest {
     // =========================================================
 
     @Nested
-    // POST /api/kms/approval/{articleId}/approve — 지식 문서 승인
+    // POST /api/kms/approval/{articleId}/approve — DL 최종 승인
     @DisplayName("POST /api/kms/approval/{articleId}/approve")
     class Approve {
 
         @Test
-        // PENDING 문서 승인 시 200 OK 응답과 함께 DB에 APPROVED 상태로 반영된다
+        // TL 1차 승인 후 DL 최종 승인 시 200 OK 응답과 함께 DB에 APPROVED 상태로 반영된다
         @DisplayName("Returns 200 OK and changes status to APPROVED in DB")
         void approve_statusChangedToApproved() throws Exception {
             // given
             KnowledgeArticle saved = savePendingArticle();
-            ArticleApproveRequest request = new ArticleApproveRequest(validAuthorId, "잘 작성된 문서입니다.");
 
-            // when
-            mockMvc.perform(post("/api/kms/approval/" + saved.getArticleId() + "/approve")
+            // TL 1차 승인 (PENDING → TL_APPROVED)
+            mockMvc.perform(post("/api/kms/approval/" + saved.getArticleId() + "/tl-approve")
                             .with(user(tlUser))
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+                            .content(objectMapper.writeValueAsString(
+                                    new ArticleApproveRequest(validAuthorId, "1차 검토 완료입니다."))))
+                    .andExpect(status().isOk());
+
+            // DL 최종 승인
+            mockMvc.perform(post("/api/kms/approval/" + saved.getArticleId() + "/approve")
+                            .with(user(dlUser))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(
+                                    new ArticleApproveRequest(validAuthorId, "최종 승인합니다."))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true));
 
@@ -225,12 +242,12 @@ class KnowledgeArticleIntegrationTest {
     // =========================================================
 
     @Nested
-    // POST /api/kms/approval/{articleId}/reject — 지식 문서 반려
-    @DisplayName("POST /api/kms/approval/{articleId}/reject")
+    // POST /api/kms/approval/{articleId}/tl-reject — TL 반려
+    @DisplayName("POST /api/kms/approval/{articleId}/tl-reject")
     class Reject {
 
         @Test
-        // PENDING 문서 반려 시 200 OK 응답과 함께 DB에 REJECTED 상태와 반려 사유가 반영된다
+        // PENDING 문서 TL 반려 시 200 OK 응답과 함께 DB에 REJECTED 상태와 반려 사유가 반영된다
         @DisplayName("Returns 200 OK and changes status to REJECTED with rejection reason in DB")
         void reject_statusChangedToRejected() throws Exception {
             // given
@@ -239,7 +256,7 @@ class KnowledgeArticleIntegrationTest {
             ArticleRejectRequest request = new ArticleRejectRequest(reason);
 
             // when
-            mockMvc.perform(post("/api/kms/approval/" + saved.getArticleId() + "/reject")
+            mockMvc.perform(post("/api/kms/approval/" + saved.getArticleId() + "/tl-reject")
                             .with(user(tlUser))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))

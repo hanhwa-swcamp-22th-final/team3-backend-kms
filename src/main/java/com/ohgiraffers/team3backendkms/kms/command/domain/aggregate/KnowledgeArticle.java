@@ -86,26 +86,39 @@ public class KnowledgeArticle {
         this.articleStatus = ArticleStatus.PENDING;
     }
 
-    /* PENDING → APPROVED */
-    public void approve(Long approvedBy, String opinion) {
+    /* PENDING → TL_APPROVED (TL 1차 승인) */
+    public void tlApprove(Long approverId, String opinion) {
         if (opinion != null && opinion.length() > 500) {
             throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_002.getMessage());
         }
         if (this.articleStatus != ArticleStatus.PENDING) {
             throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
         }
+        this.articleStatus = ArticleStatus.TL_APPROVED;
+        this.approvedBy = approverId;
+        this.articleApprovalOpinion = opinion;
+    }
+
+    /* TL_APPROVED → APPROVED (DL 최종 승인) */
+    public void approve(Long approverId, String opinion) {
+        if (opinion != null && opinion.length() > 500) {
+            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_002.getMessage());
+        }
+        if (this.articleStatus != ArticleStatus.TL_APPROVED) {
+            throw new IllegalStateException(ArticleErrorCode.APPROVAL_004.getMessage());
+        }
         this.articleStatus = ArticleStatus.APPROVED;
-        this.approvedBy = approvedBy;
+        this.approvedBy = approverId;
         this.articleApprovalOpinion = opinion;
         this.approvedAt = LocalDateTime.now();
     }
 
-    /* PENDING → REJECTED */
+    /* PENDING 또는 TL_APPROVED → REJECTED (TL/DL 반려) */
     public void reject(String reason) {
         if (reason == null || reason.length() < 10 || reason.length() > 500) {
             throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_001.getMessage());
         }
-        if (this.articleStatus != ArticleStatus.PENDING) {
+        if (this.articleStatus != ArticleStatus.PENDING && this.articleStatus != ArticleStatus.TL_APPROVED) {
             throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
         }
         this.articleStatus = ArticleStatus.REJECTED;

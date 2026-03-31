@@ -43,7 +43,13 @@ public class KnowledgeArticleService {
         article.incrementViewCount();
     }
 
-    /* 지식 문서 승인 */
+    /* TL 1차 승인 (PENDING → TL_APPROVED) */
+    public void tlApprove(Long articleId, Long approverId, String opinion) {
+        KnowledgeArticle article = findArticleById(articleId);
+        article.tlApprove(approverId, opinion);
+    }
+
+    /* DL 최종 승인 (TL_APPROVED → APPROVED) */
     public void approve(Long articleId, Long approverId, String opinion) {
         KnowledgeArticle article = findArticleById(articleId);
         article.approve(approverId, opinion);

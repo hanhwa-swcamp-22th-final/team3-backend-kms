@@ -35,6 +35,7 @@ class KnowledgeArticleServiceTest {
     private IdGenerator idGenerator;
 
     private KnowledgeArticle pendingArticle;
+    private KnowledgeArticle tlApprovedArticle;
     private KnowledgeArticle draftArticle;
 
     @BeforeEach
@@ -46,6 +47,17 @@ class KnowledgeArticleServiceTest {
                 .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent("테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
                 .articleStatus(ArticleStatus.PENDING)
+                .isDeleted(false)
+                .viewCount(0)
+                .build();
+
+        tlApprovedArticle = KnowledgeArticle.builder()
+                .articleId(3L)
+                .authorId(1L)
+                .articleTitle("TL 승인 완료 문서 제목입니다")
+                .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                .articleContent("TL 승인 완료 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
+                .articleStatus(ArticleStatus.TL_APPROVED)
                 .isDeleted(false)
                 .viewCount(0)
                 .build();
@@ -206,48 +218,79 @@ class KnowledgeArticleServiceTest {
     }
 
     // =========================================================
-    // approve()
+    // tlApprove()
     // =========================================================
 
     @Nested
-    // 지식 문서 승인 (approve)
-    @DisplayName("approve()")
-    class ApproveTest {
+    // TL 1차 승인 (tlApprove)
+    @DisplayName("tlApprove()")
+    class TlApproveTest {
 
         @Test
-        // PENDING 문서를 승인하면 APPROVED 상태로 바뀐다
-        @DisplayName("Changes status to APPROVED")
-        void approve_Success() {
+        // PENDING 문서를 TL 승인하면 TL_APPROVED 상태로 바뀐다
+        @DisplayName("Changes status to TL_APPROVED")
+        void tlApprove_Success() {
             // given
             given(knowledgeArticleRepository.findById(1L))
                     .willReturn(Optional.of(pendingArticle));
 
             // when
-            knowledgeArticleService.approve(1L, 99L, "잘 작성된 문서입니다.");
+            knowledgeArticleService.tlApprove(1L, 99L, "1차 검토 완료입니다.");
 
             // then
-            assertEquals(ArticleStatus.APPROVED, pendingArticle.getArticleStatus());
+            assertEquals(ArticleStatus.TL_APPROVED, pendingArticle.getArticleStatus());
         }
 
         @Test
-        // PENDING이 아닌 문서를 승인하면 예외가 발생한다 (APPROVAL_003)
+        // PENDING이 아닌 문서를 TL 승인하면 예외가 발생한다 (APPROVAL_003)
         @DisplayName("Throws exception when status is not PENDING (APPROVAL_003)")
-        void approve_NotPending_ThrowsException() {
+        void tlApprove_NotPending_ThrowsException() {
             // given
-            KnowledgeArticle approvedArticle = KnowledgeArticle.builder()
-                    .articleId(4L)
-                    .authorId(1L)
-                    .articleStatus(ArticleStatus.APPROVED)
-                    .isDeleted(false)
-                    .viewCount(0)
-                    .build();
-
-            given(knowledgeArticleRepository.findById(4L))
-                    .willReturn(Optional.of(approvedArticle));
+            given(knowledgeArticleRepository.findById(2L))
+                    .willReturn(Optional.of(draftArticle));
 
             // when & then
             assertThrows(IllegalStateException.class, () ->
-                    knowledgeArticleService.approve(4L, 99L, "재승인 시도")
+                    knowledgeArticleService.tlApprove(2L, 99L, "잘못된 승인 시도")
+            );
+        }
+    }
+
+    // =========================================================
+    // approve()
+    // =========================================================
+
+    @Nested
+    // DL 최종 승인 (approve)
+    @DisplayName("approve()")
+    class ApproveTest {
+
+        @Test
+        // TL_APPROVED 문서를 DL 승인하면 APPROVED 상태로 바뀐다
+        @DisplayName("Changes status to APPROVED")
+        void approve_Success() {
+            // given
+            given(knowledgeArticleRepository.findById(3L))
+                    .willReturn(Optional.of(tlApprovedArticle));
+
+            // when
+            knowledgeArticleService.approve(3L, 99L, "최종 승인합니다.");
+
+            // then
+            assertEquals(ArticleStatus.APPROVED, tlApprovedArticle.getArticleStatus());
+        }
+
+        @Test
+        // TL_APPROVED가 아닌 문서를 DL 승인하면 예외가 발생한다 (APPROVAL_004)
+        @DisplayName("Throws exception when status is not TL_APPROVED (APPROVAL_004)")
+        void approve_NotTlApproved_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            // when & then
+            assertThrows(IllegalStateException.class, () ->
+                    knowledgeArticleService.approve(1L, 99L, "잘못된 최종 승인 시도")
             );
         }
     }
