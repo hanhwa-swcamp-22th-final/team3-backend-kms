@@ -6,7 +6,6 @@ import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.Artic
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,7 +16,6 @@ public class DeptLeaderArticleController {
     private final KnowledgeArticleService knowledgeArticleService;
 
     /* DL 최종 승인 (TL_APPROVED → APPROVED) */
-    @PreAuthorize("hasAnyAuthority('DL')")
     @PostMapping("/approval/{articleId}/approve")
     public ResponseEntity<ApiResponse<Void>> approve(
             @PathVariable Long articleId,
@@ -28,7 +26,6 @@ public class DeptLeaderArticleController {
     }
 
     /* DL 반려 (TL_APPROVED → REJECTED) */
-    @PreAuthorize("hasAnyAuthority('DL')")
     @PostMapping("/approval/{articleId}/reject")
     public ResponseEntity<ApiResponse<Void>> reject(
             @PathVariable Long articleId,

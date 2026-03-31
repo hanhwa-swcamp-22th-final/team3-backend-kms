@@ -7,7 +7,6 @@ import com.ohgiraffers.team3backendkms.kms.command.application.service.Knowledge
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,7 +17,6 @@ public class WorkerArticleController {
     private final KnowledgeArticleService knowledgeArticleService;
 
     /* 지식 문서 등록 (PENDING) */
-    @PreAuthorize("hasAnyAuthority('WORKER')")
     @PostMapping("/articles")
     public ResponseEntity<ApiResponse<Long>> register(@RequestBody ArticleRegisterRequest request) {
         Long articleId = knowledgeArticleService.register(
@@ -32,7 +30,6 @@ public class WorkerArticleController {
     }
 
     /* 지식 문서 임시저장 (DRAFT) */
-    @PreAuthorize("hasAnyAuthority('WORKER')")
     @PostMapping("/articles/drafts")
     public ResponseEntity<ApiResponse<Long>> draft(@RequestBody ArticleDraftRequest request) {
         Long articleId = knowledgeArticleService.draft(
@@ -46,7 +43,6 @@ public class WorkerArticleController {
     }
 
     /* 지식 문서 삭제 (soft delete) */
-    @PreAuthorize("hasAnyAuthority('WORKER')")
     @DeleteMapping("/articles/{articleId}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long articleId,
