@@ -145,7 +145,8 @@ class WorkerArticleControllerTest {
             willDoNothing().given(knowledgeArticleService).delete(anyLong(), anyLong());
 
             mockMvc.perform(delete("/api/kms/articles/1")
-                            .param("requesterId", "10"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(Map.of("requesterId", 10))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true));
         }
@@ -157,7 +158,8 @@ class WorkerArticleControllerTest {
                     .given(knowledgeArticleService).delete(anyLong(), anyLong());
 
             mockMvc.perform(delete("/api/kms/articles/1")
-                            .param("requesterId", "99"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(Map.of("requesterId", 99))))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.success").value(false));
         }

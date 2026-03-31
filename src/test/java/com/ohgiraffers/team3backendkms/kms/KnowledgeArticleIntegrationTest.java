@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -59,10 +60,10 @@ class KnowledgeArticleIntegrationTest {
     // 인증 사용자 (WORKER — 등록, 임시저장, 삭제)
     protected CustomUserDetails workerUser;
 
-    // 인증 사용자 (TL — 1차 승인, 반려)
+    // 인증 사용자 (TL — 승인, 반려)
     protected CustomUserDetails tlUser;
 
-    // 인증 사용자 (DL — 최종 승인, 반려)
+    // 인증 사용자 (DL — 승인, 반려)
     protected CustomUserDetails dlUser;
 
     private Long validAuthorId;
@@ -137,7 +138,7 @@ class KnowledgeArticleIntegrationTest {
         @DisplayName("Returns 201 Created and saves article with PENDING status in DB")
         void register_savedAsPending() throws Exception {
             // given
-            String body = objectMapper.writeValueAsString(java.util.Map.of(
+            String body = objectMapper.writeValueAsString(Map.of(
                     "authorId", validAuthorId,
                     "title", TITLE,
                     "category", "TROUBLESHOOTING",
@@ -177,7 +178,7 @@ class KnowledgeArticleIntegrationTest {
         @DisplayName("Returns 201 Created and saves article with DRAFT status in DB")
         void draft_savedAsDraft() throws Exception {
             // given
-            String body = objectMapper.writeValueAsString(java.util.Map.of(
+            String body = objectMapper.writeValueAsString(Map.of(
                     "authorId", validAuthorId,
                     "title", TITLE,
                     "category", "PROCESS_IMPROVEMENT",
@@ -204,35 +205,27 @@ class KnowledgeArticleIntegrationTest {
     }
 
     // =========================================================
-    // POST /api/kms/approval/{articleId}/approve
+    // POST /api/kms/tl/approval/{articleId}/approve
     // =========================================================
 
     @Nested
-    // POST /api/kms/approval/{articleId}/approve — DL 최종 승인
-    @DisplayName("POST /api/kms/approval/{articleId}/approve")
+    // POST /api/kms/tl/approval/{articleId}/approve — TL 승인
+    @DisplayName("POST /api/kms/tl/approval/{articleId}/approve")
     class Approve {
 
         @Test
-        // TL 1차 승인 후 DL 최종 승인 시 200 OK 응답과 함께 DB에 APPROVED 상태로 반영된다
+        // PENDING 문서 TL 승인 시 200 OK 응답과 함께 DB에 APPROVED 상태로 반영된다
         @DisplayName("Returns 200 OK and changes status to APPROVED in DB")
         void approve_statusChangedToApproved() throws Exception {
             // given
             KnowledgeArticle saved = savePendingArticle();
 
-            // TL 1차 승인 (PENDING → TL_APPROVED)
-            mockMvc.perform(post("/api/kms/approval/" + saved.getArticleId() + "/tl-approve")
+            // when
+            mockMvc.perform(post("/api/kms/tl/approval/" + saved.getArticleId() + "/approve")
                             .with(user(tlUser))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(
-                                    java.util.Map.of("approverId", validAuthorId, "reviewComment", "1차 검토 완료입니다."))))
-                    .andExpect(status().isOk());
-
-            // DL 최종 승인
-            mockMvc.perform(post("/api/kms/approval/" + saved.getArticleId() + "/approve")
-                            .with(user(dlUser))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(
-                                    java.util.Map.of("approverId", validAuthorId, "reviewComment", "최종 승인합니다."))))
+                                    Map.of("approverId", validAuthorId, "reviewComment", "최종 승인합니다."))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true));
 
@@ -242,12 +235,12 @@ class KnowledgeArticleIntegrationTest {
     }
 
     // =========================================================
-    // POST /api/kms/approval/{articleId}/reject
+    // POST /api/kms/tl/approval/{articleId}/reject
     // =========================================================
 
     @Nested
-    // POST /api/kms/approval/{articleId}/tl-reject — TL 반려
-    @DisplayName("POST /api/kms/approval/{articleId}/tl-reject")
+    // POST /api/kms/tl/approval/{articleId}/reject — TL 반려
+    @DisplayName("POST /api/kms/tl/approval/{articleId}/reject")
     class Reject {
 
         @Test
@@ -259,11 +252,11 @@ class KnowledgeArticleIntegrationTest {
             String reason = "내용이 충분하지 않습니다. 보완 후 재제출해주세요.";
 
             // when
-            mockMvc.perform(post("/api/kms/approval/" + saved.getArticleId() + "/tl-reject")
+            mockMvc.perform(post("/api/kms/tl/approval/" + saved.getArticleId() + "/reject")
                             .with(user(tlUser))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(
-                                    java.util.Map.of("reviewComment", reason))))
+                                    Map.of("reviewComment", reason))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true));
 
@@ -305,7 +298,9 @@ class KnowledgeArticleIntegrationTest {
             // when
             mockMvc.perform(delete("/api/kms/articles/" + saved.getArticleId())
                             .with(user(workerUser))
-                            .param("requesterId", String.valueOf(validAuthorId)))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(
+                                    Map.of("requesterId", validAuthorId))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true));
 

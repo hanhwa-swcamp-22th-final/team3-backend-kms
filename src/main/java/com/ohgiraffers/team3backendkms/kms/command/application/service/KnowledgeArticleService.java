@@ -23,7 +23,7 @@ public class KnowledgeArticleService {
     /* 지식 문서 등록 (PENDING) */
     public Long register(Long authorId, Long equipmentId,
                          String title, ArticleCategory category, String content) {
-        validateInput(title, content);
+        validateInput(title, category, content);
         return knowledgeArticleRepository.save(
                 buildArticle(authorId, equipmentId, title, category, content, ArticleStatus.PENDING)
         ).getArticleId();
@@ -43,13 +43,7 @@ public class KnowledgeArticleService {
         article.incrementViewCount();
     }
 
-    /* TL 1차 승인 (PENDING → TL_APPROVED) */
-    public void tlApprove(Long articleId, Long approverId, String opinion) {
-        KnowledgeArticle article = findArticleById(articleId);
-        article.tlApprove(approverId, opinion);
-    }
-
-    /* DL 최종 승인 (TL_APPROVED → APPROVED) */
+    /* 승인 (PENDING → APPROVED) — TL 또는 DL */
     public void approve(Long articleId, Long approverId, String opinion) {
         KnowledgeArticle article = findArticleById(articleId);
         article.approve(approverId, opinion);
@@ -93,9 +87,12 @@ public class KnowledgeArticleService {
                 .build();
     }
 
-    private void validateInput(String title, String content) {
+    private void validateInput(String title, ArticleCategory category, String content) {
         if (title == null || title.length() < 5 || title.length() > 200) {
             throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_001.getMessage());
+        }
+        if (category == null) {
+            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_004.getMessage());
         }
         if (content == null || content.length() < 50) {
             throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_002.getMessage());

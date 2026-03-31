@@ -63,13 +63,13 @@ class KnowledgeArticleTest {
     }
 
     // =========================================================
-    // tlApprove()
+    // approve()
     // =========================================================
 
     @Nested
-    // 지식 문서 TL 1차 승인 (tlApprove)
-    @DisplayName("tlApprove()")
-    class TlApproveTest {
+    // 지식 문서 승인 (approve) — TL 또는 DL
+    @DisplayName("approve()")
+    class ApproveTest {
 
         @BeforeEach
         void setUpPending() {
@@ -77,66 +77,11 @@ class KnowledgeArticleTest {
         }
 
         @Test
-        // PENDING 상태의 문서를 TL 승인하면 TL_APPROVED로 바뀌고 승인자가 저장된다
-        @DisplayName("Changes status to TL_APPROVED and saves approver info")
-        void tlApprove_Success() {
-            // given
-            Long approverId = 99L;
-            String opinion = "1차 검토 완료입니다.";
-
-            // when
-            article.tlApprove(approverId, opinion);
-
-            // then
-            assertEquals(ArticleStatus.TL_APPROVED, article.getArticleStatus());
-            assertEquals(approverId, article.getApprovedBy());
-            assertEquals(opinion, article.getArticleApprovalOpinion());
-        }
-
-        @Test
-        // 이미 TL 승인된 문서를 다시 TL 승인하면 예외가 발생한다 (APPROVAL_003)
-        @DisplayName("Throws exception when status is not PENDING (APPROVAL_003)")
-        void tlApprove_NotPending_ThrowsException() {
-            // given
-            article.tlApprove(99L, "1차 승인합니다."); // TL_APPROVED 상태로 전환
-
-            // when & then
-            assertThrows(IllegalStateException.class, () -> article.tlApprove(99L, "재승인 시도"));
-        }
-
-        @Test
-        // 승인 의견이 500자를 넘으면 예외가 발생한다 (APPROVAL_002)
-        @DisplayName("Throws exception when opinion exceeds 500 characters (APPROVAL_002)")
-        void tlApprove_OpinionTooLong_ThrowsException() {
-            // given
-            String longOpinion = "a".repeat(501);
-
-            // when & then
-            assertThrows(IllegalArgumentException.class, () -> article.tlApprove(99L, longOpinion));
-        }
-    }
-
-    // =========================================================
-    // approve()
-    // =========================================================
-
-    @Nested
-    // 지식 문서 DL 최종 승인 (approve)
-    @DisplayName("approve()")
-    class ApproveTest {
-
-        @BeforeEach
-        void setUpTlApproved() {
-            article.submit();              // PENDING 상태로 전환
-            article.tlApprove(99L, "1차 검토 완료입니다."); // TL_APPROVED 상태로 전환
-        }
-
-        @Test
-        // TL_APPROVED 상태의 문서를 DL 승인하면 APPROVED로 바뀌고 승인자·승인일시가 저장된다
+        // PENDING 상태의 문서를 승인하면 APPROVED로 바뀌고 승인자·승인일시가 저장된다
         @DisplayName("Changes status to APPROVED and saves approver info")
         void approve_Success() {
             // given
-            Long approverId = 100L;
+            Long approverId = 99L;
             String opinion = "최종 승인합니다.";
 
             // when
@@ -150,14 +95,41 @@ class KnowledgeArticleTest {
         }
 
         @Test
-        // 이미 승인된 문서를 다시 승인하면 예외가 발생한다 (APPROVAL_004)
-        @DisplayName("Throws exception when status is not TL_APPROVED (APPROVAL_004)")
-        void approve_NotTlApproved_ThrowsException() {
+        // 이미 승인된 문서를 다시 승인하면 예외가 발생한다 (APPROVAL_005)
+        @DisplayName("Throws exception when status is APPROVED (APPROVAL_005)")
+        void approve_AlreadyApproved_ThrowsException() {
             // given
-            article.approve(100L, "최종 승인합니다."); // APPROVED 상태로 전환
+            article.approve(99L, "최종 승인합니다."); // APPROVED 상태로 전환
 
             // when & then
-            assertThrows(IllegalStateException.class, () -> article.approve(100L, "재승인 시도"));
+            assertThrows(IllegalStateException.class, () -> article.approve(99L, "재승인 시도"));
+        }
+
+        @Test
+        // 반려된 문서를 승인하면 예외가 발생한다 (APPROVAL_006)
+        @DisplayName("Throws exception when status is REJECTED (APPROVAL_006)")
+        void approve_WhenRejected_ThrowsException() {
+            // given
+            article.reject("내용이 충분하지 않습니다. 보완 후 재제출해주세요.");
+
+            // when & then
+            assertThrows(IllegalStateException.class, () -> article.approve(99L, "잘못된 승인 시도"));
+        }
+
+        @Test
+        // 삭제된 문서를 승인하면 예외가 발생한다 (ARTICLE_008)
+        @DisplayName("Throws exception when article is deleted (ARTICLE_008)")
+        void approve_WhenDeleted_ThrowsException() {
+            // given — PENDING 상태에서 삭제 불가이므로 DRAFT로 시작해 삭제 후 PENDING으로 상태 변경
+            KnowledgeArticle deletedArticle = KnowledgeArticle.builder()
+                    .authorId(1L)
+                    .articleStatus(ArticleStatus.PENDING)
+                    .isDeleted(true)
+                    .viewCount(0)
+                    .build();
+
+            // when & then
+            assertThrows(IllegalStateException.class, () -> deletedArticle.approve(99L, "승인 시도"));
         }
 
         @Test
@@ -168,7 +140,7 @@ class KnowledgeArticleTest {
             String longOpinion = "a".repeat(501);
 
             // when & then
-            assertThrows(IllegalArgumentException.class, () -> article.approve(100L, longOpinion));
+            assertThrows(IllegalArgumentException.class, () -> article.approve(99L, longOpinion));
         }
     }
 
@@ -224,14 +196,41 @@ class KnowledgeArticleTest {
         }
 
         @Test
-        // 이미 반려된 문서를 다시 반려하면 예외가 발생한다 (APPROVAL_003)
-        @DisplayName("Throws exception when status is not PENDING (APPROVAL_003)")
-        void reject_NotPending_ThrowsException() {
+        // 이미 반려된 문서를 다시 반려하면 예외가 발생한다 (APPROVAL_007)
+        @DisplayName("Throws exception when status is REJECTED (APPROVAL_007)")
+        void reject_AlreadyRejected_ThrowsException() {
             // given
             article.reject("내용이 충분하지 않습니다. 보완 후 재제출해주세요."); // REJECTED 상태로 전환
 
             // when & then
             assertThrows(IllegalStateException.class, () -> article.reject("재반려 시도입니다."));
+        }
+
+        @Test
+        // 승인 완료된 문서를 반려하면 예외가 발생한다 (APPROVAL_008)
+        @DisplayName("Throws exception when status is APPROVED (APPROVAL_008)")
+        void reject_WhenApproved_ThrowsException() {
+            // given
+            article.approve(99L, "최종 승인합니다.");
+
+            // when & then
+            assertThrows(IllegalStateException.class, () -> article.reject("반려 시도입니다. 보완해주세요."));
+        }
+
+        @Test
+        // 삭제된 문서를 반려하면 예외가 발생한다 (ARTICLE_008)
+        @DisplayName("Throws exception when article is deleted (ARTICLE_008)")
+        void reject_WhenDeleted_ThrowsException() {
+            // given
+            KnowledgeArticle deletedArticle = KnowledgeArticle.builder()
+                    .authorId(1L)
+                    .articleStatus(ArticleStatus.PENDING)
+                    .isDeleted(true)
+                    .viewCount(0)
+                    .build();
+
+            // when & then
+            assertThrows(IllegalStateException.class, () -> deletedArticle.reject("반려 시도입니다. 보완해주세요."));
         }
     }
 
@@ -265,8 +264,7 @@ class KnowledgeArticleTest {
         void softDelete_Approved_ThrowsException() {
             // given
             article.submit();
-            article.tlApprove(99L, "1차 승인합니다.");
-            article.approve(100L, "최종 승인합니다.");
+            article.approve(99L, "최종 승인합니다.");
 
             // when & then
             assertThrows(IllegalStateException.class, () -> article.softDelete());

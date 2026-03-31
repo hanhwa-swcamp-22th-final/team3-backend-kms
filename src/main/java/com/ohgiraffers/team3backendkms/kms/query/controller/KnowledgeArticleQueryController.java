@@ -29,7 +29,7 @@ public class KnowledgeArticleQueryController {
         return ResponseEntity.ok(ApiResponse.success(articles));
     }
 
-    /* 지식 상세 조회 */
+    /* 지식 상세 조회 — 조회 후 조회수 증가 (Command는 Controller에서 조율) */
     @GetMapping("/articles/{articleId}")
     public ResponseEntity<ApiResponse<ArticleDetailDto>> getArticleDetail(
             @PathVariable Long articleId

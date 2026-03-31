@@ -1,9 +1,11 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.controller.worker;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDeleteRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +20,7 @@ public class WorkerArticleController {
 
     /* 지식 문서 등록 (PENDING) */
     @PostMapping("/articles")
-    public ResponseEntity<ApiResponse<Long>> register(@RequestBody ArticleRegisterRequest request) {
+    public ResponseEntity<ApiResponse<Long>> register(@Valid @RequestBody ArticleRegisterRequest request) {
         Long articleId = knowledgeArticleService.register(
                 request.getAuthorId(),
                 request.getEquipmentId(),
@@ -31,7 +33,7 @@ public class WorkerArticleController {
 
     /* 지식 문서 임시저장 (DRAFT) */
     @PostMapping("/articles/drafts")
-    public ResponseEntity<ApiResponse<Long>> draft(@RequestBody ArticleDraftRequest request) {
+    public ResponseEntity<ApiResponse<Long>> draft(@Valid @RequestBody ArticleDraftRequest request) {
         Long articleId = knowledgeArticleService.draft(
                 request.getAuthorId(),
                 request.getEquipmentId(),
@@ -46,9 +48,9 @@ public class WorkerArticleController {
     @DeleteMapping("/articles/{articleId}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long articleId,
-            @RequestParam Long requesterId
+            @Valid @RequestBody ArticleDeleteRequest request
     ) {
-        knowledgeArticleService.delete(articleId, requesterId);
+        knowledgeArticleService.delete(articleId, request.getRequesterId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

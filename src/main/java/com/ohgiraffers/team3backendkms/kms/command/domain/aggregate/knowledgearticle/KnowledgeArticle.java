@@ -86,26 +86,22 @@ public class KnowledgeArticle {
         this.articleStatus = ArticleStatus.PENDING;
     }
 
-    /* PENDING → TL_APPROVED (TL 1차 승인) */
-    public void tlApprove(Long approverId, String opinion) {
-        if (opinion != null && opinion.length() > 500) {
-            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_002.getMessage());
+    /* PENDING → APPROVED (TL 또는 DL 승인) */
+    public void approve(Long approverId, String opinion) {
+        if (Boolean.TRUE.equals(this.isDeleted)) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
+        }
+        if (this.articleStatus == ArticleStatus.APPROVED) {
+            throw new IllegalStateException(ArticleErrorCode.APPROVAL_005.getMessage());
+        }
+        if (this.articleStatus == ArticleStatus.REJECTED) {
+            throw new IllegalStateException(ArticleErrorCode.APPROVAL_006.getMessage());
         }
         if (this.articleStatus != ArticleStatus.PENDING) {
             throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
         }
-        this.articleStatus = ArticleStatus.TL_APPROVED;
-        this.approvedBy = approverId;
-        this.articleApprovalOpinion = opinion;
-    }
-
-    /* TL_APPROVED → APPROVED (DL 최종 승인) */
-    public void approve(Long approverId, String opinion) {
         if (opinion != null && opinion.length() > 500) {
             throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_002.getMessage());
-        }
-        if (this.articleStatus != ArticleStatus.TL_APPROVED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_004.getMessage());
         }
         this.articleStatus = ArticleStatus.APPROVED;
         this.approvedBy = approverId;
@@ -113,13 +109,22 @@ public class KnowledgeArticle {
         this.approvedAt = LocalDateTime.now();
     }
 
-    /* PENDING 또는 TL_APPROVED → REJECTED (TL/DL 반려) */
+    /* PENDING → REJECTED (TL 또는 DL 반려) */
     public void reject(String reason) {
+        if (Boolean.TRUE.equals(this.isDeleted)) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
+        }
+        if (this.articleStatus == ArticleStatus.REJECTED) {
+            throw new IllegalStateException(ArticleErrorCode.APPROVAL_007.getMessage());
+        }
+        if (this.articleStatus == ArticleStatus.APPROVED) {
+            throw new IllegalStateException(ArticleErrorCode.APPROVAL_008.getMessage());
+        }
+        if (this.articleStatus != ArticleStatus.PENDING) {
+            throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
+        }
         if (reason == null || reason.length() < 10 || reason.length() > 500) {
             throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_001.getMessage());
-        }
-        if (this.articleStatus != ArticleStatus.PENDING && this.articleStatus != ArticleStatus.TL_APPROVED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
         }
         this.articleStatus = ArticleStatus.REJECTED;
         this.articleRejectionReason = reason;
@@ -134,6 +139,9 @@ public class KnowledgeArticle {
     public void softDelete() {
         if (Boolean.TRUE.equals(this.isDeleted)) {
             throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
+        }
+        if (this.articleStatus == ArticleStatus.PENDING) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_010.getMessage());
         }
         if (this.articleStatus == ArticleStatus.APPROVED) {
             throw new IllegalStateException(ArticleErrorCode.ARTICLE_009.getMessage());

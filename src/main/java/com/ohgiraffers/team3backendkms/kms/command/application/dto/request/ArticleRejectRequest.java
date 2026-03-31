@@ -7,5 +7,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ArticleRejectRequest {
 
-    private String reviewComment;   // 필수 (10~500자), Entity 비즈니스 로직에서 검증
+    private String reviewComment;   // 필수 (10~500자), null·길이 검증은 Entity reject()에서 처리
 }

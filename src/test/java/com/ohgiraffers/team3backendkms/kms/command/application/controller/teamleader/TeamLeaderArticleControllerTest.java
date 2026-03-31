@@ -41,20 +41,20 @@ class TeamLeaderArticleControllerTest {
     private KnowledgeArticleService knowledgeArticleService;
 
     @Nested
-    @DisplayName("POST /api/kms/approval/{articleId}/tl-approve")
-    class TlApprove {
+    @DisplayName("POST /api/kms/tl/approval/{articleId}/approve")
+    class Approve {
 
         @Test
         @DisplayName("Returns 200 OK on valid request")
-        void tlApprove_success() throws Exception {
+        void approve_success() throws Exception {
             Map<String, Object> body = Map.of(
                     "approverId", 20,
                     "reviewComment", "1차 검토 완료입니다."
             );
             willDoNothing().given(knowledgeArticleService)
-                    .tlApprove(anyLong(), anyLong(), anyString());
+                    .approve(anyLong(), anyLong(), anyString());
 
-            mockMvc.perform(post("/api/kms/approval/1/tl-approve")
+            mockMvc.perform(post("/api/kms/tl/approval/1/approve")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
                     .andExpect(status().isOk())
@@ -63,16 +63,16 @@ class TeamLeaderArticleControllerTest {
 
         @Test
         @DisplayName("Returns 400 when status is not PENDING")
-        void tlApprove_whenNotPending_thenBadRequest() throws Exception {
+        void approve_whenNotPending_thenBadRequest() throws Exception {
             Map<String, Object> body = Map.of(
                     "approverId", 20,
                     "reviewComment", "1차 검토 완료입니다."
             );
             willThrow(new IllegalStateException("[APPROVAL_003] PENDING 상태에서만 처리할 수 있습니다."))
                     .given(knowledgeArticleService)
-                    .tlApprove(anyLong(), anyLong(), anyString());
+                    .approve(anyLong(), anyLong(), anyString());
 
-            mockMvc.perform(post("/api/kms/approval/1/tl-approve")
+            mockMvc.perform(post("/api/kms/tl/approval/1/approve")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
                     .andExpect(status().isBadRequest())
@@ -81,17 +81,17 @@ class TeamLeaderArticleControllerTest {
     }
 
     @Nested
-    @DisplayName("POST /api/kms/approval/{articleId}/tl-reject")
-    class TlReject {
+    @DisplayName("POST /api/kms/tl/approval/{articleId}/reject")
+    class Reject {
 
         @Test
         @DisplayName("Returns 200 OK on valid request")
-        void tlReject_success() throws Exception {
+        void reject_success() throws Exception {
             Map<String, Object> body = Map.of("reviewComment", "반려 사유입니다. 내용을 보완해주세요.");
             willDoNothing().given(knowledgeArticleService)
                     .reject(anyLong(), anyString());
 
-            mockMvc.perform(post("/api/kms/approval/1/tl-reject")
+            mockMvc.perform(post("/api/kms/tl/approval/1/reject")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
                     .andExpect(status().isOk())
@@ -100,13 +100,13 @@ class TeamLeaderArticleControllerTest {
 
         @Test
         @DisplayName("Returns 400 when rejection reason is empty")
-        void tlReject_whenNoReason_thenBadRequest() throws Exception {
+        void reject_whenNoReason_thenBadRequest() throws Exception {
             Map<String, Object> body = Map.of("reviewComment", "");
             willThrow(new IllegalArgumentException("[APPROVAL_001] 반려 사유는 10자 이상 500자 이하여야 합니다."))
                     .given(knowledgeArticleService)
                     .reject(anyLong(), anyString());
 
-            mockMvc.perform(post("/api/kms/approval/1/tl-reject")
+            mockMvc.perform(post("/api/kms/tl/approval/1/reject")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
                     .andExpect(status().isBadRequest())

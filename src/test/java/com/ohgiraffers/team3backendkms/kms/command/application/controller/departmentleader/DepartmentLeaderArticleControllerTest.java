@@ -24,12 +24,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(
-        controllers = DeptLeaderArticleController.class,
+        controllers = DepartmentLeaderArticleController.class,
         excludeAutoConfiguration = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class}
 )
 @Import(GlobalExceptionHandler.class)
-@DisplayName("DeptLeaderArticleController")
-class DeptLeaderArticleControllerTest {
+@DisplayName("DepartmentLeaderArticleController")
+class DepartmentLeaderArticleControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -41,7 +41,7 @@ class DeptLeaderArticleControllerTest {
     private KnowledgeArticleService knowledgeArticleService;
 
     @Nested
-    @DisplayName("POST /api/kms/approval/{articleId}/approve")
+    @DisplayName("POST /api/kms/dl/approval/{articleId}/approve")
     class Approve {
 
         @Test
@@ -54,7 +54,7 @@ class DeptLeaderArticleControllerTest {
             willDoNothing().given(knowledgeArticleService)
                     .approve(anyLong(), anyLong(), anyString());
 
-            mockMvc.perform(post("/api/kms/approval/1/approve")
+            mockMvc.perform(post("/api/kms/dl/approval/1/approve")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
                     .andExpect(status().isOk())
@@ -62,17 +62,17 @@ class DeptLeaderArticleControllerTest {
         }
 
         @Test
-        @DisplayName("Returns 400 when status is not TL_APPROVED")
-        void approve_whenNotTlApproved_thenBadRequest() throws Exception {
+        @DisplayName("Returns 400 when status is not PENDING")
+        void approve_whenNotPending_thenBadRequest() throws Exception {
             Map<String, Object> body = Map.of(
                     "approverId", 20,
                     "reviewComment", "최종 승인합니다."
             );
-            willThrow(new IllegalStateException("[APPROVAL_004] TL_APPROVED 상태에서만 처리할 수 있습니다."))
+            willThrow(new IllegalStateException("[APPROVAL_003] PENDING 상태에서만 처리할 수 있습니다."))
                     .given(knowledgeArticleService)
                     .approve(anyLong(), anyLong(), anyString());
 
-            mockMvc.perform(post("/api/kms/approval/1/approve")
+            mockMvc.perform(post("/api/kms/dl/approval/1/approve")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
                     .andExpect(status().isBadRequest())
@@ -81,7 +81,7 @@ class DeptLeaderArticleControllerTest {
     }
 
     @Nested
-    @DisplayName("POST /api/kms/approval/{articleId}/reject")
+    @DisplayName("POST /api/kms/dl/approval/{articleId}/reject")
     class Reject {
 
         @Test
@@ -91,7 +91,7 @@ class DeptLeaderArticleControllerTest {
             willDoNothing().given(knowledgeArticleService)
                     .reject(anyLong(), anyString());
 
-            mockMvc.perform(post("/api/kms/approval/1/reject")
+            mockMvc.perform(post("/api/kms/dl/approval/1/reject")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
                     .andExpect(status().isOk())
@@ -106,7 +106,7 @@ class DeptLeaderArticleControllerTest {
                     .given(knowledgeArticleService)
                     .reject(anyLong(), anyString());
 
-            mockMvc.perform(post("/api/kms/approval/1/reject")
+            mockMvc.perform(post("/api/kms/dl/approval/1/reject")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
                     .andExpect(status().isBadRequest())
