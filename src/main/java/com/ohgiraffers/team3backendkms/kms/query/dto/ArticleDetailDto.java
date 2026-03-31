@@ -2,15 +2,15 @@ package com.ohgiraffers.team3backendkms.kms.query.dto;
 
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class ArticleDetailDto {
 
     private Long articleId;

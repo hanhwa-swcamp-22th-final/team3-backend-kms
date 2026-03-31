@@ -53,11 +53,15 @@ class KnowledgeArticleQueryControllerTest {
         @DisplayName("Returns 200 OK with list JSON")
         void getArticles_success() throws Exception {
             // given
-            ArticleReadDto dto = new ArticleReadDto(
-                    1L, 10L, "홍길동", "테스트 제목입니다",
-                    ArticleCategory.TROUBLESHOOTING, ArticleStatus.APPROVED,
-                    3, LocalDateTime.of(2026, 3, 1, 12, 0)
-            );
+            ArticleReadDto dto = new ArticleReadDto();
+            dto.setArticleId(1L);
+            dto.setAuthorId(10L);
+            dto.setAuthorName("홍길동");
+            dto.setArticleTitle("테스트 제목입니다");
+            dto.setArticleCategory(ArticleCategory.TROUBLESHOOTING);
+            dto.setArticleStatus(ArticleStatus.APPROVED);
+            dto.setViewCount(3);
+            dto.setCreatedAt(LocalDateTime.of(2026, 3, 1, 12, 0));
             given(knowledgeArticleQueryService.getArticles(any(ArticleQueryRequest.class)))
                     .willReturn(List.of(dto));
 
@@ -100,12 +104,18 @@ class KnowledgeArticleQueryControllerTest {
         @DisplayName("Returns 200 OK with detail JSON")
         void getArticleDetail_success() throws Exception {
             // given
-            ArticleDetailDto dto = new ArticleDetailDto(
-                    1L, 10L, "홍길동", "테스트 제목입니다",
-                    ArticleCategory.TROUBLESHOOTING, "본문 내용입니다.",
-                    ArticleStatus.APPROVED, "승인 의견", null,
-                    5, LocalDateTime.of(2026, 3, 1, 12, 0), LocalDateTime.of(2026, 3, 2, 9, 0)
-            );
+            ArticleDetailDto dto = new ArticleDetailDto();
+            dto.setArticleId(1L);
+            dto.setAuthorId(10L);
+            dto.setAuthorName("홍길동");
+            dto.setArticleTitle("테스트 제목입니다");
+            dto.setArticleCategory(ArticleCategory.TROUBLESHOOTING);
+            dto.setArticleContent("본문 내용입니다.");
+            dto.setArticleStatus(ArticleStatus.APPROVED);
+            dto.setArticleApprovalOpinion("승인 의견");
+            dto.setViewCount(5);
+            dto.setCreatedAt(LocalDateTime.of(2026, 3, 1, 12, 0));
+            dto.setUpdatedAt(LocalDateTime.of(2026, 3, 2, 9, 0));
             given(knowledgeArticleQueryService.getArticleDetail(1L)).willReturn(dto);
 
             // when & then

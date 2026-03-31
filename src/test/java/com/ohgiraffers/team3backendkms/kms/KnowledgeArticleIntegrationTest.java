@@ -2,10 +2,6 @@ package com.ohgiraffers.team3backendkms.kms;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.config.security.CustomUserDetails;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleApproveRequest;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftRequest;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRejectRequest;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.KnowledgeArticle;
@@ -137,20 +133,24 @@ class KnowledgeArticleIntegrationTest {
     class Register {
 
         @Test
-        // 정상 요청 시 200 OK 응답과 함께 DB에 PENDING 상태로 저장된다
-        @DisplayName("Returns 200 OK and saves article with PENDING status in DB")
+        // 정상 요청 시 201 Created 응답과 함께 DB에 PENDING 상태로 저장된다
+        @DisplayName("Returns 201 Created and saves article with PENDING status in DB")
         void register_savedAsPending() throws Exception {
             // given
-            ArticleRegisterRequest request = new ArticleRegisterRequest(
-                    validAuthorId, TITLE, ArticleCategory.TROUBLESHOOTING, TEST_EQUIPMENT_ID, CONTENT
-            );
+            String body = objectMapper.writeValueAsString(java.util.Map.of(
+                    "authorId", validAuthorId,
+                    "title", TITLE,
+                    "category", "TROUBLESHOOTING",
+                    "equipmentId", TEST_EQUIPMENT_ID,
+                    "content", CONTENT
+            ));
 
             // when
             String response = mockMvc.perform(post("/api/kms/articles")
                             .with(user(workerUser))
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isOk())
+                            .content(body))
+                    .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.success").value(true))
                     .andReturn().getResponse().getContentAsString();
 
@@ -173,20 +173,24 @@ class KnowledgeArticleIntegrationTest {
     class Draft {
 
         @Test
-        // 정상 요청 시 200 OK 응답과 함께 DB에 DRAFT 상태로 저장된다
-        @DisplayName("Returns 200 OK and saves article with DRAFT status in DB")
+        // 정상 요청 시 201 Created 응답과 함께 DB에 DRAFT 상태로 저장된다
+        @DisplayName("Returns 201 Created and saves article with DRAFT status in DB")
         void draft_savedAsDraft() throws Exception {
             // given
-            ArticleDraftRequest request = new ArticleDraftRequest(
-                    validAuthorId, TITLE, ArticleCategory.PROCESS_IMPROVEMENT, TEST_EQUIPMENT_ID, CONTENT
-            );
+            String body = objectMapper.writeValueAsString(java.util.Map.of(
+                    "authorId", validAuthorId,
+                    "title", TITLE,
+                    "category", "PROCESS_IMPROVEMENT",
+                    "equipmentId", TEST_EQUIPMENT_ID,
+                    "content", CONTENT
+            ));
 
             // when
             String response = mockMvc.perform(post("/api/kms/articles/drafts")
                             .with(user(workerUser))
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isOk())
+                            .content(body))
+                    .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.success").value(true))
                     .andReturn().getResponse().getContentAsString();
 
@@ -220,7 +224,7 @@ class KnowledgeArticleIntegrationTest {
                             .with(user(tlUser))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(
-                                    new ArticleApproveRequest(validAuthorId, "1차 검토 완료입니다."))))
+                                    java.util.Map.of("approverId", validAuthorId, "reviewComment", "1차 검토 완료입니다."))))
                     .andExpect(status().isOk());
 
             // DL 최종 승인
@@ -228,7 +232,7 @@ class KnowledgeArticleIntegrationTest {
                             .with(user(dlUser))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(
-                                    new ArticleApproveRequest(validAuthorId, "최종 승인합니다."))))
+                                    java.util.Map.of("approverId", validAuthorId, "reviewComment", "최종 승인합니다."))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true));
 
@@ -253,13 +257,13 @@ class KnowledgeArticleIntegrationTest {
             // given
             KnowledgeArticle saved = savePendingArticle();
             String reason = "내용이 충분하지 않습니다. 보완 후 재제출해주세요.";
-            ArticleRejectRequest request = new ArticleRejectRequest(reason);
 
             // when
             mockMvc.perform(post("/api/kms/approval/" + saved.getArticleId() + "/tl-reject")
                             .with(user(tlUser))
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+                            .content(objectMapper.writeValueAsString(
+                                    java.util.Map.of("reviewComment", reason))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true));
 

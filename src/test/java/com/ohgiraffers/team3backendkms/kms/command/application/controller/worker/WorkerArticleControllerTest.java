@@ -47,7 +47,7 @@ class WorkerArticleControllerTest {
     class Register {
 
         @Test
-        @DisplayName("Returns 200 OK on valid request")
+        @DisplayName("Returns 201 Created on valid request")
         void register_success() throws Exception {
             Map<String, Object> body = Map.of(
                     "authorId", 10,
@@ -62,7 +62,7 @@ class WorkerArticleControllerTest {
             mockMvc.perform(post("/api/kms/articles")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
-                    .andExpect(status().isOk())
+                    .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data").value(1));
         }
@@ -114,7 +114,7 @@ class WorkerArticleControllerTest {
     class Draft {
 
         @Test
-        @DisplayName("Returns 200 OK on valid request")
+        @DisplayName("Returns 201 Created on valid request")
         void draft_success() throws Exception {
             Map<String, Object> body = Map.of(
                     "authorId", 10,
@@ -129,7 +129,7 @@ class WorkerArticleControllerTest {
             mockMvc.perform(post("/api/kms/articles/drafts")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(body)))
-                    .andExpect(status().isOk())
+                    .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data").value(2));
         }

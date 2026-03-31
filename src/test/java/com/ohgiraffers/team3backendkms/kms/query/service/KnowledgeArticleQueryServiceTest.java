@@ -42,11 +42,15 @@ class KnowledgeArticleQueryServiceTest {
         void getArticles_success() {
             // given
             ArticleQueryRequest request = new ArticleQueryRequest();
-            ArticleReadDto dto = new ArticleReadDto(
-                    1L, 10L, "홍길동", "테스트 제목입니다",
-                    ArticleCategory.TROUBLESHOOTING, ArticleStatus.APPROVED,
-                    0, LocalDateTime.now()
-            );
+            ArticleReadDto dto = new ArticleReadDto();
+            dto.setArticleId(1L);
+            dto.setAuthorId(10L);
+            dto.setAuthorName("홍길동");
+            dto.setArticleTitle("테스트 제목입니다");
+            dto.setArticleCategory(ArticleCategory.TROUBLESHOOTING);
+            dto.setArticleStatus(ArticleStatus.APPROVED);
+            dto.setViewCount(0);
+            dto.setCreatedAt(LocalDateTime.now());
             given(knowledgeArticleMapper.findArticles(request)).willReturn(List.of(dto));
 
             // when
@@ -86,12 +90,18 @@ class KnowledgeArticleQueryServiceTest {
         @DisplayName("Returns ArticleDetailDto")
         void getArticleDetail_success() {
             // given
-            ArticleDetailDto dto = new ArticleDetailDto(
-                    1L, 10L, "홍길동", "테스트 제목입니다",
-                    ArticleCategory.TROUBLESHOOTING, "본문 내용이 들어갑니다.",
-                    ArticleStatus.APPROVED, "승인 의견", null,
-                    5, LocalDateTime.now(), LocalDateTime.now()
-            );
+            ArticleDetailDto dto = new ArticleDetailDto();
+            dto.setArticleId(1L);
+            dto.setAuthorId(10L);
+            dto.setAuthorName("홍길동");
+            dto.setArticleTitle("테스트 제목입니다");
+            dto.setArticleCategory(ArticleCategory.TROUBLESHOOTING);
+            dto.setArticleContent("본문 내용이 들어갑니다.");
+            dto.setArticleStatus(ArticleStatus.APPROVED);
+            dto.setArticleApprovalOpinion("승인 의견");
+            dto.setViewCount(5);
+            dto.setCreatedAt(LocalDateTime.now());
+            dto.setUpdatedAt(LocalDateTime.now());
             given(knowledgeArticleMapper.findArticleById(1L)).willReturn(Optional.of(dto));
 
             // when

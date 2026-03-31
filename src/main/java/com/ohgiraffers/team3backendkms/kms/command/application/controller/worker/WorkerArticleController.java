@@ -5,6 +5,7 @@ import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.Artic
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +28,7 @@ public class WorkerArticleController {
                 request.getCategory(),
                 request.getContent()
         );
-        return ResponseEntity.ok(ApiResponse.success(articleId));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(articleId));
     }
 
     /* 지식 문서 임시저장 (DRAFT) */
@@ -41,7 +42,7 @@ public class WorkerArticleController {
                 request.getCategory(),
                 request.getContent()
         );
-        return ResponseEntity.ok(ApiResponse.success(articleId));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(articleId));
     }
 
     /* 지식 문서 삭제 (soft delete) */
