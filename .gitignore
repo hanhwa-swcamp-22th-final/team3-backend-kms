@@ -46,3 +46,10 @@ src/main/resources/application-secret.yml
 ### Local-only docs ###
 kmsSummary/
 CLAUDE.md
+DB_TEST_REPORT.md
+TEST_EXECUTION_REPORT.md
+VALIDATION_REPORT.md
+
+### Test utility files ###
+src/test/java/com/ohgiraffers/team3backendkms/config/DatabaseTableInspector.java
+src/test/java/com/ohgiraffers/team3backendkms/config/RealDataInserter.java

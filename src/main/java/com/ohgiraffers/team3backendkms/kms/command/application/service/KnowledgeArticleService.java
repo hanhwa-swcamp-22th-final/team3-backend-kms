@@ -37,7 +37,7 @@ public class KnowledgeArticleService {
         ).getArticleId();
     }
 
-    /* 지식 문서 수정 (DRAFT → PENDING) */
+    /* 지식 문서 수정 (Worker) */
     public void update(Long articleId, String title, ArticleCategory category, String content, Long requesterId) {
         KnowledgeArticle article = findArticleById(articleId);
 
@@ -49,13 +49,20 @@ public class KnowledgeArticleService {
         article.update(title, category, content);
     }
 
+    /* 지식 문서 수정 (Admin) — 작성자 체크 없이 수정 가능 */
+    public void adminUpdate(Long articleId, String title, ArticleCategory category, String content) {
+        KnowledgeArticle article = findArticleById(articleId);
+        validateInput(title, category, content);
+        article.update(title, category, content);
+    }
+
     /* 조회수 증가 */
     public void incrementViewCount(Long articleId) {
         KnowledgeArticle article = findArticleById(articleId);
         article.incrementViewCount();
     }
 
-    /* 승인 (PENDING → APPROVED) — TL 또는 DL */
+    /* 승인 (PENDING → APPROVED) */
     public void approve(Long articleId, Long approverId, String opinion) {
         KnowledgeArticle article = findArticleById(articleId);
         article.approve(approverId, opinion);
@@ -67,7 +74,7 @@ public class KnowledgeArticleService {
         article.reject(reason);
     }
 
-    /* 지식 문서 삭제 (Worker) — DRAFT만 삭제 가능 */
+    /* 지식 문서 삭제 (Worker) — DRAFT 또는 본인 확인 후 삭제 */
     public void delete(Long articleId, Long requesterId) {
         KnowledgeArticle article = findArticleById(articleId);
 
@@ -85,7 +92,7 @@ public class KnowledgeArticleService {
     }
 
     // =========================================================
-    // private 공통 메서드
+    // private 헬퍼 메서드
     // =========================================================
 
     private KnowledgeArticle buildArticle(Long authorId, Long equipmentId,
@@ -95,7 +102,7 @@ public class KnowledgeArticleService {
                 .articleId(idGenerator.generate())
                 .authorId(authorId)
                 .equipmentId(equipmentId)
-                .fileGroupId(0L) // TODO: 파일 그룹 연동 후 실제 fileGroupId로 교체
+                .fileGroupId(0L)
                 .articleTitle(title)
                 .articleCategory(category)
                 .articleContent(content)

@@ -14,13 +14,13 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/kms")
+@RequestMapping("/api/kms/articles")
 public class WorkerArticleController {
 
     private final KnowledgeArticleService knowledgeArticleService;
 
     /* 지식 문서 등록 (PENDING) */
-    @PostMapping("/articles")
+    @PostMapping
     public ResponseEntity<ApiResponse<Long>> register(@Valid @RequestBody ArticleRegisterRequest request) {
         Long articleId = knowledgeArticleService.register(
                 request.getAuthorId(),
@@ -33,7 +33,7 @@ public class WorkerArticleController {
     }
 
     /* 지식 문서 임시저장 (DRAFT) */
-    @PostMapping("/articles/drafts")
+    @PostMapping("/drafts")
     public ResponseEntity<ApiResponse<Long>> draft(@Valid @RequestBody ArticleDraftRequest request) {
         Long articleId = knowledgeArticleService.draft(
                 request.getAuthorId(),
@@ -45,8 +45,8 @@ public class WorkerArticleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(articleId));
     }
 
-    /* 지식 문서 수정 (DRAFT → PENDING) */
-    @PutMapping("/articles/{articleId}")
+    /* 지식 문서 수정 (Worker) */
+    @PutMapping("/{articleId}")
     public ResponseEntity<ApiResponse<Void>> update(
             @PathVariable Long articleId,
             @Valid @RequestBody ArticleUpdateRequest request
@@ -61,8 +61,8 @@ public class WorkerArticleController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    /* 지식 문서 삭제 (soft delete) */
-    @DeleteMapping("/articles/{articleId}")
+    /* 지식 문서 삭제 (Worker) */
+    @DeleteMapping("/{articleId}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long articleId,
             @Valid @RequestBody ArticleDeleteRequest request

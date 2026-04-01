@@ -1,29 +1,29 @@
 ### 지식 문서 등록 (PENDING 상태로 제출)
 POST http://localhost:8080/api/kms/articles
 Content-Type: application/json
-Authorization: Bearer {{workerToken}}
+#Authorization: Bearer {{workerToken}}
 
 {
-  "authorId": 1774590584056408,
+  "authorId": 1774937276588944,
   "title": "Spring Boot 시작 가이드 - 처음 배우는 분을 위한 완전 입문서",
   "category": "TROUBLESHOOTING",
-  "equipmentId": null,
+  "equipmentId": 1774852819326802,
   "content": "Spring Boot를 처음 시작하는 방법을 단계별로 안내합니다. 프로젝트 생성부터 배포까지 전 과정을 설명합니다."
 }
 
 ### 임시저장 (DRAFT) — 내용 길이 제한 없음
 POST http://localhost:8080/api/kms/articles/drafts
 Content-Type: application/json
-Authorization: Bearer {{workerToken}}
+#Authorization: Bearer {{workerToken}}
 
 {
-  "authorId": 1774590584056408,
+  "authorId": 1774937276588944,
   "title": "작성 중인 문서",
   "category": "ETC",
-  "equipmentId": null,
+  "equipmentId": 1774852819326802,
   "content": "아직 작성 중입니다."
 }
 
 ### 문서 삭제
 DELETE http://localhost:8080/api/kms/articles/{{articleId}}?requesterId={{authorId}}
-Authorization: Bearer {{workerToken}}
+#Authorization: Bearer {{workerToken}}

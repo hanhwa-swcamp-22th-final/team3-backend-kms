@@ -8,8 +8,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class
-ArticleRegisterRequest {
+public class ArticleRegisterRequest {
 
     @NotNull(message = "작성자 ID는 필수입니다")
     private Long authorId;          // 임시: JWT 연결 시 제거 예정

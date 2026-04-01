@@ -11,13 +11,12 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/kms")
+@RequestMapping("/api/kms/tl/approval")
 public class TeamLeaderArticleController {
 
     private final KnowledgeArticleService knowledgeArticleService;
 
-    /* TL 승인 (PENDING → APPROVED) */
-    @PostMapping("/tl/approval/{articleId}/approve")
+    @PostMapping("/{articleId}/approve")
     public ResponseEntity<ApiResponse<Void>> approve(
             @PathVariable Long articleId,
             @Valid @RequestBody ArticleApproveRequest request
@@ -26,8 +25,7 @@ public class TeamLeaderArticleController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    /* TL 반려 (PENDING → REJECTED) */
-    @PostMapping("/tl/approval/{articleId}/reject")
+    @PostMapping("/{articleId}/reject")
     public ResponseEntity<ApiResponse<Void>> reject(
             @PathVariable Long articleId,
             @Valid @RequestBody ArticleRejectRequest request
