@@ -3,6 +3,7 @@ package com.ohgiraffers.team3backendkms.kms.query.controller;
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleQueryService;
@@ -37,5 +38,21 @@ public class KnowledgeArticleQueryController {
         ArticleDetailDto detail = knowledgeArticleQueryService.getArticleDetail(articleId);
         knowledgeArticleService.incrementViewCount(articleId);
         return ResponseEntity.ok(ApiResponse.success(detail));
+    }
+
+    /* 월간 기여자 랭킹 조회 */
+    @GetMapping("/articles/contributors")
+    public ResponseEntity<ApiResponse<List<ContributorRankDto>>> getTopContributors(
+            @RequestParam(value = "limit", defaultValue = "3") Integer limit
+    ) {
+        List<ContributorRankDto> contributors = knowledgeArticleQueryService.getTopContributors(limit);
+        return ResponseEntity.ok(ApiResponse.success(contributors));
+    }
+
+    /* AI 지식 추천 조회 (APPROVED 문서 중 조회수 높은 순 TOP 5) */
+    @GetMapping("/articles/recommendations")
+    public ResponseEntity<ApiResponse<List<ArticleReadDto>>> getRecommendations() {
+        List<ArticleReadDto> recommendations = knowledgeArticleQueryService.getRecommendations();
+        return ResponseEntity.ok(ApiResponse.success(recommendations));
     }
 }

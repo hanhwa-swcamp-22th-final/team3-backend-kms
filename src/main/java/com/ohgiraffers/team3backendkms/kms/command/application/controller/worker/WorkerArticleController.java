@@ -4,6 +4,7 @@ import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDeleteRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleUpdateRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,22 @@ public class WorkerArticleController {
                 request.getContent()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(articleId));
+    }
+
+    /* 지식 문서 수정 (DRAFT → PENDING) */
+    @PutMapping("/articles/{articleId}")
+    public ResponseEntity<ApiResponse<Void>> update(
+            @PathVariable Long articleId,
+            @Valid @RequestBody ArticleUpdateRequest request
+    ) {
+        knowledgeArticleService.update(
+                articleId,
+                request.getTitle(),
+                request.getCategory(),
+                request.getContent(),
+                request.getAuthorId()
+        );
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     /* 지식 문서 삭제 (soft delete) */

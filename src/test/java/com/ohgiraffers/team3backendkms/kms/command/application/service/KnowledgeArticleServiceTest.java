@@ -332,4 +332,145 @@ class KnowledgeArticleServiceTest {
             );
         }
     }
+
+    // =========================================================
+    // update()
+    // =========================================================
+
+    @Nested
+    // 지식 문서 수정 (update) — DRAFT 상태에서만 가능, 수정 후 PENDING 전환
+    @DisplayName("update()")
+    class UpdateTest {
+
+        @Test
+        // DRAFT 문서를 수정하면 PENDING 상태로 바뀐다
+        @DisplayName("Updates article and changes status to PENDING when DRAFT")
+        void update_Success() {
+            // given
+            String newTitle = "수정된 지식 문서 제목입니다";
+            ArticleCategory newCategory = ArticleCategory.PROCESS_IMPROVEMENT;
+            String newContent = "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 추가로 작성한 내용입니다.";
+
+            given(knowledgeArticleRepository.findById(2L))
+                    .willReturn(Optional.of(draftArticle));
+
+            // when
+            knowledgeArticleService.update(2L, newTitle, newCategory, newContent, 1L);
+
+            // then
+            assertEquals(newTitle, draftArticle.getArticleTitle());
+            assertEquals(newCategory, draftArticle.getArticleCategory());
+            assertEquals(newContent, draftArticle.getArticleContent());
+            assertEquals(ArticleStatus.PENDING, draftArticle.getArticleStatus());
+        }
+
+        @Test
+        // 타인의 문서를 수정하면 예외가 발생한다 (ARTICLE_007)
+        @DisplayName("Throws exception when requester is not the author (ARTICLE_007)")
+        void update_NotAuthor_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(2L))
+                    .willReturn(Optional.of(draftArticle));
+
+            // when & then
+            assertThrows(IllegalStateException.class, () ->
+                    knowledgeArticleService.update(2L, "수정된 제목", ArticleCategory.TROUBLESHOOTING,
+                            "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.", 999L)
+            );
+        }
+
+        @Test
+        // 제목이 5자 미만이면 예외가 발생한다 (ARTICLE_001)
+        @DisplayName("Throws exception when title is less than 5 characters (ARTICLE_001)")
+        void update_TitleTooShort_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(2L))
+                    .willReturn(Optional.of(draftArticle));
+
+            // when & then
+            assertThrows(IllegalArgumentException.class, () ->
+                    knowledgeArticleService.update(2L, "짧음", ArticleCategory.TROUBLESHOOTING,
+                            "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.", 1L)
+            );
+        }
+
+        @Test
+        // 본문이 50자 미만이면 예외가 발생한다 (ARTICLE_002)
+        @DisplayName("Throws exception when content is less than 50 characters (ARTICLE_002)")
+        void update_ContentTooShort_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(2L))
+                    .willReturn(Optional.of(draftArticle));
+
+            // when & then
+            assertThrows(IllegalArgumentException.class, () ->
+                    knowledgeArticleService.update(2L, "수정된 제목입니다", ArticleCategory.TROUBLESHOOTING,
+                            "짧은 본문", 1L)
+            );
+        }
+    }
+
+    // =========================================================
+    // adminDelete()
+    // =========================================================
+
+    @Nested
+    // 관리자 삭제 (adminDelete) — Admin만 사용, 모든 상태 삭제 가능
+    @DisplayName("adminDelete()")
+    class AdminDeleteTest {
+
+        @Test
+        // 문서를 관리자가 삭제 사유와 함께 삭제하면 isDeleted=true, deletionReason이 저장된다
+        @DisplayName("Sets isDeleted to true and saves deletion reason")
+        void adminDelete_Success() {
+            // given
+            KnowledgeArticle approvedArticle = KnowledgeArticle.builder()
+                    .articleId(5L)
+                    .authorId(1L)
+                    .articleStatus(ArticleStatus.APPROVED)
+                    .isDeleted(false)
+                    .viewCount(0)
+                    .build();
+            String deletionReason = "지식 문서 정책 위반으로 인한 삭제입니다. 해당 문서는 더 이상 참고할 수 없습니다.";
+
+            given(knowledgeArticleRepository.findById(5L))
+                    .willReturn(Optional.of(approvedArticle));
+
+            // when
+            knowledgeArticleService.adminDelete(5L, deletionReason);
+
+            // then
+            assertTrue(approvedArticle.getIsDeleted());
+            assertEquals(deletionReason, approvedArticle.getArticleDeletionReason());
+        }
+
+        @Test
+        // 삭제 사유가 10자 미만이면 예외가 발생한다 (ARTICLE_012)
+        @DisplayName("Throws exception when reason is less than 10 characters (ARTICLE_012)")
+        void adminDelete_ReasonTooShort_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            // when & then
+            assertThrows(IllegalArgumentException.class, () ->
+                    knowledgeArticleService.adminDelete(1L, "짧음")
+            );
+        }
+
+        @Test
+        // 삭제 사유가 500자를 넘으면 예외가 발생한다 (ARTICLE_012)
+        @DisplayName("Throws exception when reason exceeds 500 characters (ARTICLE_012)")
+        void adminDelete_ReasonTooLong_ThrowsException() {
+            // given
+            String longReason = "a".repeat(501);
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            // when & then
+            assertThrows(IllegalArgumentException.class, () ->
+                    knowledgeArticleService.adminDelete(1L, longReason)
+            );
+        }
+    }
 }

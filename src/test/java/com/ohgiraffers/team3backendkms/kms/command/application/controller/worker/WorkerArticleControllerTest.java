@@ -136,6 +136,70 @@ class WorkerArticleControllerTest {
     }
 
     @Nested
+    @DisplayName("PUT /api/kms/articles/{articleId}")
+    class Update {
+
+        @Test
+        @DisplayName("Returns 200 OK on valid request")
+        void update_success() throws Exception {
+            Map<String, Object> body = Map.of(
+                    "authorId", 10,
+                    "title", "수정된 제목입니다",
+                    "category", "PROCESS_IMPROVEMENT",
+                    "content", "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다."
+            );
+            willDoNothing().given(knowledgeArticleService)
+                    .update(anyLong(), anyString(), any(ArticleCategory.class), anyString(), anyLong());
+
+            mockMvc.perform(put("/api/kms/articles/2")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(body)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+        }
+
+        @Test
+        @DisplayName("Returns 400 when requester is not the author")
+        void update_whenNotAuthor_thenBadRequest() throws Exception {
+            Map<String, Object> body = Map.of(
+                    "authorId", 99,
+                    "title", "수정된 제목입니다",
+                    "category", "PROCESS_IMPROVEMENT",
+                    "content", "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다."
+            );
+            willThrow(new IllegalStateException("[ARTICLE_007] 본인이 작성한 문서만 삭제할 수 있습니다."))
+                    .given(knowledgeArticleService)
+                    .update(anyLong(), anyString(), any(ArticleCategory.class), anyString(), anyLong());
+
+            mockMvc.perform(put("/api/kms/articles/2")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(body)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false));
+        }
+
+        @Test
+        @DisplayName("Returns 400 when title is too short")
+        void update_whenTitleTooShort_thenBadRequest() throws Exception {
+            Map<String, Object> body = Map.of(
+                    "authorId", 10,
+                    "title", "짧",
+                    "category", "PROCESS_IMPROVEMENT",
+                    "content", "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다."
+            );
+            willThrow(new IllegalArgumentException("[ARTICLE_001] 제목은 5자 이상 200자 이하여야 합니다."))
+                    .given(knowledgeArticleService)
+                    .update(anyLong(), anyString(), any(ArticleCategory.class), anyString(), anyLong());
+
+            mockMvc.perform(put("/api/kms/articles/2")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(body)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false));
+        }
+    }
+
+    @Nested
     @DisplayName("DELETE /api/kms/articles/{articleId}")
     class Delete {
 

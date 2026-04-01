@@ -37,6 +37,18 @@ public class KnowledgeArticleService {
         ).getArticleId();
     }
 
+    /* 지식 문서 수정 (DRAFT → PENDING) */
+    public void update(Long articleId, String title, ArticleCategory category, String content, Long requesterId) {
+        KnowledgeArticle article = findArticleById(articleId);
+
+        if (!article.getAuthorId().equals(requesterId)) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_007.getMessage());
+        }
+
+        validateInput(title, category, content);
+        article.update(title, category, content);
+    }
+
     /* 조회수 증가 */
     public void incrementViewCount(Long articleId) {
         KnowledgeArticle article = findArticleById(articleId);
@@ -55,7 +67,7 @@ public class KnowledgeArticleService {
         article.reject(reason);
     }
 
-    /* 지식 문서 삭제 */
+    /* 지식 문서 삭제 (Worker) — DRAFT만 삭제 가능 */
     public void delete(Long articleId, Long requesterId) {
         KnowledgeArticle article = findArticleById(articleId);
 
@@ -64,6 +76,12 @@ public class KnowledgeArticleService {
         }
 
         article.softDelete();
+    }
+
+    /* 지식 문서 삭제 (Admin) — 모든 상태 삭제 가능, 삭제 사유 필수 */
+    public void adminDelete(Long articleId, String reason) {
+        KnowledgeArticle article = findArticleById(articleId);
+        article.adminDelete(reason);
     }
 
     // =========================================================

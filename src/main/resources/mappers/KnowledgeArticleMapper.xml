@@ -62,4 +62,44 @@
           AND ka.is_deleted = false
     </select>
 
+    <!-- 월간 기여자 랭킹 조회 (이번 달 APPROVED 문서 기준) -->
+    <select id="findTopContributors"
+            parameterType="map"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto">
+        SELECT
+            ka.author_id     AS employeeId,
+            e.employee_name  AS employeeName,
+            COUNT(*)         AS articleCount,
+            ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC) AS rank
+        FROM knowledge_article ka
+        LEFT JOIN employee e ON ka.author_id = e.employee_id
+        WHERE ka.article_status = 'APPROVED'
+          AND ka.is_deleted = false
+          AND YEAR(ka.approved_at) = YEAR(CURDATE())
+          AND MONTH(ka.approved_at) = MONTH(CURDATE())
+        GROUP BY ka.author_id, e.employee_name
+        ORDER BY articleCount DESC, ka.author_id
+        LIMIT #{limit}
+    </select>
+
+    <!-- AI 지식 추천 조회 (APPROVED 문서 중 조회수 높은 순 TOP 5) -->
+    <select id="findRecommendations"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto">
+        SELECT
+            ka.article_id       AS articleId,
+            ka.author_id        AS authorId,
+            e.employee_name     AS authorName,
+            ka.article_title    AS articleTitle,
+            ka.article_category AS articleCategory,
+            ka.article_status   AS articleStatus,
+            ka.view_count       AS viewCount,
+            ka.created_at       AS createdAt
+        FROM knowledge_article ka
+        LEFT JOIN employee e ON ka.author_id = e.employee_id
+        WHERE ka.article_status = 'APPROVED'
+          AND ka.is_deleted = false
+        ORDER BY ka.view_count DESC, ka.approved_at DESC
+        LIMIT 5
+    </select>
+
 </mapper>

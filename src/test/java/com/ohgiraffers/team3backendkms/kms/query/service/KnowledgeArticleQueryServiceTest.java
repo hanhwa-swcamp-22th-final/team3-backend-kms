@@ -4,6 +4,7 @@ import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundExceptio
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeArticleMapper;
@@ -17,9 +18,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
@@ -127,6 +130,119 @@ class KnowledgeArticleQueryServiceTest {
                     () -> knowledgeArticleQueryService.getArticleDetail(999L)
             );
             assertTrue(exception.getMessage().contains("문서를 찾을 수 없습니다"));
+        }
+    }
+
+    @Nested
+    // getTopContributors 메서드
+    @DisplayName("getTopContributors()")
+    class GetTopContributors {
+
+        @Test
+        // 월간 기여자 랭킹 조회 성공: limit 개수만큼 반환한다
+        @DisplayName("Returns top contributors list with specified limit")
+        void getTopContributors_success() {
+            // given
+            ContributorRankDto dto1 = new ContributorRankDto();
+            dto1.setEmployeeId(1L);
+            dto1.setEmployeeName("홍길동");
+            dto1.setArticleCount(5L);
+            dto1.setRank(1);
+
+            ContributorRankDto dto2 = new ContributorRankDto();
+            dto2.setEmployeeId(2L);
+            dto2.setEmployeeName("김영희");
+            dto2.setArticleCount(3L);
+            dto2.setRank(2);
+
+            given(knowledgeArticleMapper.findTopContributors(any(Map.class)))
+                    .willReturn(List.of(dto1, dto2));
+
+            // when
+            List<ContributorRankDto> result = knowledgeArticleQueryService.getTopContributors(3);
+
+            // then
+            assertNotNull(result);
+            assertEquals(2, result.size());
+            assertEquals("홍길동", result.get(0).getEmployeeName());
+            assertEquals(5L, result.get(0).getArticleCount());
+            assertEquals(1, result.get(0).getRank());
+        }
+
+        @Test
+        // 월간 기여자 랭킹 조회: 데이터가 없으면 빈 목록을 반환한다
+        @DisplayName("Returns empty list when no contributors")
+        void getTopContributors_whenNoData_thenReturnEmptyList() {
+            // given
+            given(knowledgeArticleMapper.findTopContributors(any(Map.class)))
+                    .willReturn(List.of());
+
+            // when
+            List<ContributorRankDto> result = knowledgeArticleQueryService.getTopContributors(3);
+
+            // then
+            assertNotNull(result);
+            assertTrue(result.isEmpty());
+        }
+    }
+
+    @Nested
+    // getRecommendations 메서드
+    @DisplayName("getRecommendations()")
+    class GetRecommendations {
+
+        @Test
+        // AI 지식 추천 조회 성공: TOP 5 목록을 반환한다
+        @DisplayName("Returns top 5 recommendations list")
+        void getRecommendations_success() {
+            // given
+            ArticleReadDto dto1 = new ArticleReadDto();
+            dto1.setArticleId(1L);
+            dto1.setAuthorId(10L);
+            dto1.setAuthorName("홍길동");
+            dto1.setArticleTitle("인기 있는 문서 1");
+            dto1.setArticleCategory(ArticleCategory.TROUBLESHOOTING);
+            dto1.setArticleStatus(ArticleStatus.APPROVED);
+            dto1.setViewCount(100);
+            dto1.setCreatedAt(LocalDateTime.now());
+
+            ArticleReadDto dto2 = new ArticleReadDto();
+            dto2.setArticleId(2L);
+            dto2.setAuthorId(11L);
+            dto2.setAuthorName("김영희");
+            dto2.setArticleTitle("인기 있는 문서 2");
+            dto2.setArticleCategory(ArticleCategory.PROCESS_IMPROVEMENT);
+            dto2.setArticleStatus(ArticleStatus.APPROVED);
+            dto2.setViewCount(50);
+            dto2.setCreatedAt(LocalDateTime.now());
+
+            given(knowledgeArticleMapper.findRecommendations())
+                    .willReturn(List.of(dto1, dto2));
+
+            // when
+            List<ArticleReadDto> result = knowledgeArticleQueryService.getRecommendations();
+
+            // then
+            assertNotNull(result);
+            assertEquals(2, result.size());
+            assertEquals(100, result.get(0).getViewCount());
+            assertEquals(50, result.get(1).getViewCount());
+        }
+
+        @Test
+        // AI 지식 추천 조회: 데이터가 없으면 빈 목록을 반환한다
+        @DisplayName("Returns empty list when no recommendations")
+        void getRecommendations_whenNoData_thenReturnEmptyList() {
+            // given
+            given(knowledgeArticleMapper.findRecommendations())
+                    .willReturn(List.of());
+
+            // when
+            List<ArticleReadDto> result = knowledgeArticleQueryService.getRecommendations();
+
+            // then
+            assertNotNull(result);
+            assertTrue(result.isEmpty());
         }
     }
 }

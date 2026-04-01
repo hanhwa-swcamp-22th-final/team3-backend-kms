@@ -6,6 +6,7 @@ import com.ohgiraffers.team3backendkms.kms.command.application.service.Knowledge
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleQueryService;
@@ -140,6 +141,117 @@ class KnowledgeArticleQueryControllerTest {
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/kms/articles/contributors")
+    class GetTopContributors {
+
+        @Test
+        // 월간 기여자 랭킹 조회 성공: 기여자 목록을 반환한다
+        @DisplayName("Returns 200 OK with contributors list")
+        void getTopContributors_success() throws Exception {
+            // given
+            ContributorRankDto dto1 = new ContributorRankDto();
+            dto1.setEmployeeId(1L);
+            dto1.setEmployeeName("홍길동");
+            dto1.setArticleCount(5L);
+            dto1.setRank(1);
+
+            ContributorRankDto dto2 = new ContributorRankDto();
+            dto2.setEmployeeId(2L);
+            dto2.setEmployeeName("김영희");
+            dto2.setArticleCount(3L);
+            dto2.setRank(2);
+
+            given(knowledgeArticleQueryService.getTopContributors(3))
+                    .willReturn(List.of(dto1, dto2));
+
+            // when & then
+            mockMvc.perform(get("/api/kms/articles/contributors")
+                            .param("limit", "3"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data[0].employeeName").value("홍길동"))
+                    .andExpect(jsonPath("$.data[0].articleCount").value(5))
+                    .andExpect(jsonPath("$.data[0].rank").value(1))
+                    .andExpect(jsonPath("$.data[1].employeeName").value("김영희"))
+                    .andExpect(jsonPath("$.data[1].articleCount").value(3));
+        }
+
+        @Test
+        // 월간 기여자 랭킹 조회: 기본값으로 3을 사용한다
+        @DisplayName("Uses default limit of 3 when not specified")
+        void getTopContributors_withDefaultLimit() throws Exception {
+            // given
+            given(knowledgeArticleQueryService.getTopContributors(3))
+                    .willReturn(List.of());
+
+            // when & then
+            mockMvc.perform(get("/api/kms/articles/contributors"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data").isArray());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/kms/articles/recommendations")
+    class GetRecommendations {
+
+        @Test
+        // AI 지식 추천 조회 성공: TOP 5 목록을 반환한다
+        @DisplayName("Returns 200 OK with recommendations list")
+        void getRecommendations_success() throws Exception {
+            // given
+            ArticleReadDto dto1 = new ArticleReadDto();
+            dto1.setArticleId(1L);
+            dto1.setAuthorId(10L);
+            dto1.setAuthorName("홍길동");
+            dto1.setArticleTitle("인기 있는 문서 1");
+            dto1.setArticleCategory(ArticleCategory.TROUBLESHOOTING);
+            dto1.setArticleStatus(ArticleStatus.APPROVED);
+            dto1.setViewCount(100);
+            dto1.setCreatedAt(LocalDateTime.of(2026, 3, 1, 12, 0));
+
+            ArticleReadDto dto2 = new ArticleReadDto();
+            dto2.setArticleId(2L);
+            dto2.setAuthorId(11L);
+            dto2.setAuthorName("김영희");
+            dto2.setArticleTitle("인기 있는 문서 2");
+            dto2.setArticleCategory(ArticleCategory.PROCESS_IMPROVEMENT);
+            dto2.setArticleStatus(ArticleStatus.APPROVED);
+            dto2.setViewCount(50);
+            dto2.setCreatedAt(LocalDateTime.of(2026, 2, 15, 9, 0));
+
+            given(knowledgeArticleQueryService.getRecommendations())
+                    .willReturn(List.of(dto1, dto2));
+
+            // when & then
+            mockMvc.perform(get("/api/kms/articles/recommendations"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data[0].articleId").value(1))
+                    .andExpect(jsonPath("$.data[0].articleTitle").value("인기 있는 문서 1"))
+                    .andExpect(jsonPath("$.data[0].viewCount").value(100))
+                    .andExpect(jsonPath("$.data[1].articleId").value(2))
+                    .andExpect(jsonPath("$.data[1].viewCount").value(50));
+        }
+
+        @Test
+        // AI 지식 추천 조회: 데이터가 없으면 빈 목록을 반환한다
+        @DisplayName("Returns empty list when no recommendations")
+        void getRecommendations_whenNoData() throws Exception {
+            // given
+            given(knowledgeArticleQueryService.getRecommendations())
+                    .willReturn(List.of());
+
+            // when & then
+            mockMvc.perform(get("/api/kms/articles/recommendations"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data").isArray());
         }
     }
 }

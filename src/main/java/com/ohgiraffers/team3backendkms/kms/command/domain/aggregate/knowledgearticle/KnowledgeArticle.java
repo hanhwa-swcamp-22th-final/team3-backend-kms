@@ -130,6 +130,20 @@ public class KnowledgeArticle {
         this.articleRejectionReason = reason;
     }
 
+    /* DRAFT → 필드 수정 후 PENDING 전환 */
+    public void update(String title, ArticleCategory category, String content) {
+        if (Boolean.TRUE.equals(this.isDeleted)) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
+        }
+        if (this.articleStatus != ArticleStatus.DRAFT) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_006.getMessage());
+        }
+        this.articleTitle = title;
+        this.articleCategory = category;
+        this.articleContent = content;
+        this.articleStatus = ArticleStatus.PENDING;
+    }
+
     /* 조회수 증가 */
     public void incrementViewCount() {
         this.viewCount = (this.viewCount == null ? 0 : this.viewCount) + 1;
@@ -143,10 +157,26 @@ public class KnowledgeArticle {
         if (this.articleStatus == ArticleStatus.PENDING) {
             throw new IllegalStateException(ArticleErrorCode.ARTICLE_010.getMessage());
         }
+        if (this.articleStatus == ArticleStatus.REJECTED) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_010.getMessage());
+        }
         if (this.articleStatus == ArticleStatus.APPROVED) {
             throw new IllegalStateException(ArticleErrorCode.ARTICLE_009.getMessage());
         }
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
+    }
+
+    /* 관리자 삭제 — 모든 상태에서 삭제 가능 */
+    public void adminDelete(String reason) {
+        if (Boolean.TRUE.equals(this.isDeleted)) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
+        }
+        if (reason == null || reason.length() < 10 || reason.length() > 500) {
+            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_012.getMessage());
+        }
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
+        this.articleDeletionReason = reason;
     }
 }

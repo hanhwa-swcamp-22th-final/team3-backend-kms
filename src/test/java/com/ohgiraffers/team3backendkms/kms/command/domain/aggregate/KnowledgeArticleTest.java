@@ -280,5 +280,167 @@ class KnowledgeArticleTest {
             // when & then
             assertThrows(IllegalStateException.class, () -> article.softDelete());
         }
+
+        @Test
+        // 반려된 문서를 Worker가 삭제하면 예외가 발생한다 (ARTICLE_010)
+        @DisplayName("Throws exception when status is REJECTED (ARTICLE_010)")
+        void softDelete_WhenRejected_ThrowsException() {
+            // given
+            article.submit();
+            article.reject("내용이 충분하지 않습니다. 보완 후 재제출해주세요.");
+
+            // when & then
+            assertThrows(IllegalStateException.class, () -> article.softDelete());
+        }
+    }
+
+    // =========================================================
+    // update()
+    // =========================================================
+
+    @Nested
+    // 지식 문서 수정 (update) — DRAFT 상태에서만 가능, 수정 후 PENDING 전환
+    @DisplayName("update()")
+    class UpdateTest {
+
+        @Test
+        // DRAFT 상태 문서를 수정하면 모든 필드가 반영되고 PENDING으로 전환된다
+        @DisplayName("Updates all fields and changes status to PENDING when DRAFT")
+        void update_Success() {
+            // given — setUp()에서 DRAFT 상태의 article 준비됨
+            String newTitle = "수정된 지식 문서 제목입니다";
+            ArticleCategory newCategory = ArticleCategory.PROCESS_IMPROVEMENT;
+            String newContent = "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.";
+
+            // when
+            article.update(newTitle, newCategory, newContent);
+
+            // then
+            assertEquals(newTitle, article.getArticleTitle());
+            assertEquals(newCategory, article.getArticleCategory());
+            assertEquals(newContent, article.getArticleContent());
+            assertEquals(ArticleStatus.PENDING, article.getArticleStatus());
+        }
+
+        @Test
+        // 승인 대기(PENDING) 상태 문서를 수정하면 예외가 발생한다 (ARTICLE_006)
+        @DisplayName("Throws exception when status is PENDING (ARTICLE_006)")
+        void update_WhenPending_ThrowsException() {
+            // given
+            article.submit(); // DRAFT → PENDING
+
+            // when & then
+            assertThrows(IllegalStateException.class,
+                    () -> article.update("수정된 제목입니다", ArticleCategory.TROUBLESHOOTING,
+                            "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다."));
+        }
+
+        @Test
+        // 승인 완료(APPROVED) 상태 문서를 수정하면 예외가 발생한다 (ARTICLE_006)
+        @DisplayName("Throws exception when status is APPROVED (ARTICLE_006)")
+        void update_WhenApproved_ThrowsException() {
+            // given
+            article.submit();
+            article.approve(99L, "최종 승인합니다.");
+
+            // when & then
+            assertThrows(IllegalStateException.class,
+                    () -> article.update("수정된 제목입니다", ArticleCategory.TROUBLESHOOTING,
+                            "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다."));
+        }
+
+        @Test
+        // 반려(REJECTED) 상태 문서를 수정하면 예외가 발생한다 (ARTICLE_006)
+        @DisplayName("Throws exception when status is REJECTED (ARTICLE_006)")
+        void update_WhenRejected_ThrowsException() {
+            // given
+            article.submit();
+            article.reject("내용이 충분하지 않습니다. 보완 후 재제출해주세요.");
+
+            // when & then
+            assertThrows(IllegalStateException.class,
+                    () -> article.update("수정된 제목입니다", ArticleCategory.TROUBLESHOOTING,
+                            "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다."));
+        }
+
+        @Test
+        // 삭제된 문서를 수정하면 예외가 발생한다 (ARTICLE_008)
+        @DisplayName("Throws exception when article is deleted (ARTICLE_008)")
+        void update_WhenDeleted_ThrowsException() {
+            // given
+            KnowledgeArticle deletedArticle = KnowledgeArticle.builder()
+                    .authorId(1L)
+                    .articleStatus(ArticleStatus.DRAFT)
+                    .isDeleted(true)
+                    .viewCount(0)
+                    .build();
+
+            // when & then
+            assertThrows(IllegalStateException.class,
+                    () -> deletedArticle.update("수정된 제목입니다", ArticleCategory.TROUBLESHOOTING,
+                            "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다."));
+        }
+    }
+
+    // =========================================================
+    // adminDelete()
+    // =========================================================
+
+    @Nested
+    // 지식 문서 관리자 삭제 (adminDelete) — Admin만 사용, 모든 상태 삭제 가능
+    @DisplayName("adminDelete()")
+    class AdminDeleteTest {
+
+        @Test
+        // 문서를 관리자가 삭제 사유와 함께 삭제하면 isDeleted=true, deletionReason이 저장된다
+        @DisplayName("Sets isDeleted to true and saves deletion reason")
+        void adminDelete_Success() {
+            // given
+            String deletionReason = "지식 문서 정책 위반으로 인한 삭제입니다. 해당 문서는 더 이상 참고할 수 없습니다.";
+            article.submit();
+            article.approve(99L, "승인했습니다.");
+
+            // when
+            article.adminDelete(deletionReason);
+
+            // then
+            assertTrue(article.getIsDeleted());
+            assertEquals(deletionReason, article.getArticleDeletionReason());
+            assertNotNull(article.getDeletedAt());
+        }
+
+        @Test
+        // 이미 삭제된 문서를 다시 삭제하면 예외가 발생한다 (ARTICLE_008)
+        @DisplayName("Throws exception when already deleted (ARTICLE_008)")
+        void adminDelete_AlreadyDeleted_ThrowsException() {
+            // given
+            article.softDelete();
+            String deletionReason = "재삭제 시도. 관리자만 이 작업을 할 수 있습니다.";
+
+            // when & then
+            assertThrows(IllegalStateException.class, () -> article.adminDelete(deletionReason));
+        }
+
+        @Test
+        // 삭제 사유가 10자 미만이면 예외가 발생한다 (ARTICLE_012)
+        @DisplayName("Throws exception when reason is less than 10 characters (ARTICLE_012)")
+        void adminDelete_ReasonTooShort_ThrowsException() {
+            // given
+            String shortReason = "짧음";
+
+            // when & then
+            assertThrows(IllegalArgumentException.class, () -> article.adminDelete(shortReason));
+        }
+
+        @Test
+        // 삭제 사유가 500자를 넘으면 예외가 발생한다 (ARTICLE_012)
+        @DisplayName("Throws exception when reason exceeds 500 characters (ARTICLE_012)")
+        void adminDelete_ReasonTooLong_ThrowsException() {
+            // given
+            String longReason = "a".repeat(501);
+
+            // when & then
+            assertThrows(IllegalArgumentException.class, () -> article.adminDelete(longReason));
+        }
     }
 }
