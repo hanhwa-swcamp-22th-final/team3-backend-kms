@@ -136,7 +136,7 @@ class KnowledgeArticleQueryMapperTest {
           // when - findArticles 호출하여 동작확인
           List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request); //
 
-          // then - stream은 list 안에 데이터를 하났기 꺼네서 검사하여 삭제된문서가 결과에없는지 검증
+          // then - stream은 list 안에 데이터를 하나씩 꺼네서 검사하여 삭제된문서가 결과에없는지 검증
           assertNotNull(result);
           boolean deletedIncluded = result.stream()
               .anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_3));
