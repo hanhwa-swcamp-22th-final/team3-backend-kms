@@ -18,9 +18,9 @@ public enum ArticleErrorCode {
 
     /**
      * 제목 길이 검증
-     * 발생 위치: KnowledgeArticleService.validateInput()
+     * 발생 위치: ArticleRegisterRequest, ArticleUpdateRequest, AdminArticleUpdateRequest
      * 호출 메서드: register(), update(), adminUpdate()
-     * 조건: title == null OR title.length() < 5 OR title.length() > 200
+     * 조건: DTO Bean Validation 실패
      * HTTP 응답:
      *   - Status: 400
      *   - errorCode: "BAD_REQUEST"
@@ -30,9 +30,9 @@ public enum ArticleErrorCode {
 
     /**
      * 본문 최소 길이 검증
-     * 발생 위치: KnowledgeArticleService.validateInput()
+     * 발생 위치: ArticleRegisterRequest, ArticleUpdateRequest, AdminArticleUpdateRequest
      * 호출 메서드: register(), update(), adminUpdate()
-     * 조건: content == null OR content.length() < 50
+     * 조건: DTO Bean Validation 실패
      * HTTP 응답:
      *   - Status: 400
      *   - errorCode: "BAD_REQUEST"
@@ -42,9 +42,9 @@ public enum ArticleErrorCode {
 
     /**
      * 본문 최대 길이 검증
-     * 발생 위치: KnowledgeArticleService.validateInput()
+     * 발생 위치: ArticleRegisterRequest, ArticleUpdateRequest, AdminArticleUpdateRequest
      * 호출 메서드: register(), update(), adminUpdate()
-     * 조건: content.length() > 10000
+     * 조건: DTO Bean Validation 실패
      * HTTP 응답:
      *   - Status: 400
      *   - errorCode: "BAD_REQUEST"
@@ -54,9 +54,9 @@ public enum ArticleErrorCode {
 
     /**
      * 카테고리 필수 검증
-     * 발생 위치: KnowledgeArticleService.validateInput()
+     * 발생 위치: ArticleRegisterRequest, ArticleUpdateRequest, AdminArticleUpdateRequest
      * 호출 메서드: register(), update(), adminUpdate()
-     * 조건: category == null
+     * 조건: DTO Bean Validation 실패
      * HTTP 응답:
      *   - Status: 400
      *   - errorCode: "BAD_REQUEST"
@@ -66,9 +66,9 @@ public enum ArticleErrorCode {
 
     /**
      * 설비 ID 필수 및 유효성 검증
-     * 발생 위치: KnowledgeArticleService.validateInput()
-     * 호출 메서드: register(), update(), adminUpdate(), draft()
-     * 조건: equipmentId == null OR equipmentId <= 0
+     * 발생 위치: KnowledgeArticleService.validateEquipmentId(), validateEquipmentIdIfPresent()
+     * 호출 메서드: register(), draft()
+     * 조건: equipmentId == null OR equipmentId <= 0, 또는 제공된 equipmentId <= 0
      * HTTP 응답:
      *   - Status: 400
      *   - errorCode: "BAD_REQUEST"
@@ -159,7 +159,7 @@ public enum ArticleErrorCode {
      * 삭제 사유 길이 검증 (관리자 삭제 전용)
      * 발생 위치: KnowledgeArticle.adminDelete()
      * 호출 메서드: DELETE /api/kms/admin/articles/{articleId}
-     * 조건: reason == null OR reason.length() < 10 OR reason.length() > 500
+     * 조건: deletionReason == null OR deletionReason.length() < 10 OR deletionReason.length() > 500
      * HTTP 응답:
      *   - Status: 400
      *   - errorCode: "BAD_REQUEST"
@@ -188,7 +188,7 @@ public enum ArticleErrorCode {
      * 발생 위치: KnowledgeArticle.reject()
      * 호출 메서드: POST /api/kms/tl/approval/{articleId}/reject
      *            POST /api/kms/dl/approval/{articleId}/reject
-     * 조건: reason == null OR reason.length() < 10 OR reason.length() > 500
+     * 조건: reviewComment == null OR reviewComment.length() < 10 OR reviewComment.length() > 500
      * HTTP 응답:
      *   - Status: 400
      *   - errorCode: "BAD_REQUEST"
@@ -201,7 +201,7 @@ public enum ArticleErrorCode {
      * 발생 위치: KnowledgeArticle.approve()
      * 호출 메서드: POST /api/kms/tl/approval/{articleId}/approve
      *            POST /api/kms/dl/approval/{articleId}/approve
-     * 조건: opinion != null AND opinion.length() > 500
+     * 조건: reviewComment != null AND reviewComment.length() > 500
      * HTTP 응답:
      *   - Status: 400
      *   - errorCode: "BAD_REQUEST"

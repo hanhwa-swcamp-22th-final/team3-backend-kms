@@ -65,7 +65,6 @@ class AdminArticleControllerTest {
         @DisplayName("Returns 200 OK on valid request")
         void adminUpdate_success() throws Exception {
             Map<String, Object> body = Map.of(
-                    "authorId", 10,
                     "title", "관리자 수정 제목입니다 (5자 이상)",
                     "category", "ETC",
                     "content", "관리자가 수정한 본문 내용입니다. 이 본문은 최소 50자 이상이어야 검증을 통과할 수 있습니다. 룰루랄라 룰루랄라 충분한 길이 확보."

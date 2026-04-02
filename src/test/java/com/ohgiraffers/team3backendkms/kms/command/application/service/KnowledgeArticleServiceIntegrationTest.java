@@ -142,16 +142,16 @@ class KnowledgeArticleServiceIntegrationTest {
         @DisplayName("PENDING 문서를 반려하면 REJECTED 상태와 반려 사유가 DB에 반영된다")
         void reject_StatusChangedToRejected() {
             // given
-            String reason = "내용이 충분하지 않습니다. 보완 후 재제출해주세요.";
+            String reviewComment = "내용이 충분하지 않습니다. 보완 후 재제출해주세요.";
             Long articleId = knowledgeArticleService.register(validAuthorId, TEST_EQUIPMENT_ID, TITLE, ArticleCategory.TROUBLESHOOTING, CONTENT);
             KnowledgeArticle saved = knowledgeArticleRepository.findById(articleId).orElseThrow();
 
             // when
-            knowledgeArticleService.reject(saved.getArticleId(), reason);
+            knowledgeArticleService.reject(saved.getArticleId(), reviewComment);
 
             // then
             assertEquals(ArticleStatus.REJECTED, saved.getArticleStatus());
-            assertEquals(reason, saved.getArticleRejectionReason());
+            assertEquals(reviewComment, saved.getArticleRejectionReason());
         }
     }
 

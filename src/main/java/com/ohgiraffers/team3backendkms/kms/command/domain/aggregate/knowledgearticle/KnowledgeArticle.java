@@ -81,18 +81,18 @@ public class KnowledgeArticle {
         this.articleStatus = ArticleStatus.PENDING;
     }
 
-    /* PENDING → APPROVED (TL 또는 DL 승인) */
-    public void approve(Long approverId, String opinion) {
+    /* PENDING → APPROVED */
+    public void approve(Long approverId, String reviewComment) {
         this.articleStatus = ArticleStatus.APPROVED;
         this.approvedBy = approverId;
-        this.articleApprovalOpinion = opinion;
+        this.articleApprovalOpinion = reviewComment;
         this.approvedAt = LocalDateTime.now();
     }
 
-    /* PENDING → REJECTED (TL 또는 DL 반려) */
-    public void reject(String reason) {
+    /* PENDING → REJECTED */
+    public void reject(String reviewComment) {
         this.articleStatus = ArticleStatus.REJECTED;
-        this.articleRejectionReason = reason;
+        this.articleRejectionReason = reviewComment;
     }
 
     /* DRAFT → 필드 수정 후 PENDING 전환 */

@@ -79,7 +79,7 @@ class KnowledgeArticleServiceTest {
             given(knowledgeArticleRepository.save(any(KnowledgeArticle.class)))
                     .willReturn(pendingArticle);
 
-            // when
+            // when  - 레지스터 실행해서 save호출
             knowledgeArticleService.register(
                     1L, 1L,
                     "테스트 지식 문서 제목입니다",
@@ -108,11 +108,11 @@ class KnowledgeArticleServiceTest {
         // 임시저장 시 DRAFT 상태로 저장된다
         @DisplayName("Saves article with DRAFT status")
         void draft_Success() {
-            // given
+            // given - save호출시 draftArticle 반환
             given(knowledgeArticleRepository.save(any(KnowledgeArticle.class)))
                     .willReturn(draftArticle);
 
-            // when
+            // when -   레지스터 실행해서 save호출
             knowledgeArticleService.draft(
                     1L, 1L,
                     "임시저장 문서 제목입니다",
@@ -120,7 +120,7 @@ class KnowledgeArticleServiceTest {
                     "임시저장 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 추가로 작성한 내용입니다."
             );
 
-            // then
+            // then - save에 전달된 article을 꺼내서 상태가 PENDING확인
             ArgumentCaptor<KnowledgeArticle> captor = ArgumentCaptor.forClass(KnowledgeArticle.class);
             verify(knowledgeArticleRepository).save(captor.capture());
             assertEquals(ArticleStatus.DRAFT, captor.getValue().getArticleStatus());
@@ -202,20 +202,20 @@ class KnowledgeArticleServiceTest {
 
         @Test
         // PENDING 문서를 반려하면 REJECTED 상태로 바뀌고 반려 사유가 저장된다
-        @DisplayName("Changes status to REJECTED and saves rejection reason")
+        @DisplayName("Changes status to REJECTED and saves review comment")
         void reject_Success() {
             // given
-            String reason = "내용이 충분하지 않습니다. 보완 후 재제출해주세요.";
+            String reviewComment = "내용이 충분하지 않습니다. 보완 후 재제출해주세요.";
 
             given(knowledgeArticleRepository.findById(1L))
                     .willReturn(Optional.of(pendingArticle));
 
             // when
-            knowledgeArticleService.reject(1L, reason);
+            knowledgeArticleService.reject(1L, reviewComment);
 
             // then
             assertEquals(ArticleStatus.REJECTED, pendingArticle.getArticleStatus());
-            assertEquals(reason, pendingArticle.getArticleRejectionReason());
+            assertEquals(reviewComment, pendingArticle.getArticleRejectionReason());
         }
     }
 

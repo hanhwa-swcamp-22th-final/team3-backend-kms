@@ -6,6 +6,7 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,6 +27,8 @@ import java.util.Collections;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -45,8 +49,15 @@ public class KnowledgeArticleIntegrationTest {
     @Autowired
     private KnowledgeArticleRepository knowledgeArticleRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     private final Long validAuthorId = 1774942559890303L;
     private final Long TEST_EQUIPMENT_ID = 1774836457838985L;
+    private Long otherAuthorIdForQueryTest;
     private final String TITLE = "통합 테스트용 제목입니다 (5자 이상)";
     private final String CONTENT = "통합 테스트용 본문입니다. 이 본문은 최소 50자 이상이어야 등록이 가능합니다. 룰루랄라 룰루랄라 충분한 길이 확보.";
 
@@ -56,6 +67,15 @@ public class KnowledgeArticleIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=0");
+        jdbcTemplate.execute(
+                "INSERT IGNORE INTO attachment_file_group (file_group_id, reference_type) VALUES (0, 'KNOWLEDGE')"
+        );
+        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=1");
+        otherAuthorIdForQueryTest = jdbcTemplate.queryForObject(
+                "SELECT employee_id FROM employee WHERE employee_id <> " + validAuthorId + " LIMIT 1", Long.class
+        );
+
         workerUser = new User(validAuthorId.toString(), "", Collections.singleton(new SimpleGrantedAuthority("ROLE_WORKER")));
         tlUser = new User("20", "", Collections.singleton(new SimpleGrantedAuthority("ROLE_TEAM_LEADER")));
         adminUser = new User("admin", "", Collections.singleton(new SimpleGrantedAuthority("ROLE_ADMIN")));
@@ -86,6 +106,7 @@ public class KnowledgeArticleIntegrationTest {
         @Test
         @DisplayName("Returns 201 Created and saves article with PENDING status")
         void register_savesArticleWithPendingStatus() throws Exception {
+            // [Given] 테스트에 필요한 요청 데이터와 설정을 준비합니다.
             Map<String, Object> request = Map.of(
                     "authorId", validAuthorId,
                     "equipmentId", TEST_EQUIPMENT_ID,
@@ -94,10 +115,12 @@ public class KnowledgeArticleIntegrationTest {
                     "content", CONTENT
             );
 
+            // [When] MockMvc를 통해 실제 API 요청을 시뮬레이션합니다.
             mockMvc.perform(post("/api/kms/articles")
                             .with(user(workerUser))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
+            // [Then] 응답 상태 코드와 반환된 데이터가 예상과 일치하는지 검증합니다.
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.success").value(true));
         }
@@ -421,22 +444,22 @@ public class KnowledgeArticleIntegrationTest {
          * 흐름: Worker 작성 → Pending → TL 검수 → 반려 → 다시 수정해서 재제출
          */
         @Test
-        @DisplayName("Success: Changes status to REJECTED and saves reason in DB")
+        @DisplayName("Success: Changes status to REJECTED and saves review comment in DB")
         void reject_statusChangedToRejected() throws Exception {
             KnowledgeArticle saved = savePendingArticle();
-            String reason = "내용이 부족합니다. 보충 후 재제출해주세요.";
+            String reviewComment = "내용이 부족합니다. 보충 후 재제출해주세요.";
 
             mockMvc.perform(post("/api/kms/tl/approval/" + saved.getArticleId() + "/reject")
                             .with(user(tlUser))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(
-                                    Map.of("reviewComment", reason))))
+                                    Map.of("reviewComment", reviewComment))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true));
 
             KnowledgeArticle updated = knowledgeArticleRepository.findById(saved.getArticleId()).get();
             assertEquals(ArticleStatus.REJECTED, updated.getArticleStatus());
-            assertEquals(reason, updated.getArticleRejectionReason());
+            assertEquals(reviewComment, updated.getArticleRejectionReason());
         }
 
         /**
@@ -450,7 +473,7 @@ public class KnowledgeArticleIntegrationTest {
          * - 반려 사유는 최소 10자 이상 (명확한 피드백)
          * - 반려 사유는 최대 500자 이하
          * - DTO 검증: @Length(min=10, max=500)
-         * - Service 검증: validateInput()도 체크
+         * - DTO 검증이 먼저 적용된다
          *
          * 규칙: 반려 사유는 충분히 상세해야 함 (10~500자)
          */
@@ -463,11 +486,11 @@ public class KnowledgeArticleIntegrationTest {
                             .with(user(tlUser))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(
-                                    Map.of("rejecterId", 20L, "reason", "짧음"))))
+                                    Map.of("reviewComment", "짧음"))))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.errorCode").value("BAD_REQUEST"))
-                    .andExpect(jsonPath("$.message").value("[APPROVAL_001] 반려 사유는 10자 이상 500자 이하여야 합니다."));
+                    .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                    .andExpect(jsonPath("$.message").value("반려 사유는 10자 이상 500자 이하여야 합니다"));
         }
 
         /**
@@ -489,13 +512,13 @@ public class KnowledgeArticleIntegrationTest {
         @DisplayName("Failure: PENDING이 아닌 상태에서 반려 불가 (APPROVAL_003)")
         void reject_nonPendingArticle_fails() throws Exception {
             KnowledgeArticle saved = saveDraftArticle();
-            String reason = "이 문서는 승인 대기 상태가 아닙니다.";
+            String reviewComment = "이 문서는 승인 대기 상태가 아닙니다.";
 
             mockMvc.perform(post("/api/kms/tl/approval/" + saved.getArticleId() + "/reject")
                             .with(user(tlUser))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(
-                                    Map.of("reviewComment", reason))))
+                                    Map.of("reviewComment", reviewComment))))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.errorCode").value("BAD_REQUEST"))
@@ -504,8 +527,129 @@ public class KnowledgeArticleIntegrationTest {
     }
 
     // =========================================================
-    // GET /api/kms/articles/{articleId} 는 KnowledgeArticleQueryControllerTest에서 검증
+    // GET /api/kms/articles (목록 조회)
     // =========================================================
+
+    @Nested
+    @DisplayName("GET /api/kms/articles")
+    class GetArticles {
+
+        @Test
+        @DisplayName("Returns article list from DB")
+        void getArticles_returnsArticleList() throws Exception {
+            saveApprovedArticle();
+            savePendingArticle();
+            flushAndClear();
+
+            mockMvc.perform(get("/api/kms/articles")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data").isArray());
+        }
+
+        @Test
+        @DisplayName("Excludes deleted articles")
+        void getArticles_excludesDeletedArticles() throws Exception {
+            KnowledgeArticle deletedArticle = saveDraftArticle();
+            deletedArticle.softDelete();
+            knowledgeArticleRepository.save(deletedArticle);
+
+            saveApprovedArticle();
+            flushAndClear();
+
+            mockMvc.perform(get("/api/kms/articles")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+        }
+
+        @Test
+        @DisplayName("Filters by article title keyword")
+        void getArticles_filtersByArticleTitleKeyword() throws Exception {
+            saveApprovedArticleWithViewCount(10, "검색 대상 제목");
+            saveApprovedArticleWithViewCount(5, "다른 제목");
+            flushAndClear();
+
+            mockMvc.perform(get("/api/kms/articles")
+                            .param("searchType", "articleTitle")
+                            .param("keyword", "검색 대상")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data[0].articleTitle").value("검색 대상 제목"));
+        }
+
+        @Test
+        @DisplayName("Worker can see own articles and approved articles only")
+        void getArticles_appliesWorkerVisibility() throws Exception {
+            saveApprovedArticleWithViewCount(10, "승인된 공개 문서");
+            saveArticle(validAuthorId, ArticleStatus.DRAFT, "내 임시 문서", 0);
+            saveArticle(otherAuthorIdForQueryTest, ArticleStatus.DRAFT, "다른 사람 임시 문서", 0);
+            flushAndClear();
+
+            mockMvc.perform(get("/api/kms/articles")
+                            .param("requesterId", String.valueOf(validAuthorId))
+                            .param("requesterRole", "WORKER")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data[*].articleTitle").value(hasItem("승인된 공개 문서")))
+                    .andExpect(jsonPath("$.data[*].articleTitle").value(hasItem("내 임시 문서")))
+                    .andExpect(jsonPath("$.data[*].articleTitle").value(not(hasItem("다른 사람 임시 문서"))));
+        }
+    }
+
+    // =========================================================
+    // GET /api/kms/articles/{articleId} (상세 조회)
+    // =========================================================
+
+    @Nested
+    @DisplayName("GET /api/kms/articles/{articleId}")
+    class GetArticleDetail {
+
+        @Test
+        @DisplayName("Returns article detail and increments view count")
+        void getArticleDetail_returnsDetailAndIncrementsViewCount() throws Exception {
+            KnowledgeArticle saved = saveApprovedArticle();
+            flushAndClear();
+
+            mockMvc.perform(get("/api/kms/articles/" + saved.getArticleId())
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.articleId").value(saved.getArticleId()))
+                    .andExpect(jsonPath("$.data.articleTitle").value(TITLE));
+
+            KnowledgeArticle updated = knowledgeArticleRepository.findById(saved.getArticleId()).orElseThrow();
+            assertEquals(1, updated.getViewCount());
+        }
+    }
+
+    // =========================================================
+    // GET /api/kms/articles/recommendations (추천 조회)
+    // =========================================================
+
+    @Nested
+    @DisplayName("GET /api/kms/articles/recommendations")
+    class GetRecommendations {
+
+        @Test
+        @DisplayName("Returns approved recommendations only")
+        void getRecommendations_returnsApprovedArticlesOnly() throws Exception {
+            saveApprovedArticleWithViewCount(100, "추천 대상 문서 1");
+            saveApprovedArticleWithViewCount(50, "추천 대상 문서 2");
+            savePendingArticle();
+            flushAndClear();
+
+            mockMvc.perform(get("/api/kms/articles/recommendations")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data[0].viewCount").value(100))
+                    .andExpect(jsonPath("$.data[1].viewCount").value(50));
+        }
+    }
 
     // =========================================================
     // DELETE /api/kms/articles/{articleId} (Worker 삭제)
@@ -807,6 +951,7 @@ public class KnowledgeArticleIntegrationTest {
                 .articleId(new TimeBasedIdGenerator().generate())
                 .authorId(validAuthorId)
                 .equipmentId(TEST_EQUIPMENT_ID)
+                .fileGroupId(0L)
                 .articleTitle(TITLE)
                 .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent(CONTENT)
@@ -825,6 +970,7 @@ public class KnowledgeArticleIntegrationTest {
                 .articleId(new TimeBasedIdGenerator().generate())
                 .authorId(validAuthorId)
                 .equipmentId(TEST_EQUIPMENT_ID)
+                .fileGroupId(0L)
                 .articleTitle(TITLE)
                 .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent(CONTENT)
@@ -843,6 +989,7 @@ public class KnowledgeArticleIntegrationTest {
                 .articleId(new TimeBasedIdGenerator().generate())
                 .authorId(validAuthorId)
                 .equipmentId(TEST_EQUIPMENT_ID)
+                .fileGroupId(0L)
                 .articleTitle(TITLE)
                 .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent(CONTENT)
@@ -850,6 +997,10 @@ public class KnowledgeArticleIntegrationTest {
                 .isDeleted(false)
                 .viewCount(0)
                 .build());
+    }
+
+    private KnowledgeArticle saveApprovedArticleWithViewCount(int viewCount, String title) {
+        return saveArticle(validAuthorId, ArticleStatus.APPROVED, title, viewCount);
     }
 
     /**
@@ -861,6 +1012,7 @@ public class KnowledgeArticleIntegrationTest {
                 .articleId(new TimeBasedIdGenerator().generate())
                 .authorId(validAuthorId)
                 .equipmentId(TEST_EQUIPMENT_ID)
+                .fileGroupId(0L)
                 .articleTitle(TITLE)
                 .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent(CONTENT)
@@ -868,5 +1020,25 @@ public class KnowledgeArticleIntegrationTest {
                 .isDeleted(false)
                 .viewCount(0)
                 .build());
+    }
+
+    private KnowledgeArticle saveArticle(Long authorId, ArticleStatus status, String title, int viewCount) {
+        return knowledgeArticleRepository.save(KnowledgeArticle.builder()
+                .articleId(new TimeBasedIdGenerator().generate())
+                .authorId(authorId)
+                .equipmentId(TEST_EQUIPMENT_ID)
+                .fileGroupId(0L)
+                .articleTitle(title)
+                .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                .articleContent(CONTENT)
+                .articleStatus(status)
+                .isDeleted(false)
+                .viewCount(viewCount)
+                .build());
+    }
+
+    private void flushAndClear() {
+        entityManager.flush();
+        entityManager.clear();
     }
 }

@@ -42,6 +42,7 @@ class KnowledgeArticleQueryMapperTest {
     private JdbcTemplate jdbcTemplate;
 
     private Long validAuthorId;
+    private Long otherAuthorId;
     private Long validEquipmentId;
 
     private static final Long TEST_ARTICLE_ID_1 = 9000000000001L;
@@ -68,6 +69,8 @@ class KnowledgeArticleQueryMapperTest {
         // 실제 employee ID 조회
         validAuthorId = jdbcTemplate.queryForObject(
                 "SELECT employee_id FROM employee LIMIT 1", Long.class);
+        otherAuthorId = jdbcTemplate.queryForObject(
+                "SELECT employee_id FROM employee WHERE employee_id <> " + validAuthorId + " LIMIT 1", Long.class);
         validEquipmentId = TEST_EQUIPMENT_ID;
 
         KnowledgeArticle article1 = KnowledgeArticle.builder()
@@ -112,10 +115,25 @@ class KnowledgeArticleQueryMapperTest {
                 .createdAt(LocalDateTime.now())
                 .build();
 
+        KnowledgeArticle article4 = KnowledgeArticle.builder()
+                .articleId(9000000000004L)
+                .authorId(otherAuthorId)
+                .equipmentId(validEquipmentId)
+                .fileGroupId(0L)
+                .articleTitle("다른 작성자의 임시 문서")
+                .articleCategory(ArticleCategory.PROCESS_IMPROVEMENT)
+                .articleContent("다른 작성자의 비승인 문서 본문 내용입니다.")
+                .articleStatus(ArticleStatus.DRAFT)
+                .isDeleted(false)
+                .viewCount(1)
+                .createdAt(LocalDateTime.now().minusHours(3))
+                .build();
+
         // 여기쓸려고 위에서 JPA형식 사용
         knowledgeArticleRepository.save(article1);
         knowledgeArticleRepository.save(article2);
         knowledgeArticleRepository.save(article3);
+        knowledgeArticleRepository.save(article4);
         entityManager.flush(); // JPA → MyBatis 간 데이터 가시성 보장
     }
 
@@ -183,6 +201,68 @@ class KnowledgeArticleQueryMapperTest {
                         "popular 정렬 시 조회수 내림차순이어야 합니다"
                 );
             }
+        }
+
+        @Test
+        @DisplayName("Filters by article title keyword")
+        void findArticles_withArticleTitleKeyword_success() {
+            ArticleQueryRequest request = new ArticleQueryRequest();
+            request.setSearchType("articleTitle");
+            request.setKeyword("첫번째");
+
+            List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
+
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(TEST_ARTICLE_ID_1, result.get(0).getArticleId());
+        }
+
+        @Test
+        @DisplayName("Filters by author name keyword")
+        void findArticles_withAuthorNameKeyword_success() {
+            String otherAuthorName = jdbcTemplate.queryForObject(
+                    "SELECT employee_name FROM employee WHERE employee_id = " + otherAuthorId, String.class
+            );
+
+            ArticleQueryRequest request = new ArticleQueryRequest();
+            request.setSearchType("authorName");
+            request.setKeyword(otherAuthorName);
+
+            List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
+
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(otherAuthorId, result.get(0).getAuthorId());
+        }
+
+        @Test
+        @DisplayName("Filters by article ID keyword")
+        void findArticles_withArticleIdKeyword_success() {
+            ArticleQueryRequest request = new ArticleQueryRequest();
+            request.setSearchType("articleId");
+            request.setKeyword(String.valueOf(TEST_ARTICLE_ID_1));
+            request.setArticleIdKeyword(TEST_ARTICLE_ID_1);
+
+            List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
+
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(TEST_ARTICLE_ID_1, result.get(0).getArticleId());
+        }
+
+        @Test
+        @DisplayName("Worker can see own articles and approved articles only")
+        void findArticles_withWorkerVisibility_success() {
+            ArticleQueryRequest request = new ArticleQueryRequest();
+            request.setRequesterId(validAuthorId);
+            request.setRequesterRole("WORKER");
+
+            List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
+
+            assertNotNull(result);
+            assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_1)));
+            assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_2)));
+            assertFalse(result.stream().anyMatch(a -> a.getArticleTitle().equals("다른 작성자의 임시 문서")));
         }
     }
 

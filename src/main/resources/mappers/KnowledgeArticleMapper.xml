@@ -20,11 +20,30 @@
         FROM knowledge_article ka
         LEFT JOIN employee e ON ka.author_id = e.employee_id
         WHERE ka.is_deleted = false
+        <if test="requesterRole == 'WORKER' and requesterId != null">
+            AND (
+                ka.author_id = #{requesterId}
+                OR ka.article_status = 'APPROVED'
+            )
+        </if>
         <if test="category != null">
             AND ka.article_category = #{category}
         </if>
         <if test="status != null">
             AND ka.article_status = #{status}
+        </if>
+        <if test="keyword != null and keyword != '' and searchType != null and searchType != ''">
+            <choose>
+                <when test="searchType == 'articleId' and articleIdKeyword != null">
+                    AND ka.article_id = #{articleIdKeyword}
+                </when>
+                <when test="searchType == 'authorName'">
+                    AND e.employee_name LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'articleTitle'">
+                    AND ka.article_title LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+            </choose>
         </if>
         <choose>
             <when test="sort == 'popular'">

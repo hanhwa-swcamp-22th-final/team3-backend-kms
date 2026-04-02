@@ -81,6 +81,22 @@ class KnowledgeArticleQueryServiceTest {
             assertNotNull(result);
             assertTrue(result.isEmpty());
         }
+
+        @Test
+        @DisplayName("Converts articleId keyword to articleIdKeyword")
+        void getArticles_withArticleIdKeyword_normalizesRequest() {
+            // given
+            ArticleQueryRequest request = new ArticleQueryRequest();
+            request.setSearchType("articleId");
+            request.setKeyword("123");
+            given(knowledgeArticleMapper.findArticles(request)).willReturn(List.of());
+
+            // when
+            knowledgeArticleQueryService.getArticles(request);
+
+            // then
+            assertEquals(123L, request.getArticleIdKeyword());
+        }
     }
 
     @Nested

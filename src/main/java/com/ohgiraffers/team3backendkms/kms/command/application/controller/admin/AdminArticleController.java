@@ -2,7 +2,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.controller.admin
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleAdminDeleteRequest;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleUpdateRequest;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.AdminArticleUpdateRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -31,7 +31,7 @@ public class AdminArticleController {
     @PutMapping("/{articleId}")
     public ResponseEntity<ApiResponse<Void>> adminUpdate(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
-            @Valid @RequestBody ArticleUpdateRequest request
+            @Valid @RequestBody AdminArticleUpdateRequest request
     ) {
         knowledgeArticleService.adminUpdate(
                 articleId,

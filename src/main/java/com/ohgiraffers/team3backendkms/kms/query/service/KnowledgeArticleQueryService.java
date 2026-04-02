@@ -22,6 +22,7 @@ public class KnowledgeArticleQueryService {
     private final KnowledgeArticleMapper knowledgeArticleMapper;
 
     public List<ArticleReadDto> getArticles(ArticleQueryRequest request) {
+        normalizeQueryRequest(request);
         return knowledgeArticleMapper.findArticles(request);
     }
 
@@ -36,5 +37,22 @@ public class KnowledgeArticleQueryService {
 
     public List<ArticleReadDto> getRecommendations() {
         return knowledgeArticleMapper.findRecommendations();
+    }
+
+    private void normalizeQueryRequest(ArticleQueryRequest request) {
+        if (request == null) {
+            return;
+        }
+
+        if ("articleId".equals(request.getSearchType()) && request.getKeyword() != null && !request.getKeyword().isBlank()) {
+            try {
+                request.setArticleIdKeyword(Long.parseLong(request.getKeyword().trim()));
+            } catch (NumberFormatException e) {
+                request.setArticleIdKeyword(-1L);
+            }
+            return;
+        }
+
+        request.setArticleIdKeyword(null);
     }
 }

@@ -117,21 +117,17 @@ public class GlobalExceptionHandler {
      * 비즈니스 로직 검증 오류 처리 (입력값 검증)
      *
      * 발생 위치:
-     *  - KnowledgeArticleService.register() → 제목, 본문, 카테고리 검증
-     *  - KnowledgeArticleService.update() → 제목, 본문, 카테고리 검증
-     *  - KnowledgeArticleService.adminUpdate() → 제목, 본문, 카테고리 검증
-     *  - KnowledgeArticle.approve() → 의견(opinion) 길이 검증
-     *  - KnowledgeArticle.reject() → 반려 사유(reason) 길이 검증
-     *  - KnowledgeArticle.adminDelete() → 삭제 사유(reason) 길이 검증
+     *  - KnowledgeArticleService.register() → 설비 ID 검증
+     *  - KnowledgeArticleService.draft() → 설비 ID 검증
+     *  - KnowledgeArticleService.approve() → 승인 의견 길이 검증
+     *  - KnowledgeArticleService.reject() → 반려 사유 길이 검증
+     *  - KnowledgeArticleService.adminDelete() → 삭제 사유 길이 검증
      *
      * 에러 코드 (service에서 검증):
-     *  - ARTICLE_001: "[ARTICLE_001] 제목은 5자 이상 200자 이하여야 합니다."
-     *  - ARTICLE_002: "[ARTICLE_002] 본문은 50자 이상이어야 합니다."
-     *  - ARTICLE_003: "[ARTICLE_003] 본문은 10,000자 이하여야 합니다."
-     *  - ARTICLE_004: "[ARTICLE_004] 카테고리는 필수입니다."
+     *  - ARTICLE_005: "[ARTICLE_005] 유효하지 않은 설비 ID입니다."
      *  - ARTICLE_012: "[ARTICLE_012] 삭제 사유는 10자 이상 500자 이하여야 합니다."
      *
-     * 에러 코드 (entity에서 검증):
+     * 에러 코드 (service에서 검증):
      *  - APPROVAL_001: "[APPROVAL_001] 반려 사유는 10자 이상 500자 이하여야 합니다."
      *  - APPROVAL_002: "[APPROVAL_002] 승인 의견은 500자 이하여야 합니다."
      *
