@@ -42,26 +42,15 @@ public class KnowledgeArticleService {
     /* 지식 문서 수정 (Worker) */
     public void update(Long articleId, String title, ArticleCategory category, String content, Long requesterId) {
         KnowledgeArticle article = findArticleById(articleId);
-
-        if (Boolean.TRUE.equals(article.getIsDeleted())) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-        if (article.getArticleStatus() != ArticleStatus.DRAFT) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_006.getMessage());
-        }
-        if (!article.getAuthorId().equals(requesterId)) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_007.getMessage());
-        }
-
-        validateInput(title, category, content);
-        article.update(title, category, content);
+        // Entity의 update()에서 모든 검증을 수행
+        article.update(requesterId, title, category, content);
     }
 
     /* 지식 문서 수정 (Admin) — 작성자 체크 없이 수정 가능 */
     public void adminUpdate(Long articleId, String title, ArticleCategory category, String content) {
         KnowledgeArticle article = findArticleById(articleId);
-        validateInput(title, category, content);
-        article.update(title, category, content);
+        // Entity의 adminUpdate()에서 모든 검증을 수행
+        article.adminUpdate(title, category, content);
     }
 
     /* 조회수 증가 */
@@ -73,83 +62,28 @@ public class KnowledgeArticleService {
     /* 승인 (PENDING → APPROVED) */
     public void approve(Long articleId, Long approverId, String opinion) {
         KnowledgeArticle article = findArticleById(articleId);
-
-        if (Boolean.TRUE.equals(article.getIsDeleted())) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-        if (article.getArticleStatus() == ArticleStatus.APPROVED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_005.getMessage());
-        }
-        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_006.getMessage());
-        }
-        if (article.getArticleStatus() != ArticleStatus.PENDING) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
-        }
-        if (opinion != null && opinion.length() > 500) {
-            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_002.getMessage());
-        }
-
+        // Entity의 approve()에서 모든 검증을 수행
         article.approve(approverId, opinion);
     }
 
     /* 지식 문서 반려 */
     public void reject(Long articleId, String reason) {
         KnowledgeArticle article = findArticleById(articleId);
-
-        if (Boolean.TRUE.equals(article.getIsDeleted())) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_007.getMessage());
-        }
-        if (article.getArticleStatus() == ArticleStatus.APPROVED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_008.getMessage());
-        }
-        if (article.getArticleStatus() != ArticleStatus.PENDING) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
-        }
-        if (reason == null || reason.length() < 10 || reason.length() > 500) {
-            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_001.getMessage());
-        }
-
+        // Entity의 reject()에서 모든 검증을 수행
         article.reject(reason);
     }
 
     /* 지식 문서 삭제 (Worker) — DRAFT 또는 본인 확인 후 삭제 */
     public void delete(Long articleId, Long requesterId) {
         KnowledgeArticle article = findArticleById(articleId);
-
-        if (Boolean.TRUE.equals(article.getIsDeleted())) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-        if (article.getArticleStatus() == ArticleStatus.PENDING) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_010.getMessage());
-        }
-        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_010.getMessage());
-        }
-        if (article.getArticleStatus() == ArticleStatus.APPROVED) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_009.getMessage());
-        }
-        if (!article.getAuthorId().equals(requesterId)) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_007.getMessage());
-        }
-
-        article.softDelete();
+        // Entity의 softDelete()에서 모든 검증을 수행
+        article.softDelete(requesterId);
     }
 
     /* 지식 문서 삭제 (Admin) — 모든 상태 삭제 가능, 삭제 사유 필수 */
     public void adminDelete(Long articleId, String reason) {
         KnowledgeArticle article = findArticleById(articleId);
-
-        if (Boolean.TRUE.equals(article.getIsDeleted())) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-        if (reason == null || reason.length() < 10 || reason.length() > 500) {
-            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_012.getMessage());
-        }
-
+        // Entity의 adminDelete()에서 모든 검증을 수행
         article.adminDelete(reason);
     }
 
