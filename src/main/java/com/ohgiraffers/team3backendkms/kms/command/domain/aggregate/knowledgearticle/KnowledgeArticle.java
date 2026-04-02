@@ -80,29 +80,11 @@ public class KnowledgeArticle {
 
     /* DRAFT → PENDING */
     public void submit() {
-        if (this.articleStatus != ArticleStatus.DRAFT) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_SUBMIT_INVALID.getMessage());
-        }
         this.articleStatus = ArticleStatus.PENDING;
     }
 
     /* PENDING → APPROVED (TL 또는 DL 승인) */
     public void approve(Long approverId, String opinion) {
-        if (Boolean.TRUE.equals(this.isDeleted)) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-        if (this.articleStatus == ArticleStatus.APPROVED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_005.getMessage());
-        }
-        if (this.articleStatus == ArticleStatus.REJECTED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_006.getMessage());
-        }
-        if (this.articleStatus != ArticleStatus.PENDING) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
-        }
-        if (opinion != null && opinion.length() > 500) {
-            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_002.getMessage());
-        }
         this.articleStatus = ArticleStatus.APPROVED;
         this.approvedBy = approverId;
         this.articleApprovalOpinion = opinion;
@@ -111,33 +93,12 @@ public class KnowledgeArticle {
 
     /* PENDING → REJECTED (TL 또는 DL 반려) */
     public void reject(String reason) {
-        if (Boolean.TRUE.equals(this.isDeleted)) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-        if (this.articleStatus == ArticleStatus.REJECTED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_007.getMessage());
-        }
-        if (this.articleStatus == ArticleStatus.APPROVED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_008.getMessage());
-        }
-        if (this.articleStatus != ArticleStatus.PENDING) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
-        }
-        if (reason == null || reason.length() < 10 || reason.length() > 500) {
-            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_001.getMessage());
-        }
         this.articleStatus = ArticleStatus.REJECTED;
         this.articleRejectionReason = reason;
     }
 
     /* DRAFT → 필드 수정 후 PENDING 전환 */
     public void update(String title, ArticleCategory category, String content) {
-        if (Boolean.TRUE.equals(this.isDeleted)) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-        if (this.articleStatus != ArticleStatus.DRAFT) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_006.getMessage());
-        }
         this.articleTitle = title;
         this.articleCategory = category;
         this.articleContent = content;
@@ -151,30 +112,12 @@ public class KnowledgeArticle {
 
     /* 소프트 딜리트 */
     public void softDelete() {
-        if (Boolean.TRUE.equals(this.isDeleted)) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-        if (this.articleStatus == ArticleStatus.PENDING) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_010.getMessage());
-        }
-        if (this.articleStatus == ArticleStatus.REJECTED) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_010.getMessage());
-        }
-        if (this.articleStatus == ArticleStatus.APPROVED) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_009.getMessage());
-        }
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
     }
 
     /* 관리자 삭제 — 모든 상태에서 삭제 가능 */
     public void adminDelete(String reason) {
-        if (Boolean.TRUE.equals(this.isDeleted)) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-        if (reason == null || reason.length() < 10 || reason.length() > 500) {
-            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_012.getMessage());
-        }
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
         this.articleDeletionReason = reason;

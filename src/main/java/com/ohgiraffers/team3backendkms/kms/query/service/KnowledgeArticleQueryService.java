@@ -1,5 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.query.service;
 
+import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
@@ -26,7 +27,7 @@ public class KnowledgeArticleQueryService {
 
     public ArticleDetailDto getArticleDetail(Long articleId) {
         return knowledgeArticleMapper.findArticleById(articleId)
-                .orElseThrow(() -> new ResourceNotFoundException("문서를 찾을 수 없습니다. id=" + articleId));
+                .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND.getMessage()));
     }
 
     public List<ContributorRankDto> getTopContributors(Integer limit) {

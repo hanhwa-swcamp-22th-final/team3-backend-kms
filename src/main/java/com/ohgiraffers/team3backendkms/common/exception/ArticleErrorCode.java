@@ -64,6 +64,18 @@ public enum ArticleErrorCode {
      */
     ARTICLE_004("[ARTICLE_004] 카테고리는 필수입니다."),
 
+    /**
+     * 설비 ID 필수 및 유효성 검증
+     * 발생 위치: KnowledgeArticleService.validateInput()
+     * 호출 메서드: register(), update(), adminUpdate(), draft()
+     * 조건: equipmentId == null OR equipmentId <= 0
+     * HTTP 응답:
+     *   - Status: 400
+     *   - errorCode: "BAD_REQUEST"
+     *   - message: "[ARTICLE_005] 유효하지 않은 설비 ID입니다."
+     */
+    ARTICLE_005("[ARTICLE_005] 유효하지 않은 설비 ID입니다."),
+
     // =====================================================================
     // 📋 문서 상태/권한 검증 (submit, update, delete, softDelete, etc)
     // =====================================================================

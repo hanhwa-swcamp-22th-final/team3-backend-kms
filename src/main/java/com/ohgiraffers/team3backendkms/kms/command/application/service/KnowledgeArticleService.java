@@ -23,6 +23,7 @@ public class KnowledgeArticleService {
     /* 지식 문서 등록 (PENDING) */
     public Long register(Long authorId, Long equipmentId,
                          String title, ArticleCategory category, String content) {
+        validateEquipmentId(equipmentId);
         validateInput(title, category, content);
         return knowledgeArticleRepository.save(
                 buildArticle(authorId, equipmentId, title, category, content, ArticleStatus.PENDING)
@@ -32,6 +33,7 @@ public class KnowledgeArticleService {
     /* 지식 문서 임시저장 (DRAFT) — 임시저장은 길이 검증 없이 허용 */
     public Long draft(Long authorId, Long equipmentId,
                       String title, ArticleCategory category, String content) {
+        validateEquipmentId(equipmentId);
         return knowledgeArticleRepository.save(
                 buildArticle(authorId, equipmentId, title, category, content, ArticleStatus.DRAFT)
         ).getArticleId();
@@ -41,6 +43,12 @@ public class KnowledgeArticleService {
     public void update(Long articleId, String title, ArticleCategory category, String content, Long requesterId) {
         KnowledgeArticle article = findArticleById(articleId);
 
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
+        }
+        if (article.getArticleStatus() != ArticleStatus.DRAFT) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_006.getMessage());
+        }
         if (!article.getAuthorId().equals(requesterId)) {
             throw new IllegalStateException(ArticleErrorCode.ARTICLE_007.getMessage());
         }
@@ -65,12 +73,46 @@ public class KnowledgeArticleService {
     /* 승인 (PENDING → APPROVED) */
     public void approve(Long articleId, Long approverId, String opinion) {
         KnowledgeArticle article = findArticleById(articleId);
+
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
+        }
+        if (article.getArticleStatus() == ArticleStatus.APPROVED) {
+            throw new IllegalStateException(ArticleErrorCode.APPROVAL_005.getMessage());
+        }
+        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
+            throw new IllegalStateException(ArticleErrorCode.APPROVAL_006.getMessage());
+        }
+        if (article.getArticleStatus() != ArticleStatus.PENDING) {
+            throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
+        }
+        if (opinion != null && opinion.length() > 500) {
+            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_002.getMessage());
+        }
+
         article.approve(approverId, opinion);
     }
 
     /* 지식 문서 반려 */
     public void reject(Long articleId, String reason) {
         KnowledgeArticle article = findArticleById(articleId);
+
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
+        }
+        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
+            throw new IllegalStateException(ArticleErrorCode.APPROVAL_007.getMessage());
+        }
+        if (article.getArticleStatus() == ArticleStatus.APPROVED) {
+            throw new IllegalStateException(ArticleErrorCode.APPROVAL_008.getMessage());
+        }
+        if (article.getArticleStatus() != ArticleStatus.PENDING) {
+            throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
+        }
+        if (reason == null || reason.length() < 10 || reason.length() > 500) {
+            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_001.getMessage());
+        }
+
         article.reject(reason);
     }
 
@@ -78,6 +120,18 @@ public class KnowledgeArticleService {
     public void delete(Long articleId, Long requesterId) {
         KnowledgeArticle article = findArticleById(articleId);
 
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
+        }
+        if (article.getArticleStatus() == ArticleStatus.PENDING) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_010.getMessage());
+        }
+        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_010.getMessage());
+        }
+        if (article.getArticleStatus() == ArticleStatus.APPROVED) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_009.getMessage());
+        }
         if (!article.getAuthorId().equals(requesterId)) {
             throw new IllegalStateException(ArticleErrorCode.ARTICLE_007.getMessage());
         }
@@ -88,6 +142,14 @@ public class KnowledgeArticleService {
     /* 지식 문서 삭제 (Admin) — 모든 상태 삭제 가능, 삭제 사유 필수 */
     public void adminDelete(Long articleId, String reason) {
         KnowledgeArticle article = findArticleById(articleId);
+
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
+        }
+        if (reason == null || reason.length() < 10 || reason.length() > 500) {
+            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_012.getMessage());
+        }
+
         article.adminDelete(reason);
     }
 
@@ -110,6 +172,12 @@ public class KnowledgeArticleService {
                 .isDeleted(false)
                 .viewCount(0)
                 .build();
+    }
+
+    private void validateEquipmentId(Long equipmentId) {
+        if (equipmentId == null || equipmentId <= 0) {
+            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_005.getMessage());
+        }
     }
 
     private void validateInput(String title, ArticleCategory category, String content) {
