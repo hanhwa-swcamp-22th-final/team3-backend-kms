@@ -49,11 +49,12 @@ class WorkerArticleControllerTest {
         void register_success() throws Exception {
             Map<String, Object> body = Map.of(
                     "authorId", 10,
+                    "equipmentId", 1,
                     "title", "정상적인 테스트 제목입니다",
                     "category", "TROUBLESHOOTING",
-                    "content", "본문 내용이 50자 이상이어야 합니다. 여기에 충분한 길이의 본문을 작성합니다."
+                    "content", "본문 내용이 50자 이상이어야 합니다. 여기에 충분한 길이의 본문을 작성합니다. 이제 50자를 초과합니다."
             );
-            given(knowledgeArticleService.register(anyLong(), any(), anyString(), any(ArticleCategory.class), anyString()))
+            given(knowledgeArticleService.register(anyLong(), anyLong(), anyString(), any(ArticleCategory.class), anyString()))
                     .willReturn(1L);
 
             mockMvc.perform(post("/api/kms/articles")
@@ -74,7 +75,7 @@ class WorkerArticleControllerTest {
                     "authorId", 10,
                     "title", "수정된 제목입니다",
                     "category", "PROCESS_IMPROVEMENT",
-                    "content", "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다."
+                    "content", "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 이제 충분한 길이입니다."
             );
             willDoNothing().given(knowledgeArticleService)
                     .update(anyLong(), anyString(), any(ArticleCategory.class), anyString(), anyLong());

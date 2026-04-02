@@ -5,6 +5,7 @@ import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.Artic
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRejectRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ public class TeamLeaderArticleController {
 
     @PostMapping("/{articleId}/approve")
     public ResponseEntity<ApiResponse<Void>> approve(
-            @PathVariable Long articleId,
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
             @Valid @RequestBody ArticleApproveRequest request
     ) {
         knowledgeArticleService.approve(articleId, request.getApproverId(), request.getReviewComment());
@@ -27,7 +28,7 @@ public class TeamLeaderArticleController {
 
     @PostMapping("/{articleId}/reject")
     public ResponseEntity<ApiResponse<Void>> reject(
-            @PathVariable Long articleId,
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
             @Valid @RequestBody ArticleRejectRequest request
     ) {
         knowledgeArticleService.reject(articleId, request.getReviewComment());

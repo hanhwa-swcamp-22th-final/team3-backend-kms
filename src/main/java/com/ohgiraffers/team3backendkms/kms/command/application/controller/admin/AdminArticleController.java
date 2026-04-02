@@ -5,6 +5,7 @@ import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.Artic
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleUpdateRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +20,7 @@ public class AdminArticleController {
     /* 지식 문서 삭제 (Admin) */
     @DeleteMapping("/{articleId}")
     public ResponseEntity<ApiResponse<Void>> adminDelete(
-            @PathVariable Long articleId,
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
             @Valid @RequestBody ArticleAdminDeleteRequest request
     ) {
         knowledgeArticleService.adminDelete(articleId, request.getDeletionReason());
@@ -29,7 +30,7 @@ public class AdminArticleController {
     /* 지식 문서 수정 (Admin) */
     @PutMapping("/{articleId}")
     public ResponseEntity<ApiResponse<Void>> adminUpdate(
-            @PathVariable Long articleId,
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
             @Valid @RequestBody ArticleUpdateRequest request
     ) {
         knowledgeArticleService.adminUpdate(

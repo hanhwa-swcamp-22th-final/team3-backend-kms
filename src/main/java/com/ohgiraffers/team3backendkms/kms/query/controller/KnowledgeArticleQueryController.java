@@ -7,6 +7,7 @@ import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleQueryService;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,7 +34,7 @@ public class KnowledgeArticleQueryController {
     /* 지식 상세 조회 — 조회 후 조회수 증가 (Command는 Controller에서 조율) */
     @GetMapping("/articles/{articleId}")
     public ResponseEntity<ApiResponse<ArticleDetailDto>> getArticleDetail(
-            @PathVariable Long articleId
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId
     ) {
         ArticleDetailDto detail = knowledgeArticleQueryService.getArticleDetail(articleId);
         knowledgeArticleService.incrementViewCount(articleId);

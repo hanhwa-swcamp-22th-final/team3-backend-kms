@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.stream.Collectors;
 
@@ -47,6 +48,35 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining(", "));
+        return ApiResponse.failure("VALIDATION_ERROR", message);
+    }
+
+    /**
+     * 핸들러 메서드 파라미터 검증 오류 처리 (@Positive 등 @PathVariable 검증)
+     *
+     * 발생 위치:
+     *  - @PathVariable에 @Positive 등의 제약 조건 검증 실패
+     *  - WorkerArticleController.update() → articleId 검증
+     *  - WorkerArticleController.delete() → articleId 검증
+     *  - AdminArticleController.adminDelete() → articleId 검증
+     *  - AdminArticleController.adminUpdate() → articleId 검증
+     *  - TeamLeaderArticleController.approve() → articleId 검증
+     *  - TeamLeaderArticleController.reject() → articleId 검증
+     *  - DepartmentLeaderArticleController.approve() → articleId 검증
+     *  - DepartmentLeaderArticleController.reject() → articleId 검증
+     *  - KnowledgeArticleQueryController.getArticleDetail() → articleId 검증
+     *
+     * 반환:
+     *  - HTTP Status: 400 Bad Request
+     *  - errorCode: "VALIDATION_ERROR"
+     *  - message: 파라미터 검증 오류 메시지
+     */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleHandlerMethodValidation(HandlerMethodValidationException e) {
+        String message = e.getAllErrors().stream()
+                .map(error -> error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
         return ApiResponse.failure("VALIDATION_ERROR", message);
     }
