@@ -598,6 +598,48 @@ public class KnowledgeArticleIntegrationTest {
                     .andExpect(jsonPath("$.data[*].articleTitle").value(hasItem("내 임시 문서")))
                     .andExpect(jsonPath("$.data[*].articleTitle").value(not(hasItem("다른 사람 임시 문서"))));
         }
+
+        @Test
+        @DisplayName("Team leader cannot see draft articles")
+        void getArticles_appliesTeamLeaderVisibility() throws Exception {
+            saveApprovedArticleWithViewCount(10, "승인된 공개 문서");
+            saveArticle(validAuthorId, ArticleStatus.DRAFT, "내 임시 문서", 0);
+            saveArticle(otherAuthorIdForQueryTest, ArticleStatus.DRAFT, "다른 사람 임시 문서", 0);
+            saveArticle(otherAuthorIdForQueryTest, ArticleStatus.PENDING, "다른 사람 검토중 문서", 0);
+            flushAndClear();
+
+            mockMvc.perform(get("/api/kms/articles")
+                            .param("requesterRole", "TEAMLEADER")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data[*].articleTitle").value(hasItem("승인된 공개 문서")))
+                    .andExpect(jsonPath("$.data[*].articleTitle").value(hasItem("다른 사람 검토중 문서")))
+                    .andExpect(jsonPath("$.data[*].articleTitle").value(not(hasItem("내 임시 문서"))))
+                    .andExpect(jsonPath("$.data[*].articleTitle").value(not(hasItem("다른 사람 임시 문서"))));
+        }
+
+        @Test
+        @DisplayName("Admin can see all articles including deleted articles")
+        void getArticles_appliesAdminVisibility() throws Exception {
+            KnowledgeArticle deletedArticle = saveArticle(otherAuthorIdForQueryTest, ArticleStatus.DRAFT, "삭제된 문서", 0);
+            deletedArticle.softDelete();
+            knowledgeArticleRepository.save(deletedArticle);
+            saveApprovedArticleWithViewCount(10, "승인된 공개 문서");
+            saveArticle(validAuthorId, ArticleStatus.DRAFT, "내 임시 문서", 0);
+            saveArticle(otherAuthorIdForQueryTest, ArticleStatus.DRAFT, "다른 사람 임시 문서", 0);
+            flushAndClear();
+
+            mockMvc.perform(get("/api/kms/articles")
+                            .param("requesterRole", "ADMIN")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data[*].articleTitle").value(hasItem("승인된 공개 문서")))
+                    .andExpect(jsonPath("$.data[*].articleTitle").value(hasItem("내 임시 문서")))
+                    .andExpect(jsonPath("$.data[*].articleTitle").value(hasItem("다른 사람 임시 문서")))
+                    .andExpect(jsonPath("$.data[*].articleTitle").value(hasItem("삭제된 문서")));
+        }
     }
 
     // =========================================================

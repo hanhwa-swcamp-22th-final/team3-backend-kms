@@ -19,13 +19,21 @@
             ka.created_at       AS createdAt
         FROM knowledge_article ka
         LEFT JOIN employee e ON ka.author_id = e.employee_id
-        WHERE ka.is_deleted = false
-        <if test="requesterRole == 'WORKER' and requesterId != null">
-            AND (
-                ka.author_id = #{requesterId}
-                OR ka.article_status = 'APPROVED'
-            )
+        WHERE 1 = 1
+        <if test="requesterRole != 'ADMIN'">
+            AND ka.is_deleted = false
         </if>
+        <choose>
+            <when test="requesterRole == 'WORKER' and requesterId != null">
+                AND (
+                    ka.author_id = #{requesterId}
+                    OR ka.article_status = 'APPROVED'
+                )
+            </when>
+            <when test="requesterRole == 'TEAMLEADER' or requesterRole == 'DEPARTMENTLEADER'">
+                AND ka.article_status != 'DRAFT'
+            </when>
+        </choose>
         <if test="category != null">
             AND ka.article_category = #{category}
         </if>

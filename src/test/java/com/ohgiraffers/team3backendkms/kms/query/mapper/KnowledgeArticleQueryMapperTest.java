@@ -264,6 +264,35 @@ class KnowledgeArticleQueryMapperTest {
             assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_2)));
             assertFalse(result.stream().anyMatch(a -> a.getArticleTitle().equals("다른 작성자의 임시 문서")));
         }
+
+        @Test
+        @DisplayName("Team leader cannot see draft articles")
+        void findArticles_withTeamLeaderVisibility_success() {
+            ArticleQueryRequest request = new ArticleQueryRequest();
+            request.setRequesterRole("TEAMLEADER");
+
+            List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
+
+            assertNotNull(result);
+            assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_1)));
+            assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_2)));
+            assertFalse(result.stream().anyMatch(a -> a.getArticleTitle().equals("다른 작성자의 임시 문서")));
+        }
+
+        @Test
+        @DisplayName("Admin can see all articles including deleted articles")
+        void findArticles_withAdminVisibility_success() {
+            ArticleQueryRequest request = new ArticleQueryRequest();
+            request.setRequesterRole("ADMIN");
+
+            List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
+
+            assertNotNull(result);
+            assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_1)));
+            assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_2)));
+            assertTrue(result.stream().anyMatch(a -> a.getArticleTitle().equals("다른 작성자의 임시 문서")));
+            assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_3)));
+        }
     }
 
     @Nested
