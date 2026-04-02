@@ -333,44 +333,8 @@ public class KnowledgeArticleIntegrationTest {
     }
 
     // =========================================================
-    // GET /api/kms/articles/{articleId} (상세조회)
+    // GET /api/kms/articles/{articleId} 는 KnowledgeArticleQueryControllerTest에서 검증
     // =========================================================
-
-    @Nested
-    @DisplayName("GET /api/kms/articles/{articleId}")
-    class GetDetail {
-
-        @Test
-        @DisplayName("Success: Returns 200 OK with article detail and increments view count")
-        void getDetail_returnsArticleAndIncrementsViewCount() throws Exception {
-            KnowledgeArticle saved = savePendingArticle();
-            int initialViewCount = saved.getViewCount();
-
-            mockMvc.perform(get("/api/kms/articles/" + saved.getArticleId())
-                            .with(user(workerUser))
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data.articleTitle").value(TITLE));
-
-            KnowledgeArticle updated = knowledgeArticleRepository.findById(saved.getArticleId()).get();
-            assertEquals(initialViewCount + 1, updated.getViewCount(), "조회수가 1 증가해야 함");
-        }
-
-        @Test
-        @DisplayName("Failure: Non-existent article returns 404 (NOT_FOUND)")
-        void getDetail_nonExistentArticle_fails() throws Exception {
-            Long nonExistentId = 9999999999999L;
-
-            mockMvc.perform(get("/api/kms/articles/" + nonExistentId)
-                            .with(user(workerUser))
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"))
-                    .andExpect(jsonPath("$.message").value("[ARTICLE] 문서를 찾을 수 없습니다."));
-        }
-    }
 
     // =========================================================
     // DELETE /api/kms/articles/{articleId}
