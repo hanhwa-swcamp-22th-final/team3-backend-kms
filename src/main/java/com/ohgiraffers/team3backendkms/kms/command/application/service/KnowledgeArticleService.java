@@ -24,7 +24,6 @@ public class KnowledgeArticleService {
     public Long register(Long authorId, Long equipmentId,
                          String title, ArticleCategory category, String content) {
         validateEquipmentId(equipmentId);
-        validateInput(title, category, content);
         return knowledgeArticleRepository.save(
                 buildArticle(authorId, equipmentId, title, category, content, ArticleStatus.PENDING)
         ).getArticleId();
@@ -51,14 +50,12 @@ public class KnowledgeArticleService {
         if (!article.getAuthorId().equals(requesterId)) {
             throw new IllegalStateException(ArticleErrorCode.ARTICLE_007.getMessage());
         }
-        validateInput(title, category, content);
         article.update(title, category, content);
     }
 
     /* 지식 문서 수정 (Admin) — 작성자 체크 없이 수정 가능 */
     public void adminUpdate(Long articleId, String title, ArticleCategory category, String content) {
         KnowledgeArticle article = findArticleById(articleId);
-        validateInput(title, category, content);
         article.adminUpdate(title, category, content);
     }
 
@@ -174,21 +171,6 @@ public class KnowledgeArticleService {
     private void validateEquipmentIdIfPresent(Long equipmentId) {
         if (equipmentId != null && equipmentId <= 0) {
             throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_005.getMessage());
-        }
-    }
-
-    private void validateInput(String title, ArticleCategory category, String content) {
-        if (title == null || title.length() < 5 || title.length() > 200) {
-            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_001.getMessage());
-        }
-        if (category == null) {
-            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_004.getMessage());
-        }
-        if (content == null || content.length() < 50) {
-            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_002.getMessage());
-        }
-        if (content.length() > 10000) {
-            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_003.getMessage());
         }
     }
 

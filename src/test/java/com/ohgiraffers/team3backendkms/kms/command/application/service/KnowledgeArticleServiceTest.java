@@ -93,59 +93,6 @@ class KnowledgeArticleServiceTest {
             assertEquals(ArticleStatus.PENDING, captor.getValue().getArticleStatus());
         }
 
-        @Test
-        // 제목이 5자 미만이면 예외가 발생한다 (ARTICLE_001)
-        @DisplayName("Throws exception when title is less than 5 characters (ARTICLE_001)")
-        void register_TitleTooShort_ThrowsException() {
-            // given
-            String shortTitle = "짧음";
-
-            // when & then
-            assertThrows(IllegalArgumentException.class, () ->
-                    knowledgeArticleService.register(
-                            1L, 1L,
-                            shortTitle,
-                            ArticleCategory.TROUBLESHOOTING,
-                            "테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다."
-                    )
-            );
-        }
-
-        @Test
-        // 본문이 50자 미만이면 예외가 발생한다 (ARTICLE_002)
-        @DisplayName("Throws exception when content is less than 50 characters (ARTICLE_002)")
-        void register_ContentTooShort_ThrowsException() {
-            // given
-            String shortContent = "짧은 본문";
-
-            // when & then
-            assertThrows(IllegalArgumentException.class, () ->
-                    knowledgeArticleService.register(
-                            1L, 1L,
-                            "테스트 지식 문서 제목입니다",
-                            ArticleCategory.TROUBLESHOOTING,
-                            shortContent
-                    )
-            );
-        }
-
-        @Test
-        // 본문이 10,000자를 넘으면 예외가 발생한다 (ARTICLE_003)
-        @DisplayName("Throws exception when content exceeds 10000 characters (ARTICLE_003)")
-        void register_ContentTooLong_ThrowsException() {
-            // given
-            String longContent = "a".repeat(10001);
-
-            // when & then
-            assertThrows(IllegalArgumentException.class, () ->
-                    knowledgeArticleService.register(
-                            1L, 1L,
-                            "테스트 지식 문서 제목입니다",
-                            ArticleCategory.TROUBLESHOOTING,
-                            longContent
-                    )
-            );
-        }
     }
 
     // =========================================================
@@ -379,35 +326,6 @@ class KnowledgeArticleServiceTest {
             );
         }
 
-        @Test
-        // 제목이 5자 미만이면 예외가 발생한다 (ARTICLE_001)
-        @DisplayName("Throws exception when title is less than 5 characters (ARTICLE_001)")
-        void update_TitleTooShort_ThrowsException() {
-            // given
-            given(knowledgeArticleRepository.findById(2L))
-                    .willReturn(Optional.of(draftArticle));
-
-            // when & then
-            assertThrows(IllegalArgumentException.class, () ->
-                    knowledgeArticleService.update(2L, "짧음", ArticleCategory.TROUBLESHOOTING,
-                            "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.", 1L)
-            );
-        }
-
-        @Test
-        // 본문이 50자 미만이면 예외가 발생한다 (ARTICLE_002)
-        @DisplayName("Throws exception when content is less than 50 characters (ARTICLE_002)")
-        void update_ContentTooShort_ThrowsException() {
-            // given
-            given(knowledgeArticleRepository.findById(2L))
-                    .willReturn(Optional.of(draftArticle));
-
-            // when & then
-            assertThrows(IllegalArgumentException.class, () ->
-                    knowledgeArticleService.update(2L, "수정된 제목입니다", ArticleCategory.TROUBLESHOOTING,
-                            "짧은 본문", 1L)
-            );
-        }
     }
 
     // =========================================================
