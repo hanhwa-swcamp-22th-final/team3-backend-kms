@@ -8,8 +8,6 @@ import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -80,49 +78,29 @@ public class KnowledgeArticle {
 
     /* DRAFT → PENDING */
     public void submit() {
-        if (this.articleStatus != ArticleStatus.DRAFT) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_SUBMIT_INVALID.getMessage());
-        }
         this.articleStatus = ArticleStatus.PENDING;
     }
 
-    /* PENDING → TL_APPROVED (TL 1차 승인) */
-    public void tlApprove(Long approverId, String opinion) {
-        if (opinion != null && opinion.length() > 500) {
-            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_002.getMessage());
-        }
-        if (this.articleStatus != ArticleStatus.PENDING) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
-        }
-        this.articleStatus = ArticleStatus.TL_APPROVED;
-        this.approvedBy = approverId;
-        this.articleApprovalOpinion = opinion;
-    }
-
-    /* TL_APPROVED → APPROVED (DL 최종 승인) */
-    public void approve(Long approverId, String opinion) {
-        if (opinion != null && opinion.length() > 500) {
-            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_002.getMessage());
-        }
-        if (this.articleStatus != ArticleStatus.TL_APPROVED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_004.getMessage());
-        }
+    /* PENDING → APPROVED */
+    public void approve(Long approverId, String reviewComment) {
         this.articleStatus = ArticleStatus.APPROVED;
         this.approvedBy = approverId;
-        this.articleApprovalOpinion = opinion;
+        this.articleApprovalOpinion = reviewComment;
         this.approvedAt = LocalDateTime.now();
     }
 
-    /* PENDING 또는 TL_APPROVED → REJECTED (TL/DL 반려) */
-    public void reject(String reason) {
-        if (reason == null || reason.length() < 10 || reason.length() > 500) {
-            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_001.getMessage());
-        }
-        if (this.articleStatus != ArticleStatus.PENDING && this.articleStatus != ArticleStatus.TL_APPROVED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
-        }
+    /* PENDING → REJECTED */
+    public void reject(String reviewComment) {
         this.articleStatus = ArticleStatus.REJECTED;
-        this.articleRejectionReason = reason;
+        this.articleRejectionReason = reviewComment;
+    }
+
+    /* DRAFT → 필드 수정 후 PENDING 전환 */
+    public void update(String title, ArticleCategory category, String content) {
+        this.articleTitle = title;
+        this.articleCategory = category;
+        this.articleContent = content;
+        this.articleStatus = ArticleStatus.PENDING;
     }
 
     /* 조회수 증가 */
@@ -130,15 +108,23 @@ public class KnowledgeArticle {
         this.viewCount = (this.viewCount == null ? 0 : this.viewCount) + 1;
     }
 
-    /* 소프트 딜리트 */
+    /* 소프트 딜리트 (Worker) */
     public void softDelete() {
-        if (Boolean.TRUE.equals(this.isDeleted)) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-        if (this.articleStatus == ArticleStatus.APPROVED) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_009.getMessage());
-        }
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
+    }
+
+    /* 관리자 삭제 — 모든 상태에서 삭제 가능 */
+    public void adminDelete(String reason) {
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
+        this.articleDeletionReason = reason;
+    }
+
+    /* 관리자 수정 — 상태 변경 없이 필드만 수정 */
+    public void adminUpdate(String title, ArticleCategory category, String content) {
+        this.articleTitle = title;
+        this.articleCategory = category;
+        this.articleContent = content;
     }
 }

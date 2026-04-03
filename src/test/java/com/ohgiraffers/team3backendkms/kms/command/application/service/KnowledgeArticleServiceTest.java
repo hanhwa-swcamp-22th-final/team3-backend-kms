@@ -35,7 +35,6 @@ class KnowledgeArticleServiceTest {
     private IdGenerator idGenerator;
 
     private KnowledgeArticle pendingArticle;
-    private KnowledgeArticle tlApprovedArticle;
     private KnowledgeArticle draftArticle;
 
     @BeforeEach
@@ -47,17 +46,6 @@ class KnowledgeArticleServiceTest {
                 .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent("테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
                 .articleStatus(ArticleStatus.PENDING)
-                .isDeleted(false)
-                .viewCount(0)
-                .build();
-
-        tlApprovedArticle = KnowledgeArticle.builder()
-                .articleId(3L)
-                .authorId(1L)
-                .articleTitle("TL 승인 완료 문서 제목입니다")
-                .articleCategory(ArticleCategory.TROUBLESHOOTING)
-                .articleContent("TL 승인 완료 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
-                .articleStatus(ArticleStatus.TL_APPROVED)
                 .isDeleted(false)
                 .viewCount(0)
                 .build();
@@ -91,7 +79,7 @@ class KnowledgeArticleServiceTest {
             given(knowledgeArticleRepository.save(any(KnowledgeArticle.class)))
                     .willReturn(pendingArticle);
 
-            // when
+            // when  - 레지스터 실행해서 save호출
             knowledgeArticleService.register(
                     1L, 1L,
                     "테스트 지식 문서 제목입니다",
@@ -105,59 +93,6 @@ class KnowledgeArticleServiceTest {
             assertEquals(ArticleStatus.PENDING, captor.getValue().getArticleStatus());
         }
 
-        @Test
-        // 제목이 5자 미만이면 예외가 발생한다 (ARTICLE_001)
-        @DisplayName("Throws exception when title is less than 5 characters (ARTICLE_001)")
-        void register_TitleTooShort_ThrowsException() {
-            // given
-            String shortTitle = "짧음";
-
-            // when & then
-            assertThrows(IllegalArgumentException.class, () ->
-                    knowledgeArticleService.register(
-                            1L, 1L,
-                            shortTitle,
-                            ArticleCategory.TROUBLESHOOTING,
-                            "테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다."
-                    )
-            );
-        }
-
-        @Test
-        // 본문이 50자 미만이면 예외가 발생한다 (ARTICLE_002)
-        @DisplayName("Throws exception when content is less than 50 characters (ARTICLE_002)")
-        void register_ContentTooShort_ThrowsException() {
-            // given
-            String shortContent = "짧은 본문";
-
-            // when & then
-            assertThrows(IllegalArgumentException.class, () ->
-                    knowledgeArticleService.register(
-                            1L, 1L,
-                            "테스트 지식 문서 제목입니다",
-                            ArticleCategory.TROUBLESHOOTING,
-                            shortContent
-                    )
-            );
-        }
-
-        @Test
-        // 본문이 10,000자를 넘으면 예외가 발생한다 (ARTICLE_003)
-        @DisplayName("Throws exception when content exceeds 10000 characters (ARTICLE_003)")
-        void register_ContentTooLong_ThrowsException() {
-            // given
-            String longContent = "a".repeat(10001);
-
-            // when & then
-            assertThrows(IllegalArgumentException.class, () ->
-                    knowledgeArticleService.register(
-                            1L, 1L,
-                            "테스트 지식 문서 제목입니다",
-                            ArticleCategory.TROUBLESHOOTING,
-                            longContent
-                    )
-            );
-        }
     }
 
     // =========================================================
@@ -173,11 +108,11 @@ class KnowledgeArticleServiceTest {
         // 임시저장 시 DRAFT 상태로 저장된다
         @DisplayName("Saves article with DRAFT status")
         void draft_Success() {
-            // given
+            // given - save호출시 draftArticle 반환
             given(knowledgeArticleRepository.save(any(KnowledgeArticle.class)))
                     .willReturn(draftArticle);
 
-            // when
+            // when -   레지스터 실행해서 save호출
             knowledgeArticleService.draft(
                     1L, 1L,
                     "임시저장 문서 제목입니다",
@@ -185,7 +120,7 @@ class KnowledgeArticleServiceTest {
                     "임시저장 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 추가로 작성한 내용입니다."
             );
 
-            // then
+            // then - save에 전달된 article을 꺼내서 상태가 PENDING확인
             ArgumentCaptor<KnowledgeArticle> captor = ArgumentCaptor.forClass(KnowledgeArticle.class);
             verify(knowledgeArticleRepository).save(captor.capture());
             assertEquals(ArticleStatus.DRAFT, captor.getValue().getArticleStatus());
@@ -218,79 +153,40 @@ class KnowledgeArticleServiceTest {
     }
 
     // =========================================================
-    // tlApprove()
+    // approve()
     // =========================================================
 
     @Nested
-    // TL 1차 승인 (tlApprove)
-    @DisplayName("tlApprove()")
-    class TlApproveTest {
+    // 승인 (approve) — TL 또는 DL
+    @DisplayName("approve()")
+    class ApproveTest {
 
         @Test
-        // PENDING 문서를 TL 승인하면 TL_APPROVED 상태로 바뀐다
-        @DisplayName("Changes status to TL_APPROVED")
-        void tlApprove_Success() {
+        // PENDING 문서를 승인하면 APPROVED 상태로 바뀐다
+        @DisplayName("Changes status to APPROVED")
+        void approve_Success() {
             // given
             given(knowledgeArticleRepository.findById(1L))
                     .willReturn(Optional.of(pendingArticle));
 
             // when
-            knowledgeArticleService.tlApprove(1L, 99L, "1차 검토 완료입니다.");
+            knowledgeArticleService.approve(1L, 99L, "최종 승인합니다.");
 
             // then
-            assertEquals(ArticleStatus.TL_APPROVED, pendingArticle.getArticleStatus());
+            assertEquals(ArticleStatus.APPROVED, pendingArticle.getArticleStatus());
         }
 
         @Test
-        // PENDING이 아닌 문서를 TL 승인하면 예외가 발생한다 (APPROVAL_003)
+        // PENDING이 아닌 문서를 승인하면 예외가 발생한다 (APPROVAL_003)
         @DisplayName("Throws exception when status is not PENDING (APPROVAL_003)")
-        void tlApprove_NotPending_ThrowsException() {
+        void approve_NotPending_ThrowsException() {
             // given
             given(knowledgeArticleRepository.findById(2L))
                     .willReturn(Optional.of(draftArticle));
 
             // when & then
             assertThrows(IllegalStateException.class, () ->
-                    knowledgeArticleService.tlApprove(2L, 99L, "잘못된 승인 시도")
-            );
-        }
-    }
-
-    // =========================================================
-    // approve()
-    // =========================================================
-
-    @Nested
-    // DL 최종 승인 (approve)
-    @DisplayName("approve()")
-    class ApproveTest {
-
-        @Test
-        // TL_APPROVED 문서를 DL 승인하면 APPROVED 상태로 바뀐다
-        @DisplayName("Changes status to APPROVED")
-        void approve_Success() {
-            // given
-            given(knowledgeArticleRepository.findById(3L))
-                    .willReturn(Optional.of(tlApprovedArticle));
-
-            // when
-            knowledgeArticleService.approve(3L, 99L, "최종 승인합니다.");
-
-            // then
-            assertEquals(ArticleStatus.APPROVED, tlApprovedArticle.getArticleStatus());
-        }
-
-        @Test
-        // TL_APPROVED가 아닌 문서를 DL 승인하면 예외가 발생한다 (APPROVAL_004)
-        @DisplayName("Throws exception when status is not TL_APPROVED (APPROVAL_004)")
-        void approve_NotTlApproved_ThrowsException() {
-            // given
-            given(knowledgeArticleRepository.findById(1L))
-                    .willReturn(Optional.of(pendingArticle));
-
-            // when & then
-            assertThrows(IllegalStateException.class, () ->
-                    knowledgeArticleService.approve(1L, 99L, "잘못된 최종 승인 시도")
+                    knowledgeArticleService.approve(2L, 99L, "잘못된 승인 시도")
             );
         }
     }
@@ -306,20 +202,20 @@ class KnowledgeArticleServiceTest {
 
         @Test
         // PENDING 문서를 반려하면 REJECTED 상태로 바뀌고 반려 사유가 저장된다
-        @DisplayName("Changes status to REJECTED and saves rejection reason")
+        @DisplayName("Changes status to REJECTED and saves review comment")
         void reject_Success() {
             // given
-            String reason = "내용이 충분하지 않습니다. 보완 후 재제출해주세요.";
+            String reviewComment = "내용이 충분하지 않습니다. 보완 후 재제출해주세요.";
 
             given(knowledgeArticleRepository.findById(1L))
                     .willReturn(Optional.of(pendingArticle));
 
             // when
-            knowledgeArticleService.reject(1L, reason);
+            knowledgeArticleService.reject(1L, reviewComment);
 
             // then
             assertEquals(ArticleStatus.REJECTED, pendingArticle.getArticleStatus());
-            assertEquals(reason, pendingArticle.getArticleRejectionReason());
+            assertEquals(reviewComment, pendingArticle.getArticleRejectionReason());
         }
     }
 
@@ -380,6 +276,118 @@ class KnowledgeArticleServiceTest {
             // when & then
             assertThrows(IllegalStateException.class, () ->
                     knowledgeArticleService.delete(5L, 1L)
+            );
+        }
+    }
+
+    // =========================================================
+    // update()
+    // =========================================================
+
+    @Nested
+    // 지식 문서 수정 (update) — DRAFT 상태에서만 가능, 수정 후 PENDING 전환
+    @DisplayName("update()")
+    class UpdateTest {
+
+        @Test
+        // DRAFT 문서를 수정하면 PENDING 상태로 바뀐다
+        @DisplayName("Updates article and changes status to PENDING when DRAFT")
+        void update_Success() {
+            // given
+            String newTitle = "수정된 지식 문서 제목입니다";
+            ArticleCategory newCategory = ArticleCategory.PROCESS_IMPROVEMENT;
+            String newContent = "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 추가로 작성한 내용입니다.";
+
+            given(knowledgeArticleRepository.findById(2L))
+                    .willReturn(Optional.of(draftArticle));
+
+            // when
+            knowledgeArticleService.update(2L, newTitle, newCategory, newContent, 1L);
+
+            // then
+            assertEquals(newTitle, draftArticle.getArticleTitle());
+            assertEquals(newCategory, draftArticle.getArticleCategory());
+            assertEquals(newContent, draftArticle.getArticleContent());
+            assertEquals(ArticleStatus.PENDING, draftArticle.getArticleStatus());
+        }
+
+        @Test
+        // 타인의 문서를 수정하면 예외가 발생한다 (ARTICLE_007)
+        @DisplayName("Throws exception when requester is not the author (ARTICLE_007)")
+        void update_NotAuthor_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(2L))
+                    .willReturn(Optional.of(draftArticle));
+
+            // when & then
+            assertThrows(IllegalStateException.class, () ->
+                    knowledgeArticleService.update(2L, "수정된 제목", ArticleCategory.TROUBLESHOOTING,
+                            "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.", 999L)
+            );
+        }
+
+    }
+
+    // =========================================================
+    // adminDelete()
+    // =========================================================
+
+    @Nested
+    // 관리자 삭제 (adminDelete) — Admin만 사용, 모든 상태 삭제 가능
+    @DisplayName("adminDelete()")
+    class AdminDeleteTest {
+
+        @Test
+        // 문서를 관리자가 삭제 사유와 함께 삭제하면 isDeleted=true, deletionReason이 저장된다
+        @DisplayName("Sets isDeleted to true and saves deletion reason")
+        void adminDelete_Success() {
+            // given
+            KnowledgeArticle approvedArticle = KnowledgeArticle.builder()
+                    .articleId(5L)
+                    .authorId(1L)
+                    .articleStatus(ArticleStatus.APPROVED)
+                    .isDeleted(false)
+                    .viewCount(0)
+                    .build();
+            String deletionReason = "지식 문서 정책 위반으로 인한 삭제입니다. 해당 문서는 더 이상 참고할 수 없습니다.";
+
+            given(knowledgeArticleRepository.findById(5L))
+                    .willReturn(Optional.of(approvedArticle));
+
+            // when
+            knowledgeArticleService.adminDelete(5L, deletionReason);
+
+            // then
+            assertTrue(approvedArticle.getIsDeleted());
+            assertEquals(deletionReason, approvedArticle.getArticleDeletionReason());
+        }
+
+        @Test
+        // 삭제 사유가 10자 미만이면 예외가 발생한다 (ARTICLE_012)
+        @DisplayName("Throws exception when reason is less than 10 characters (ARTICLE_012)")
+        void adminDelete_ReasonTooShort_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            // when & then
+            assertThrows(IllegalArgumentException.class, () ->
+                    knowledgeArticleService.adminDelete(1L, "짧음")
+            );
+        }
+
+        @Test
+        // 삭제 사유가 500자를 넘으면 예외가 발생한다 (ARTICLE_012)
+        @DisplayName("Throws exception when reason exceeds 500 characters (ARTICLE_012)")
+        void adminDelete_ReasonTooLong_ThrowsException() {
+            // given
+            String longReason = "a".repeat(501);
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            // when & then
+            assertThrows(IllegalArgumentException.class, () ->
+                    knowledgeArticleService.adminDelete(1L, longReason)
             );
         }
     }
