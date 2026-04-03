@@ -1,7 +1,7 @@
 package com.ohgiraffers.team3backendkms.kms.query.controller;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
-import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
+import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
@@ -20,7 +20,7 @@ import java.util.List;
 public class KnowledgeArticleQueryController {
 
     private final KnowledgeArticleQueryService knowledgeArticleQueryService;
-    private final KnowledgeArticleService knowledgeArticleService;
+    private final KnowledgeArticleCommandService knowledgeArticleCommandService;
 
     /* 지식 목록 조회 */
     @GetMapping("/articles")
@@ -37,7 +37,7 @@ public class KnowledgeArticleQueryController {
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId
     ) {
         ArticleDetailDto detail = knowledgeArticleQueryService.getArticleDetail(articleId);
-        knowledgeArticleService.incrementViewCount(articleId);
+        knowledgeArticleCommandService.incrementViewCount(articleId);
         return ResponseEntity.ok(ApiResponse.success(detail));
     }
 

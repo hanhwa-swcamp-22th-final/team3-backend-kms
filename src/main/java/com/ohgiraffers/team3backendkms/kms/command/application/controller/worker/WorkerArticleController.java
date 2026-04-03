@@ -5,7 +5,7 @@ import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.Artic
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleUpdateRequest;
-import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
+import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
@@ -18,12 +18,12 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/kms/articles")
 public class WorkerArticleController {
 
-    private final KnowledgeArticleService knowledgeArticleService;
+    private final KnowledgeArticleCommandService knowledgeArticleCommandService;
 
     /* 지식 문서 등록 (PENDING) */
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> register(@Valid @RequestBody ArticleRegisterRequest request) {
-        Long articleId = knowledgeArticleService.register(
+        Long articleId = knowledgeArticleCommandService.register(
                 request.getAuthorId(),
                 request.getEquipmentId(),
                 request.getTitle(),
@@ -36,7 +36,7 @@ public class WorkerArticleController {
     /* 지식 문서 임시저장 (DRAFT) */
     @PostMapping("/drafts")
     public ResponseEntity<ApiResponse<Long>> draft(@Valid @RequestBody ArticleDraftRequest request) {
-        Long articleId = knowledgeArticleService.draft(
+        Long articleId = knowledgeArticleCommandService.draft(
                 request.getAuthorId(),
                 request.getEquipmentId(),
                 request.getTitle(),
@@ -52,7 +52,7 @@ public class WorkerArticleController {
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
             @Valid @RequestBody ArticleUpdateRequest request
     ) {
-        knowledgeArticleService.update(
+        knowledgeArticleCommandService.update(
                 articleId,
                 request.getTitle(),
                 request.getCategory(),
@@ -68,7 +68,7 @@ public class WorkerArticleController {
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
             @Valid @RequestBody ArticleDeleteRequest request
     ) {
-        knowledgeArticleService.delete(articleId, request.getRequesterId());
+        knowledgeArticleCommandService.delete(articleId, request.getRequesterId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

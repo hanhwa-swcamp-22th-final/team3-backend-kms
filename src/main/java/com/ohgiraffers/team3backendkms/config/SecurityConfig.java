@@ -9,7 +9,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
-// TODO: 최종 검증 시 HeaderAuthenticationFilter 추가 및 @PreAuthorize 복원
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity

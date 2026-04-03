@@ -1,7 +1,6 @@
-### TL 1차 승인 (PENDING → TL_APPROVED)
-POST http://localhost:8080/api/kms/approval/{{articleId}}/tl-approve
+### TL 1차 승인 (PENDING → APPROVED)
+POST http://localhost:8080/api/kms/tl/approval/{{articleId}}/approve
 Content-Type: application/json
-Authorization: Bearer {{tlToken}}
 
 {
   "approverId": 1774590584056408,
@@ -9,9 +8,8 @@ Authorization: Bearer {{tlToken}}
 }
 
 ### TL 반려 (PENDING → REJECTED)
-POST http://localhost:8080/api/kms/approval/{{articleId}}/tl-reject
+POST http://localhost:8080/api/kms/tl/approval/{{articleId}}/reject
 Content-Type: application/json
-Authorization: Bearer {{tlToken}}
 
 {
   "reviewComment": "내용이 불충분합니다. 보완 후 재제출 바랍니다."

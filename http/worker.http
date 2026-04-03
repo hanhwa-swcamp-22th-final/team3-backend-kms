@@ -1,7 +1,6 @@
 ### 지식 문서 등록 (PENDING 상태로 제출)
 POST http://localhost:8080/api/kms/articles
 Content-Type: application/json
-#Authorization: Bearer {{workerToken}}
 
 {
   "authorId": 1774937276588944,
@@ -14,7 +13,6 @@ Content-Type: application/json
 ### 임시저장 (DRAFT) — 내용 길이 제한 없음
 POST http://localhost:8080/api/kms/articles/drafts
 Content-Type: application/json
-#Authorization: Bearer {{workerToken}}
 
 {
   "authorId": 1774937276588944,
@@ -26,4 +24,3 @@ Content-Type: application/json
 
 ### 문서 삭제
 DELETE http://localhost:8080/api/kms/articles/{{articleId}}?requesterId={{authorId}}
-#Authorization: Bearer {{workerToken}}
