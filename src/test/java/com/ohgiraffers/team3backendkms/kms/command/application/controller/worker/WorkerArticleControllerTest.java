@@ -61,6 +61,48 @@ class WorkerArticleControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
         }
+
+        @Test
+        @DisplayName("Create article API failure: return 400 when title is blank")
+        void register_whenTitleIsBlank_thenBadRequest() throws Exception {
+            // given
+            Map<String, Object> body = Map.of(
+                "authorId", 10,
+                "equipmentId", 1,
+                "title", "",
+                "category", "TROUBLESHOOTING",
+                "content", "본문 내용이 50자 이상이어야 합니다. 여기에 충분한 길이의 본문을 작성합니다. 이제 50자를 초과합니다."
+            );
+
+            // when & then
+            mockMvc.perform(post(BASE_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+        }
+
+        @Test
+        @DisplayName("Create article API failure: return 400 when content is too short")
+        void register_whenContentTooShort_thenBadRequest() throws Exception {
+            // given
+            Map<String, Object> body = Map.of(
+                "authorId", 10,
+                "equipmentId", 1,
+                "title", "정상적인 제목입니다",
+                "category", "TROUBLESHOOTING",
+                "content", "짧은 본문"
+            );
+
+            // when & then
+            mockMvc.perform(post(BASE_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+        }
     }
 
     @Nested
@@ -81,6 +123,26 @@ class WorkerArticleControllerTest {
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+        }
+
+        @Test
+        @DisplayName("Update article API failure: return 400 when title is blank")
+        void update_whenTitleIsBlank_thenBadRequest() throws Exception {
+            // given
+            Map<String, Object> body = Map.of(
+                "authorId", 10,
+                "title", "",
+                "category", "TROUBLESHOOTING",
+                "content", "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 이제 충분한 길이입니다."
+            );
+
+            // when & then
+            mockMvc.perform(put(BASE_URL + "/1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
         }
     }
 

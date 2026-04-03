@@ -60,6 +60,21 @@ class AdminArticleControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
         }
+
+        @Test
+        @DisplayName("Delete article API failure: return 400 when deletionReason is blank")
+        void adminDelete_whenReasonIsBlank_thenBadRequest() throws Exception {
+            // given
+            Map<String, String> body = Map.of("deletionReason", "");
+
+            // when & then
+            mockMvc.perform(delete(BASE_URL + "/1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+        }
     }
 
     @Nested
@@ -79,6 +94,25 @@ class AdminArticleControllerTest {
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+        }
+
+        @Test
+        @DisplayName("Update article API failure: return 400 when title is blank")
+        void adminUpdate_whenTitleIsBlank_thenBadRequest() throws Exception {
+            // given
+            Map<String, Object> body = Map.of(
+                "title", "",
+                "category", "ETC",
+                "content", "관리자가 수정한 본문 내용입니다. 이 본문은 최소 50자 이상이어야 검증을 통과할 수 있습니다. 충분한 길이."
+            );
+
+            // when & then
+            mockMvc.perform(put(BASE_URL + "/1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
         }
     }
 

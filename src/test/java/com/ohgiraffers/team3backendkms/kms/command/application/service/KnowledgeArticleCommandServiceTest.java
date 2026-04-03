@@ -1,5 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.service;
 
+import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.BusinessException;
 import com.ohgiraffers.team3backendkms.common.idgenerator.IdGenerator;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
@@ -162,9 +163,11 @@ class KnowledgeArticleCommandServiceTest {
                     .willReturn(Optional.of(draftArticle));
 
             // when & then
-            assertThrows(BusinessException.class, () ->
+            BusinessException exception = assertThrows(BusinessException.class, () ->
                     knowledgeArticleCommandService.delete(2L, 999L)
             );
+
+            assertEquals(ArticleErrorCode.ARTICLE_007, exception.getErrorCode());
         }
 
         @Test
@@ -183,9 +186,26 @@ class KnowledgeArticleCommandServiceTest {
                     .willReturn(Optional.of(approvedArticle));
 
             // when & then
-            assertThrows(BusinessException.class, () ->
+            BusinessException exception = assertThrows(BusinessException.class, () ->
                     knowledgeArticleCommandService.delete(5L, 1L)
             );
+
+            assertEquals(ArticleErrorCode.ARTICLE_009, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("Throws exception when status is PENDING (ARTICLE_010)")
+        void delete_PendingArticle_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleCommandService.delete(1L, 1L)
+            );
+
+            assertEquals(ArticleErrorCode.ARTICLE_010, exception.getErrorCode());
         }
     }
 
@@ -222,7 +242,7 @@ class KnowledgeArticleCommandServiceTest {
                     .willReturn(Optional.of(draftArticle));
 
             // when & then
-            assertThrows(BusinessException.class, () ->
+            BusinessException exception = assertThrows(BusinessException.class, () ->
                     knowledgeArticleCommandService.update(
                             2L,
                             "수정된 제목",
@@ -231,6 +251,8 @@ class KnowledgeArticleCommandServiceTest {
                             999L
                     )
             );
+
+            assertEquals(ArticleErrorCode.ARTICLE_007, exception.getErrorCode());
         }
     }
 
@@ -262,31 +284,5 @@ class KnowledgeArticleCommandServiceTest {
             assertEquals(deletionReason, approvedArticle.getArticleDeletionReason());
         }
 
-        @Test
-        @DisplayName("Throws exception when reason is less than 10 characters (ARTICLE_012)")
-        void adminDelete_ReasonTooShort_ThrowsException() {
-            // given
-            given(knowledgeArticleRepository.findById(1L))
-                    .willReturn(Optional.of(pendingArticle));
-
-            // when & then
-            assertThrows(BusinessException.class, () ->
-                    knowledgeArticleCommandService.adminDelete(1L, "짧음")
-            );
-        }
-
-        @Test
-        @DisplayName("Throws exception when reason exceeds 500 characters (ARTICLE_012)")
-        void adminDelete_ReasonTooLong_ThrowsException() {
-            // given
-            String longReason = "a".repeat(501);
-            given(knowledgeArticleRepository.findById(1L))
-                    .willReturn(Optional.of(pendingArticle));
-
-            // when & then
-            assertThrows(BusinessException.class, () ->
-                    knowledgeArticleCommandService.adminDelete(1L, longReason)
-            );
-        }
     }
 }

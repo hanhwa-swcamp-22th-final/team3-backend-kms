@@ -17,7 +17,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @AllArgsConstructor
-public class KnowledgeArticle {
+public class
+KnowledgeArticle {
 
     @Id
     private Long articleId;

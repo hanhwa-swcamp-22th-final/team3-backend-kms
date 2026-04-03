@@ -85,9 +85,6 @@ public class KnowledgeArticleCommandService {
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
-        if (reason == null || reason.length() < 10 || reason.length() > 500) {
-            throw new BusinessException(ArticleErrorCode.ARTICLE_012);
-        }
         article.adminDelete(reason);
     }
 

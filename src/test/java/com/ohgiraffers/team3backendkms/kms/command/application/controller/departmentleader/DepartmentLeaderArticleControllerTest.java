@@ -84,5 +84,20 @@ class DepartmentLeaderArticleControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
         }
+
+        @Test
+        @DisplayName("Reject article API failure: return 400 when reviewComment is too short")
+        void reject_whenReviewCommentTooShort_thenBadRequest() throws Exception {
+            // given
+            Map<String, String> body = Map.of("reviewComment", "짧음");
+
+            // when & then
+            mockMvc.perform(post(BASE_URL + "/1/reject")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+        }
     }
 }

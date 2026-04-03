@@ -31,9 +31,6 @@ public class KnowledgeArticleApprovalService {
         if (article.getArticleStatus() != ArticleStatus.PENDING) {
             throw new BusinessException(ArticleErrorCode.APPROVAL_003);
         }
-        if (reviewComment != null && reviewComment.length() > 500) {
-            throw new BusinessException(ArticleErrorCode.APPROVAL_002);
-        }
         article.approve(approverId, reviewComment);
     }
 
@@ -50,9 +47,6 @@ public class KnowledgeArticleApprovalService {
         }
         if (article.getArticleStatus() != ArticleStatus.PENDING) {
             throw new BusinessException(ArticleErrorCode.APPROVAL_003);
-        }
-        if (reviewComment == null || reviewComment.length() < 10 || reviewComment.length() > 500) {
-            throw new BusinessException(ArticleErrorCode.APPROVAL_001);
         }
         article.reject(reviewComment);
     }

@@ -4,6 +4,7 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.common.idgenerator.TimeBasedIdGenerator;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -39,6 +40,7 @@ class KnowledgeArticleRepositoryTest {
     }
 
     @Test
+    @DisplayName("Save article success: entity is stored with all fields")
     void saveAndFindById_persistsArticleFields() {
         // given
         KnowledgeArticle article = buildArticle(ArticleStatus.PENDING);
@@ -57,6 +59,7 @@ class KnowledgeArticleRepositoryTest {
     }
 
     @Test
+    @DisplayName("Delete article by id success: entity is removed")
     void deleteById_removesStoredArticle() {
         // given
         KnowledgeArticle savedArticle = knowledgeArticleRepository.save(buildArticle(ArticleStatus.DRAFT));
