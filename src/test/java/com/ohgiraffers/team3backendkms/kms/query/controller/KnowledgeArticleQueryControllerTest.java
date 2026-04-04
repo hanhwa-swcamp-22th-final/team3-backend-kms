@@ -7,6 +7,8 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.EquipmentDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.TagDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleQueryService;
@@ -245,6 +247,88 @@ class KnowledgeArticleQueryControllerTest {
 
             // when & then
             mockMvc.perform(get("/api/kms/articles/recommendations"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data").isArray());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/kms/tags")
+    class GetTags {
+
+        @Test
+        @DisplayName("Returns 200 OK with tag list")
+        void getTags_success() throws Exception {
+            // given
+            TagDto tag1 = new TagDto();
+            tag1.setTagId(1L);
+            tag1.setTagName("Java");
+
+            TagDto tag2 = new TagDto();
+            tag2.setTagId(2L);
+            tag2.setTagName("Spring");
+
+            given(knowledgeArticleQueryService.getTags()).willReturn(List.of(tag1, tag2));
+
+            // when & then
+            mockMvc.perform(get("/api/kms/tags"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data[0].tagId").value(1))
+                    .andExpect(jsonPath("$.data[0].tagName").value("Java"))
+                    .andExpect(jsonPath("$.data[1].tagName").value("Spring"));
+        }
+
+        @Test
+        @DisplayName("Returns empty list when no tag exists")
+        void getTags_whenNoData() throws Exception {
+            // given
+            given(knowledgeArticleQueryService.getTags()).willReturn(List.of());
+
+            // when & then
+            mockMvc.perform(get("/api/kms/tags"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data").isArray());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/kms/equipments")
+    class GetEquipments {
+
+        @Test
+        @DisplayName("Returns 200 OK with equipment list")
+        void getEquipments_success() throws Exception {
+            // given
+            EquipmentDto eq1 = new EquipmentDto();
+            eq1.setEquipmentId(1L);
+            eq1.setEquipmentName("설비A");
+
+            EquipmentDto eq2 = new EquipmentDto();
+            eq2.setEquipmentId(2L);
+            eq2.setEquipmentName("설비B");
+
+            given(knowledgeArticleQueryService.getEquipments()).willReturn(List.of(eq1, eq2));
+
+            // when & then
+            mockMvc.perform(get("/api/kms/equipments"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data[0].equipmentId").value(1))
+                    .andExpect(jsonPath("$.data[0].equipmentName").value("설비A"))
+                    .andExpect(jsonPath("$.data[1].equipmentName").value("설비B"));
+        }
+
+        @Test
+        @DisplayName("Returns empty list when no equipment exists")
+        void getEquipments_whenNoData() throws Exception {
+            // given
+            given(knowledgeArticleQueryService.getEquipments()).willReturn(List.of());
+
+            // when & then
+            mockMvc.perform(get("/api/kms/equipments"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data").isArray());

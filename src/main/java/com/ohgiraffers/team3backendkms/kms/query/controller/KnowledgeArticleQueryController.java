@@ -4,6 +4,8 @@ import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.EquipmentDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.TagDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleQueryService;
@@ -55,5 +57,19 @@ public class KnowledgeArticleQueryController {
     public ResponseEntity<ApiResponse<List<ArticleReadDto>>> getRecommendations() {
         List<ArticleReadDto> recommendations = knowledgeArticleQueryService.getRecommendations();
         return ResponseEntity.ok(ApiResponse.success(recommendations));
+    }
+
+    /* 태그 목록 조회 */
+    @GetMapping("/tags")
+    public ResponseEntity<ApiResponse<List<TagDto>>> getTags() {
+        List<TagDto> tags = knowledgeArticleQueryService.getTags();
+        return ResponseEntity.ok(ApiResponse.success(tags));
+    }
+
+    /* 설비 목록 조회 */
+    @GetMapping("/equipments")
+    public ResponseEntity<ApiResponse<List<EquipmentDto>>> getEquipments() {
+        List<EquipmentDto> equipments = knowledgeArticleQueryService.getEquipments();
+        return ResponseEntity.ok(ApiResponse.success(equipments));
     }
 }
