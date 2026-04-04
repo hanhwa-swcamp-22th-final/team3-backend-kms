@@ -5,7 +5,9 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
+import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.request.ApprovalQueryRequest;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,6 +17,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -57,6 +62,33 @@ class KnowledgeArticleApprovalQueryMapperTest {
             assertTrue(stats.getPendingCount() >= 2);
             assertTrue(stats.getApprovedThisMonth() >= 0);
             assertTrue(stats.getRejectionRate() >= 0.0);
+        }
+    }
+
+    @Nested
+    @DisplayName("findApprovalArticles()")
+    class FindApprovalArticles {
+
+        @Test
+        @DisplayName("Returns PENDING articles when no filter applied")
+        void findApprovalArticles_NoFilter_ReturnsPendingList() {
+            // given
+            knowledgeArticleRepository.save(buildArticle(ArticleStatus.PENDING));
+            knowledgeArticleRepository.save(buildArticle(ArticleStatus.PENDING));
+            knowledgeArticleRepository.save(buildArticle(ArticleStatus.DRAFT));
+
+            entityManager.flush();
+            entityManager.clear();
+
+            // when
+            List<ApprovalArticleDto> result = knowledgeArticleMapper.findApprovalArticles(new ApprovalQueryRequest());
+
+            // then
+            assertFalse(result.isEmpty());
+            result.forEach(dto -> assertTrue(
+                dto.getArticleStatus().name().equals("PENDING"),
+                "목록에 PENDING 아닌 항목이 포함됨: " + dto.getArticleStatus()
+            ));
         }
     }
 

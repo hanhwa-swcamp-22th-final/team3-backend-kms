@@ -129,6 +129,52 @@
         LIMIT 5
     </select>
 
+    <!-- 승인 대기 목록 조회 -->
+    <select id="findApprovalArticles"
+            parameterType="com.ohgiraffers.team3backendkms.kms.query.dto.request.ApprovalQueryRequest"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto">
+        SELECT
+            ka.article_id       AS articleId,
+            ka.author_id        AS authorId,
+            e.employee_name     AS authorName,
+            ka.article_title    AS articleTitle,
+            ka.article_category AS articleCategory,
+            ka.article_status   AS articleStatus,
+            ka.view_count       AS viewCount,
+            ka.created_at       AS createdAt
+        FROM knowledge_article ka
+        LEFT JOIN employee e ON ka.author_id = e.employee_id
+        WHERE ka.is_deleted = false
+          AND ka.article_status = 'PENDING'
+        <if test="category != null">
+            AND ka.article_category = #{category}
+        </if>
+        <if test="keyword != null and keyword != '' and searchType != null and searchType != ''">
+            <choose>
+                <when test="searchType == 'articleId' and articleIdKeyword != null">
+                    AND ka.article_id = #{articleIdKeyword}
+                </when>
+                <when test="searchType == 'authorName'">
+                    AND e.employee_name LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'articleTitle'">
+                    AND ka.article_title LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+            </choose>
+        </if>
+        <choose>
+            <when test="sort == 'popular'">
+                ORDER BY ka.view_count DESC
+            </when>
+            <otherwise>
+                ORDER BY ka.created_at DESC
+            </otherwise>
+        </choose>
+        <if test="page != null and size != null">
+            LIMIT #{size} OFFSET #{page} * #{size}
+        </if>
+    </select>
+
     <!-- 승인 통계 조회 -->
     <select id="findApprovalStats"
             resultType="com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto">

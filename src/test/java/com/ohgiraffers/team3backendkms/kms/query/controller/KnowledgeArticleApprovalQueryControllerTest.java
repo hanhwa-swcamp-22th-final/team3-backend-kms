@@ -1,6 +1,7 @@
 package com.ohgiraffers.team3backendkms.kms.query.controller;
 
 import com.ohgiraffers.team3backendkms.common.exception.GlobalExceptionHandler;
+import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleApprovalQueryService;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +15,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -31,6 +35,29 @@ class KnowledgeArticleApprovalQueryControllerTest {
 
     @MockitoBean
     private KnowledgeArticleApprovalQueryService knowledgeArticleApprovalQueryService;
+
+    @Nested
+    @DisplayName("GET /api/kms/approval")
+    class GetApprovalArticles {
+
+        @Test
+        @DisplayName("Returns approval article list with 200 OK")
+        void getApprovalArticles_Success() throws Exception {
+            // given
+            ApprovalArticleDto dto = new ApprovalArticleDto();
+            dto.setArticleId(1L);
+            dto.setArticleTitle("승인 대기 문서 제목입니다");
+
+            given(knowledgeArticleApprovalQueryService.getApprovalArticles(any())).willReturn(List.of(dto));
+
+            // when & then
+            mockMvc.perform(get("/api/kms/approval"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[0].articleId").value(1))
+                .andExpect(jsonPath("$.data[0].articleTitle").value("승인 대기 문서 제목입니다"));
+        }
+    }
 
     @Nested
     @DisplayName("GET /api/kms/approval/stats")
