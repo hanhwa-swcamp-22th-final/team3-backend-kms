@@ -232,4 +232,25 @@
             2)                                                                  AS rejectionRate
     </select>
 
+
+    <!-- 태그 목록 조회 -->
+    <select id="findAllTags"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.TagDto">
+        SELECT
+            tag_id   AS tagId,
+            tag_name AS tagName
+        FROM knowledge_tag
+        ORDER BY tag_name ASC
+    </select>
+
+    <!-- 설비 목록 조회 -->
+    <select id="findAllEquipments"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.EquipmentDto">
+        SELECT
+            equipment_id   AS equipmentId,
+            equipment_name AS equipmentName
+        FROM equipment
+        ORDER BY equipment_name ASC
+    </select>
+
 </mapper>

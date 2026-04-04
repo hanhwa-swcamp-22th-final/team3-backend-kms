@@ -5,6 +5,8 @@ import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.EquipmentDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.TagDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ApprovalQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
@@ -30,4 +32,8 @@ public interface KnowledgeArticleMapper {
     List<ApprovalArticleDto> findApprovalArticles(ApprovalQueryRequest request);
 
     Optional<ApprovalArticleDetailDto> findApprovalArticleById(Long articleId);
+
+    List<TagDto> findAllTags();
+
+    List<EquipmentDto> findAllEquipments();
 }
