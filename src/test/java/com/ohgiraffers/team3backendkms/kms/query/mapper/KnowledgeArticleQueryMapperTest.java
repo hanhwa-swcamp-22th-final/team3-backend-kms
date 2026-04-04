@@ -7,6 +7,8 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.EquipmentDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.TagDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +56,8 @@ class KnowledgeArticleQueryMapperTest {
     private static final Long TEST_ARTICLE_ID_3 = 9000000000003L;
     private static final Long TEST_ARTICLE_ID_4 = 9000000000004L;
     private static final Long TEST_EQUIPMENT_ID = 9000000099L;
+    private static final Long TEST_TAG_ID_1 = 9000000001L;
+    private static final Long TEST_TAG_ID_2 = 9000000002L;
 
     @BeforeEach
     void setUp() {
@@ -66,6 +70,12 @@ class KnowledgeArticleQueryMapperTest {
                 "INSERT IGNORE INTO equipment " +
                         "(equipment_id, equipment_process_id, environment_standard_id, equipment_code, equipment_name, equipment_status, equipment_grade) " +
                         "VALUES (" + TEST_EQUIPMENT_ID + ", 1, 1, 'TEST-EQ-MAPPER', '매퍼테스트 설비', 'OPERATING', 'A')"
+        );
+        jdbcTemplate.execute(
+                "INSERT IGNORE INTO knowledge_tag (tag_id, tag_name) VALUES (" + TEST_TAG_ID_1 + ", 'TEST-태그-알파')"
+        );
+        jdbcTemplate.execute(
+                "INSERT IGNORE INTO knowledge_tag (tag_id, tag_name) VALUES (" + TEST_TAG_ID_2 + ", 'TEST-태그-베타')"
         );
         jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=1");
 
@@ -313,6 +323,65 @@ class KnowledgeArticleQueryMapperTest {
 
             // then
             assertTrue(result.isEmpty());
+        }
+    }
+
+    @Nested
+    @DisplayName("findAllTags()")
+    class FindAllTags {
+
+        @Test
+        @DisplayName("Returns tag list ordered by tag_name ASC")
+        void findAllTags_success() {
+            // when
+            List<TagDto> result = knowledgeArticleMapper.findAllTags();
+
+            // then
+            assertNotNull(result);
+            assertTrue(result.stream().anyMatch(tag -> tag.getTagId().equals(TEST_TAG_ID_1)));
+            assertTrue(result.stream().anyMatch(tag -> tag.getTagId().equals(TEST_TAG_ID_2)));
+        }
+
+        @Test
+        @DisplayName("Results are sorted by tag_name ASC")
+        void findAllTags_sortedByName() {
+            // when
+            List<TagDto> result = knowledgeArticleMapper.findAllTags();
+
+            // then
+            assertNotNull(result);
+            for (int i = 0; i < result.size() - 1; i++) {
+                assertTrue(result.get(i).getTagName().compareTo(result.get(i + 1).getTagName()) <= 0);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("findAllEquipments()")
+    class FindAllEquipments {
+
+        @Test
+        @DisplayName("Returns equipment list including test equipment")
+        void findAllEquipments_success() {
+            // when
+            List<EquipmentDto> result = knowledgeArticleMapper.findAllEquipments();
+
+            // then
+            assertNotNull(result);
+            assertTrue(result.stream().anyMatch(eq -> eq.getEquipmentId().equals(TEST_EQUIPMENT_ID)));
+        }
+
+        @Test
+        @DisplayName("Results are sorted by equipment_name ASC")
+        void findAllEquipments_sortedByName() {
+            // when
+            List<EquipmentDto> result = knowledgeArticleMapper.findAllEquipments();
+
+            // then
+            assertNotNull(result);
+            for (int i = 0; i < result.size() - 1; i++) {
+                assertTrue(result.get(i).getEquipmentName().compareTo(result.get(i + 1).getEquipmentName()) <= 0);
+            }
         }
     }
 
