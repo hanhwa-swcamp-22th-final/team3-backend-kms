@@ -1,5 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.query.mapper;
 
+import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
@@ -20,4 +21,6 @@ public interface KnowledgeArticleMapper {
     List<ContributorRankDto> findTopContributors(Map<String, Object> params);
 
     List<ArticleReadDto> findRecommendations();
+
+    ApprovalStatsDto findApprovalStats();
 }

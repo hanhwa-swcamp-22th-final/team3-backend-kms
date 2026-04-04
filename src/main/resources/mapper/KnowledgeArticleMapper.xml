@@ -129,4 +129,38 @@
         LIMIT 5
     </select>
 
+    <!-- 승인 통계 조회 -->
+    <select id="findApprovalStats"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto">
+        SELECT
+            (SELECT COUNT(*)
+             FROM knowledge_article
+             WHERE article_status = 'PENDING'
+               AND is_deleted = false)                                          AS pendingCount,
+
+            (SELECT COUNT(*)
+             FROM knowledge_article
+             WHERE article_status = 'APPROVED'
+               AND is_deleted = false
+               AND YEAR(approved_at) = YEAR(CURDATE())
+               AND MONTH(approved_at) = MONTH(CURDATE()))                      AS approvedThisMonth,
+
+            ROUND(
+                IFNULL(
+                    (SELECT COUNT(*)
+                     FROM knowledge_article
+                     WHERE article_status = 'REJECTED'
+                       AND is_deleted = false) * 100.0 /
+                    NULLIF(
+                        (SELECT COUNT(*)
+                         FROM knowledge_article
+                         WHERE article_status IN ('APPROVED', 'REJECTED')
+                           AND is_deleted = false),
+                        0
+                    ),
+                    0.0
+                ),
+            2)                                                                  AS rejectionRate
+    </select>
+
 </mapper>
