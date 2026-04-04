@@ -1,16 +1,17 @@
 package com.ohgiraffers.team3backendkms.kms.query.controller;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
+import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ApprovalQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleApprovalQueryService;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 import java.util.List;
 
@@ -20,6 +21,14 @@ import java.util.List;
 public class KnowledgeArticleApprovalQueryController {
 
     private final KnowledgeArticleApprovalQueryService knowledgeArticleApprovalQueryService;
+
+    @GetMapping("/{articleId}")
+    public ResponseEntity<ApiResponse<ApprovalArticleDetailDto>> getApprovalArticleById(
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId
+    ) {
+        ApprovalArticleDetailDto detail = knowledgeArticleApprovalQueryService.getApprovalArticleById(articleId);
+        return ResponseEntity.ok(ApiResponse.success(detail));
+    }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ApprovalArticleDto>>> getApprovalArticles(

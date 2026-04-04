@@ -1,5 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.query.mapper;
 
+import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
@@ -27,4 +28,6 @@ public interface KnowledgeArticleMapper {
     ApprovalStatsDto findApprovalStats();
 
     List<ApprovalArticleDto> findApprovalArticles(ApprovalQueryRequest request);
+
+    Optional<ApprovalArticleDetailDto> findApprovalArticleById(Long articleId);
 }

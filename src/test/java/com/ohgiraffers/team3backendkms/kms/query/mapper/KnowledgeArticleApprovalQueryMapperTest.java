@@ -5,6 +5,7 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
+import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ApprovalQueryRequest;
@@ -18,6 +19,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -89,6 +91,37 @@ class KnowledgeArticleApprovalQueryMapperTest {
                 dto.getArticleStatus().name().equals("PENDING"),
                 "목록에 PENDING 아닌 항목이 포함됨: " + dto.getArticleStatus()
             ));
+        }
+    }
+
+    @Nested
+    @DisplayName("findApprovalArticleById()")
+    class FindApprovalArticleById {
+
+        @Test
+        @DisplayName("Returns detail when PENDING article exists")
+        void findApprovalArticleById_ReturnDetail() {
+            // given
+            KnowledgeArticle article = knowledgeArticleRepository.save(buildArticle(ArticleStatus.PENDING));
+            entityManager.flush();
+            entityManager.clear();
+
+            // when
+            Optional<ApprovalArticleDetailDto> result = knowledgeArticleMapper.findApprovalArticleById(article.getArticleId());
+
+            // then
+            assertTrue(result.isPresent());
+            assertNotNull(result.get().getArticleTitle());
+        }
+
+        @Test
+        @DisplayName("Returns empty when article not found")
+        void findApprovalArticleById_NotFound_ReturnsEmpty() {
+            // when
+            Optional<ApprovalArticleDetailDto> result = knowledgeArticleMapper.findApprovalArticleById(-1L);
+
+            // then
+            assertTrue(result.isEmpty());
         }
     }
 

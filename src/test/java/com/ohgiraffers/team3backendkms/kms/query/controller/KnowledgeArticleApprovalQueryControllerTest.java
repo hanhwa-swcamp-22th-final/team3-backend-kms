@@ -1,6 +1,9 @@
 package com.ohgiraffers.team3backendkms.kms.query.controller;
 
+import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.GlobalExceptionHandler;
+import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
+import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleApprovalQueryService;
@@ -18,7 +21,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,6 +40,42 @@ class KnowledgeArticleApprovalQueryControllerTest {
 
     @MockitoBean
     private KnowledgeArticleApprovalQueryService knowledgeArticleApprovalQueryService;
+
+    @Nested
+    @DisplayName("GET /api/kms/approval/{articleId}")
+    class GetApprovalArticleById {
+
+        @Test
+        @DisplayName("Returns approval article detail with 200 OK")
+        void getApprovalArticleById_Success() throws Exception {
+            // given
+            ApprovalArticleDetailDto dto = new ApprovalArticleDetailDto();
+            dto.setArticleId(1L);
+            dto.setArticleTitle("승인 상세 조회 제목입니다");
+
+            given(knowledgeArticleApprovalQueryService.getApprovalArticleById(1L)).willReturn(dto);
+
+            // when & then
+            mockMvc.perform(get("/api/kms/approval/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.articleId").value(1))
+                .andExpect(jsonPath("$.data.articleTitle").value("승인 상세 조회 제목입니다"));
+        }
+
+        @Test
+        @DisplayName("Returns 404 when article not found")
+        void getApprovalArticleById_NotFound_Returns404() throws Exception {
+            // given
+            willThrow(new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND))
+                .given(knowledgeArticleApprovalQueryService).getApprovalArticleById(anyLong());
+
+            // when & then
+            mockMvc.perform(get("/api/kms/approval/999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false));
+        }
+    }
 
     @Nested
     @DisplayName("GET /api/kms/approval")

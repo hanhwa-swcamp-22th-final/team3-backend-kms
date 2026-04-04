@@ -175,6 +175,28 @@
         </if>
     </select>
 
+    <!-- 승인 상세 조회 -->
+    <select id="findApprovalArticleById"
+            parameterType="long"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto">
+        SELECT
+            ka.article_id               AS articleId,
+            ka.author_id                AS authorId,
+            e.employee_name             AS authorName,
+            ka.article_title            AS articleTitle,
+            ka.article_category         AS articleCategory,
+            ka.article_content          AS articleContent,
+            ka.article_status           AS articleStatus,
+            ka.article_approval_opinion AS articleApprovalOpinion,
+            ka.article_rejection_reason AS articleRejectionReason,
+            ka.created_at               AS createdAt,
+            ka.updated_at               AS updatedAt
+        FROM knowledge_article ka
+        LEFT JOIN employee e ON ka.author_id = e.employee_id
+        WHERE ka.article_id = #{articleId}
+          AND ka.is_deleted = false
+    </select>
+
     <!-- 승인 통계 조회 -->
     <select id="findApprovalStats"
             resultType="com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto">

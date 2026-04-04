@@ -1,5 +1,8 @@
 package com.ohgiraffers.team3backendkms.kms.query.service;
 
+import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
+import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
+import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ApprovalQueryRequest;
@@ -16,6 +19,11 @@ import java.util.List;
 public class KnowledgeArticleApprovalQueryService {
 
     private final KnowledgeArticleMapper knowledgeArticleMapper;
+
+    public ApprovalArticleDetailDto getApprovalArticleById(Long articleId) {
+        return knowledgeArticleMapper.findApprovalArticleById(articleId)
+                .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND));
+    }
 
     public List<ApprovalArticleDto> getApprovalArticles(ApprovalQueryRequest request) {
         normalizeRequest(request);
