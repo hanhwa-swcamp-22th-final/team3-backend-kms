@@ -5,6 +5,8 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.EquipmentDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.TagDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeArticleMapper;
@@ -246,6 +248,92 @@ class KnowledgeArticleQueryServiceTest {
 
             // when
             List<ArticleReadDto> result = knowledgeArticleQueryService.getRecommendations();
+
+            // then
+            assertNotNull(result);
+            assertTrue(result.isEmpty());
+        }
+    }
+
+    @Nested
+    @DisplayName("getTags()")
+    class GetTags {
+
+        @Test
+        @DisplayName("Returns tag list")
+        void getTags_success() {
+            // given
+            TagDto tag1 = new TagDto();
+            tag1.setTagId(1L);
+            tag1.setTagName("Java");
+
+            TagDto tag2 = new TagDto();
+            tag2.setTagId(2L);
+            tag2.setTagName("Spring");
+
+            given(knowledgeArticleMapper.findAllTags()).willReturn(List.of(tag1, tag2));
+
+            // when
+            List<TagDto> result = knowledgeArticleQueryService.getTags();
+
+            // then
+            assertNotNull(result);
+            assertEquals(2, result.size());
+            assertEquals("Java", result.get(0).getTagName());
+            assertEquals("Spring", result.get(1).getTagName());
+        }
+
+        @Test
+        @DisplayName("Returns empty list when no tag exists")
+        void getTags_whenNoData_thenReturnEmptyList() {
+            // given
+            given(knowledgeArticleMapper.findAllTags()).willReturn(List.of());
+
+            // when
+            List<TagDto> result = knowledgeArticleQueryService.getTags();
+
+            // then
+            assertNotNull(result);
+            assertTrue(result.isEmpty());
+        }
+    }
+
+    @Nested
+    @DisplayName("getEquipments()")
+    class GetEquipments {
+
+        @Test
+        @DisplayName("Returns equipment list")
+        void getEquipments_success() {
+            // given
+            EquipmentDto eq1 = new EquipmentDto();
+            eq1.setEquipmentId(1L);
+            eq1.setEquipmentName("설비A");
+
+            EquipmentDto eq2 = new EquipmentDto();
+            eq2.setEquipmentId(2L);
+            eq2.setEquipmentName("설비B");
+
+            given(knowledgeArticleMapper.findAllEquipments()).willReturn(List.of(eq1, eq2));
+
+            // when
+            List<EquipmentDto> result = knowledgeArticleQueryService.getEquipments();
+
+            // then
+            assertNotNull(result);
+            assertEquals(2, result.size());
+            assertEquals("설비A", result.get(0).getEquipmentName());
+            assertEquals("설비B", result.get(1).getEquipmentName());
+        }
+
+        @Test
+        @DisplayName("Returns empty list when no equipment exists")
+        void getEquipments_whenNoData_thenReturnEmptyList() {
+            // given
+            given(knowledgeArticleMapper.findAllEquipments()).willReturn(List.of());
+
+            // when
+            List<EquipmentDto> result = knowledgeArticleQueryService.getEquipments();
 
             // then
             assertNotNull(result);

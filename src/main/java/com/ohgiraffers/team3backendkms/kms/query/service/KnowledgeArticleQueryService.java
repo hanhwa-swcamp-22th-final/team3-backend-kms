@@ -4,6 +4,8 @@ import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.EquipmentDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.TagDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeArticleMapper;
@@ -37,6 +39,14 @@ public class KnowledgeArticleQueryService {
 
     public List<ArticleReadDto> getRecommendations() {
         return knowledgeArticleMapper.findRecommendations();
+    }
+
+    public List<TagDto> getTags() {
+        return knowledgeArticleMapper.findAllTags();
+    }
+
+    public List<EquipmentDto> getEquipments() {
+        return knowledgeArticleMapper.findAllEquipments();
     }
 
     private void normalizeQueryRequest(ArticleQueryRequest request) {
