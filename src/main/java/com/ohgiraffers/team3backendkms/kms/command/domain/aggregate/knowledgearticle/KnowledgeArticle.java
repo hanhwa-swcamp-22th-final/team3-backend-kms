@@ -17,8 +17,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @AllArgsConstructor
-public class
-KnowledgeArticle {
+public class KnowledgeArticle {
 
     @Id
     private Long articleId;
@@ -67,11 +66,6 @@ KnowledgeArticle {
     @LastModifiedBy
     @Column(name = "updated_by")
     private Long updatedBy;
-
-    // =========================================================
-    // 예외 메시지 상수
-    // =========================================================
-
 
     // =========================================================
     // 비즈니스 로직 메서드
