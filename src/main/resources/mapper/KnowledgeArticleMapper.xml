@@ -195,6 +195,7 @@
         LEFT JOIN employee e ON ka.author_id = e.employee_id
         WHERE ka.article_id = #{articleId}
           AND ka.is_deleted = false
+          AND ka.article_status = 'PENDING'
     </select>
 
     <!-- 승인 통계 조회 -->
