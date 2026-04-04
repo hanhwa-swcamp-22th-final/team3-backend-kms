@@ -2,6 +2,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.service;
 
 import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.BusinessException;
+import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
@@ -221,6 +222,69 @@ class KnowledgeArticleApprovalServiceTest {
             );
 
             assertEquals(ArticleErrorCode.ARTICLE_008, exception.getErrorCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("hold()")
+    class HoldTest {
+
+        @Test
+        @DisplayName("Stores review comment and keeps status as PENDING")
+        void hold_Success() {
+            // given
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            // when
+            knowledgeArticleApprovalService.hold(1L, "보류 의견입니다. 내용 보완 후 재검토 예정.");
+
+            // then
+            assertEquals(ArticleStatus.PENDING, pendingArticle.getArticleStatus());
+            assertEquals("보류 의견입니다. 내용 보완 후 재검토 예정.", pendingArticle.getArticleApprovalOpinion());
+        }
+
+        @Test
+        @DisplayName("Throws exception when article not found (ARTICLE_NOT_FOUND)")
+        void hold_ArticleNotFound_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(99L))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThrows(ResourceNotFoundException.class, () ->
+                    knowledgeArticleApprovalService.hold(99L, "보류 의견입니다.")
+            );
+        }
+
+        @Test
+        @DisplayName("Throws exception when article is deleted (ARTICLE_008)")
+        void hold_DeletedArticle_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(5L))
+                    .willReturn(Optional.of(deletedArticle));
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleApprovalService.hold(5L, "삭제된 문서 보류 시도입니다.")
+            );
+
+            assertEquals(ArticleErrorCode.ARTICLE_008, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("Throws exception when status is not PENDING (APPROVAL_003)")
+        void hold_NotPending_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(2L))
+                    .willReturn(Optional.of(draftArticle));
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleApprovalService.hold(2L, "DRAFT 문서 보류 시도입니다.")
+            );
+
+            assertEquals(ArticleErrorCode.APPROVAL_003, exception.getErrorCode());
         }
     }
 }

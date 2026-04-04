@@ -51,6 +51,17 @@ public class KnowledgeArticleApprovalService {
         article.reject(reviewComment);
     }
 
+    public void hold(Long articleId, String reviewComment) {
+        KnowledgeArticle article = findArticleById(articleId);
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
+        }
+        if (article.getArticleStatus() != ArticleStatus.PENDING) {
+            throw new BusinessException(ArticleErrorCode.APPROVAL_003);
+        }
+        article.hold(reviewComment);
+    }
+
     private KnowledgeArticle findArticleById(Long articleId) {
         return knowledgeArticleRepository.findById(articleId)
                 .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND));
