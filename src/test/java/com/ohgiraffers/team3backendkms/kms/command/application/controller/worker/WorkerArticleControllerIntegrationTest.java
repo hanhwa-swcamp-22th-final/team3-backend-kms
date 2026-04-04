@@ -97,19 +97,49 @@ class WorkerArticleControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("Update draft article API integration success: update content and change status to pending")
+    @DisplayName("Update draft article API integration success: update content and keep status as draft")
     void updateDraftArticle_success() throws Exception {
         // given
         KnowledgeArticle draftArticle = saveArticle(ArticleStatus.DRAFT, TITLE, CONTENT, 0);
         Map<String, Object> request = Map.of(
             "authorId", AUTHOR_ID,
+            "equipmentId", EQUIPMENT_ID,
+            "title", UPDATED_TITLE,
+            "category", "PROCESS_IMPROVEMENT",
+            "content", "임시저장 중인 수정 본문입니다."
+        );
+
+        // when
+        mockMvc.perform(put(BASE_URL + "/{articleId}", draftArticle.getArticleId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+
+        flushAndClear();
+
+        // then
+        KnowledgeArticle updatedArticle = knowledgeArticleRepository.findById(draftArticle.getArticleId()).orElseThrow();
+        assertEquals(UPDATED_TITLE, updatedArticle.getArticleTitle());
+        assertEquals("임시저장 중인 수정 본문입니다.", updatedArticle.getArticleContent());
+        assertEquals(ArticleStatus.DRAFT, updatedArticle.getArticleStatus());
+    }
+
+    @Test
+    @DisplayName("Submit draft article API integration success: update content and change status to pending")
+    void submitDraftArticle_success() throws Exception {
+        // given
+        KnowledgeArticle draftArticle = saveArticle(ArticleStatus.DRAFT, TITLE, "임시 작성 중인 본문", 0);
+        Map<String, Object> request = Map.of(
+            "authorId", AUTHOR_ID,
+            "equipmentId", EQUIPMENT_ID,
             "title", UPDATED_TITLE,
             "category", "PROCESS_IMPROVEMENT",
             "content", UPDATED_CONTENT
         );
 
         // when
-        mockMvc.perform(put(BASE_URL + "/{articleId}", draftArticle.getArticleId())
+        mockMvc.perform(put(BASE_URL + "/{articleId}/submit", draftArticle.getArticleId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())

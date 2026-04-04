@@ -135,6 +135,20 @@ class KnowledgeArticleCommandServiceTest {
             // then
             assertEquals(1, pendingArticle.getViewCount());
         }
+
+        @Test
+        @DisplayName("Does not increment view count for DRAFT article")
+        void incrementViewCount_DraftArticle_NoIncrement() {
+            // given
+            given(knowledgeArticleRepository.findById(2L))
+                    .willReturn(Optional.of(draftArticle));
+
+            // when
+            knowledgeArticleCommandService.incrementViewCount(2L);
+
+            // then
+            assertEquals(0, draftArticle.getViewCount());
+        }
     }
 
     @Nested
@@ -210,49 +224,80 @@ class KnowledgeArticleCommandServiceTest {
     }
 
     @Nested
-    @DisplayName("update()")
+    @DisplayName("updateDraft()")
     class UpdateTest {
 
         @Test
-        @DisplayName("Updates article and changes status to PENDING when DRAFT")
-        void update_Success() {
+        @DisplayName("Updates article and keeps status as DRAFT when DRAFT")
+        void updateDraft_Success() {
             // given
             String newTitle = "수정된 지식 문서 제목입니다";
             ArticleCategory newCategory = ArticleCategory.PROCESS_IMPROVEMENT;
+            Long newEquipmentId = 99L;
             String newContent = "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 추가로 작성한 내용입니다.";
 
             given(knowledgeArticleRepository.findById(2L))
                     .willReturn(Optional.of(draftArticle));
 
             // when
-            knowledgeArticleCommandService.update(2L, newTitle, newCategory, newContent, 1L);
+            knowledgeArticleCommandService.updateDraft(2L, newTitle, newCategory, newEquipmentId, newContent, 1L);
 
             // then
             assertEquals(newTitle, draftArticle.getArticleTitle());
             assertEquals(newCategory, draftArticle.getArticleCategory());
+            assertEquals(newEquipmentId, draftArticle.getEquipmentId());
             assertEquals(newContent, draftArticle.getArticleContent());
-            assertEquals(ArticleStatus.PENDING, draftArticle.getArticleStatus());
+            assertEquals(ArticleStatus.DRAFT, draftArticle.getArticleStatus());
         }
 
         @Test
         @DisplayName("Throws exception when requester is not the author (ARTICLE_007)")
-        void update_NotAuthor_ThrowsException() {
+        void updateDraft_NotAuthor_ThrowsException() {
             // given
             given(knowledgeArticleRepository.findById(2L))
                     .willReturn(Optional.of(draftArticle));
 
             // when & then
             BusinessException exception = assertThrows(BusinessException.class, () ->
-                    knowledgeArticleCommandService.update(
+                    knowledgeArticleCommandService.updateDraft(
                             2L,
                             "수정된 제목",
                             ArticleCategory.TROUBLESHOOTING,
+                            1L,
                             "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.",
                             999L
                     )
             );
 
             assertEquals(ArticleErrorCode.ARTICLE_007, exception.getErrorCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("submitDraft()")
+    class SubmitDraftTest {
+
+        @Test
+        @DisplayName("Updates article and changes status to PENDING when DRAFT")
+        void submitDraft_Success() {
+            // given
+            String newTitle = "제출할 지식 문서 제목입니다";
+            ArticleCategory newCategory = ArticleCategory.PROCESS_IMPROVEMENT;
+            Long newEquipmentId = 99L;
+            String newContent = "제출용 본문 내용입니다. 최소 50자 이상이어야 하며 제출 시 상태 변경까지 함께 검증합니다.";
+
+            given(knowledgeArticleRepository.findById(2L))
+                    .willReturn(Optional.of(draftArticle));
+
+            // when
+            knowledgeArticleCommandService.submitDraft(2L, newTitle, newCategory, newEquipmentId, newContent, 1L);
+
+            // then
+            assertEquals(newTitle, draftArticle.getArticleTitle());
+            assertEquals(newCategory, draftArticle.getArticleCategory());
+            assertEquals(newEquipmentId, draftArticle.getEquipmentId());
+            assertEquals(newContent, draftArticle.getArticleContent());
+            assertEquals(ArticleStatus.PENDING, draftArticle.getArticleStatus());
         }
     }
 

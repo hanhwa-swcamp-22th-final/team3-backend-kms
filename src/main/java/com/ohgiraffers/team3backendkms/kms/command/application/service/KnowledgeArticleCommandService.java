@@ -36,7 +36,7 @@ public class KnowledgeArticleCommandService {
         ).getArticleId();
     }
 
-    public void update(Long articleId, String title, ArticleCategory category, String content, Long requesterId) {
+    public void updateDraft(Long articleId, String title, ArticleCategory category, Long equipmentId, String content, Long requesterId) {
         KnowledgeArticle article = findArticleById(articleId);
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
@@ -47,7 +47,24 @@ public class KnowledgeArticleCommandService {
         if (!article.getAuthorId().equals(requesterId)) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_007);
         }
-        article.update(title, category, content);
+        validateEquipmentIdIfPresent(equipmentId);
+        article.updateDraft(title, category, equipmentId, content);
+    }
+
+    public void submitDraft(Long articleId, String title, ArticleCategory category, Long equipmentId, String content, Long requesterId) {
+        KnowledgeArticle article = findArticleById(articleId);
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
+        }
+        if (article.getArticleStatus() != ArticleStatus.DRAFT) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_SUBMIT_INVALID);
+        }
+        if (!article.getAuthorId().equals(requesterId)) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_007);
+        }
+        validateEquipmentId(equipmentId);
+        article.updateDraft(title, category, equipmentId, content);
+        article.submit();
     }
 
     public void adminUpdate(Long articleId, String title, ArticleCategory category, String content) {
@@ -57,6 +74,9 @@ public class KnowledgeArticleCommandService {
 
     public void incrementViewCount(Long articleId) {
         KnowledgeArticle article = findArticleById(articleId);
+        if (article.getArticleStatus() == ArticleStatus.DRAFT) {
+            return;
+        }
         article.incrementViewCount();
     }
 

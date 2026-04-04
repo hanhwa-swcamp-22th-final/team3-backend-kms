@@ -4,7 +4,8 @@ import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDeleteRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleUpdateRequest;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftUpdateRequest;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleSubmitRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -50,12 +51,30 @@ public class WorkerArticleController {
     @PutMapping("/{articleId}")
     public ResponseEntity<ApiResponse<Void>> update(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
-            @Valid @RequestBody ArticleUpdateRequest request
+            @Valid @RequestBody ArticleDraftUpdateRequest request
     ) {
-        knowledgeArticleCommandService.update(
+        knowledgeArticleCommandService.updateDraft(
                 articleId,
                 request.getTitle(),
                 request.getCategory(),
+                request.getEquipmentId(),
+                request.getContent(),
+                request.getAuthorId()
+        );
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /* 임시저장 문서 제출 (DRAFT -> PENDING) */
+    @PutMapping("/{articleId}/submit")
+    public ResponseEntity<ApiResponse<Void>> submit(
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
+            @Valid @RequestBody ArticleSubmitRequest request
+    ) {
+        knowledgeArticleCommandService.submitDraft(
+                articleId,
+                request.getTitle(),
+                request.getCategory(),
+                request.getEquipmentId(),
                 request.getContent(),
                 request.getAuthorId()
         );

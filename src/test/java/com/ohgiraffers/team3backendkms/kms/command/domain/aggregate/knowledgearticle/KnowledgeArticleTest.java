@@ -83,27 +83,29 @@ class KnowledgeArticleTest {
     }
 
     @Nested
-    @DisplayName("update()")
+    @DisplayName("updateDraft()")
     class UpdateTest {
 
         @Test
-        @DisplayName("Updates fields and changes status to PENDING")
-        void update_UpdatesFieldsAndChangesStatusToPending() {
+        @DisplayName("Updates fields and keeps status as DRAFT")
+        void updateDraft_UpdatesFieldsAndKeepsStatusAsDraft() {
             // given
             KnowledgeArticle article = buildArticle(ArticleStatus.DRAFT, 0);
 
             // when
-            article.update(
+            article.updateDraft(
                     "수정된 제목입니다",
                     ArticleCategory.PROCESS_IMPROVEMENT,
+                    200L,
                     "수정된 본문 내용입니다. 도메인 단위 테스트를 위해 충분한 길이의 본문을 작성합니다."
             );
 
             // then
             assertEquals("수정된 제목입니다", article.getArticleTitle());
             assertEquals(ArticleCategory.PROCESS_IMPROVEMENT, article.getArticleCategory());
+            assertEquals(200L, article.getEquipmentId());
             assertEquals("수정된 본문 내용입니다. 도메인 단위 테스트를 위해 충분한 길이의 본문을 작성합니다.", article.getArticleContent());
-            assertEquals(ArticleStatus.PENDING, article.getArticleStatus());
+            assertEquals(ArticleStatus.DRAFT, article.getArticleStatus());
         }
     }
 

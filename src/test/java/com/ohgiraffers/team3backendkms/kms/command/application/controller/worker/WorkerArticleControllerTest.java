@@ -110,12 +110,12 @@ class WorkerArticleControllerTest {
     class Update {
 
         @Test
-        @DisplayName("Update article API success: return successful response")
+        @DisplayName("Update draft API success: return successful response")
         void update_success() throws Exception {
             // given
-            Map<String, Object> body = createUpdateRequest();
+            Map<String, Object> body = createDraftUpdateRequest();
             willDoNothing().given(knowledgeArticleCommandService)
-                .update(anyLong(), anyString(), any(ArticleCategory.class), anyString(), anyLong());
+                .updateDraft(anyLong(), any(), any(), any(), any(), anyLong());
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/1")
@@ -126,8 +126,8 @@ class WorkerArticleControllerTest {
         }
 
         @Test
-        @DisplayName("Update article API failure: return 400 when title is blank")
-        void update_whenTitleIsBlank_thenBadRequest() throws Exception {
+        @DisplayName("Update draft API success: allow blank title for temporary save")
+        void update_whenTitleIsBlank_thenOk() throws Exception {
             // given
             Map<String, Object> body = Map.of(
                 "authorId", 10,
@@ -135,9 +135,52 @@ class WorkerArticleControllerTest {
                 "category", "TROUBLESHOOTING",
                 "content", "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 이제 충분한 길이입니다."
             );
+            willDoNothing().given(knowledgeArticleCommandService)
+                .updateDraft(anyLong(), any(), any(), any(), any(), anyLong());
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+        }
+    }
+
+    @Nested
+    @DisplayName("PUT /api/kms/articles/{articleId}/submit")
+    class Submit {
+
+        @Test
+        @DisplayName("Submit draft API success: return successful response")
+        void submit_success() throws Exception {
+            // given
+            Map<String, Object> body = createSubmitRequest();
+            willDoNothing().given(knowledgeArticleCommandService)
+                .submitDraft(anyLong(), anyString(), any(ArticleCategory.class), anyLong(), anyString(), anyLong());
+
+            // when & then
+            mockMvc.perform(put(BASE_URL + "/1/submit")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+        }
+
+        @Test
+        @DisplayName("Submit draft API failure: return 400 when content is too short")
+        void submit_whenContentTooShort_thenBadRequest() throws Exception {
+            // given
+            Map<String, Object> body = Map.of(
+                "authorId", 10,
+                "equipmentId", 1,
+                "title", "정상적인 제목입니다",
+                "category", "TROUBLESHOOTING",
+                "content", "짧은 본문"
+            );
+
+            // when & then
+            mockMvc.perform(put(BASE_URL + "/1/submit")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isBadRequest())
@@ -175,9 +218,20 @@ class WorkerArticleControllerTest {
         );
     }
 
-    private Map<String, Object> createUpdateRequest() {
+    private Map<String, Object> createDraftUpdateRequest() {
         return Map.of(
             "authorId", 10,
+            "equipmentId", 1,
+            "title", "수정된 제목입니다",
+            "category", "PROCESS_IMPROVEMENT",
+            "content", "임시 저장 중인 본문입니다."
+        );
+    }
+
+    private Map<String, Object> createSubmitRequest() {
+        return Map.of(
+            "authorId", 10,
+            "equipmentId", 1,
             "title", "수정된 제목입니다",
             "category", "PROCESS_IMPROVEMENT",
             "content", "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 이제 충분한 길이입니다."
