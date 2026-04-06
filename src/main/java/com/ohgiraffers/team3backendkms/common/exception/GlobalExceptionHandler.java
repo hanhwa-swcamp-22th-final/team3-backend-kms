@@ -3,10 +3,11 @@ package com.ohgiraffers.team3backendkms.common.exception;
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
@@ -44,12 +45,12 @@ public class GlobalExceptionHandler {
      * }
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<Void> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
-        return ApiResponse.failure("VALIDATION_ERROR", message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.failure("VALIDATION_ERROR", message));
     }
 
     /**
@@ -73,156 +74,30 @@ public class GlobalExceptionHandler {
      *  - message: 파라미터 검증 오류 메시지
      */
     @ExceptionHandler(HandlerMethodValidationException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<Void> handleHandlerMethodValidation(HandlerMethodValidationException e) {
+    public ResponseEntity<ApiResponse<Void>> handleHandlerMethodValidation(HandlerMethodValidationException e) {
         String message = e.getAllErrors().stream()
                 .map(error -> error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
-        return ApiResponse.failure("VALIDATION_ERROR", message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.failure("VALIDATION_ERROR", message));
     }
 
     /**
-     * 리소스 미찾음 처리
+     * 비즈니스 예외 처리 (상태 검증, 입력값 검증, 리소스 미존재 등 모든 비즈니스 예외 통합 처리)
      *
-     * 발생 위치:
-     *  - KnowledgeArticleService.delete() → 문서 미존재
-     *  - KnowledgeArticleService.update() → 문서 미존재
-     *  - KnowledgeArticleService.approve() → 문서 미존재
-     *  - KnowledgeArticleService.reject() → 문서 미존재
-     *  - KnowledgeArticleService.adminDelete() → 문서 미존재
-     *  - KnowledgeArticleService.incrementViewCount() → 문서 미존재
-     *
-     * 에러 코드:
-     *  - ARTICLE_NOT_FOUND: "[ARTICLE] 문서를 찾을 수 없습니다."
-     *
-     * 반환:
-     *  - HTTP Status: 404 Not Found
-     *  - errorCode: "NOT_FOUND"
-     *  - message: "[ARTICLE] 문서를 찾을 수 없습니다."
-     *
-     * 예시:
-     * {
-     *   "success": false,
-     *   "errorCode": "NOT_FOUND",
-     *   "message": "[ARTICLE] 문서를 찾을 수 없습니다."
-     * }
+     * HTTP 상태는 ArticleErrorCode에 정의된 값을 그대로 사용한다.
      */
-    @ExceptionHandler(ResourceNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ApiResponse<Void> handleResourceNotFound(ResourceNotFoundException e) {
-        return ApiResponse.failure("NOT_FOUND", e.getMessage());
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
+        ArticleErrorCode errorCode = e.getErrorCode();
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(ApiResponse.failure(errorCode.getCode(), e.getMessage()));
     }
 
-    /**
-     * 비즈니스 로직 검증 오류 처리 (입력값 검증)
-     *
-     * 발생 위치:
-     *  - KnowledgeArticleService.register() → 설비 ID 검증
-     *  - KnowledgeArticleService.draft() → 설비 ID 검증
-     *  - KnowledgeArticleService.approve() → 승인 의견 길이 검증
-     *  - KnowledgeArticleService.reject() → 반려 사유 길이 검증
-     *  - KnowledgeArticleService.adminDelete() → 삭제 사유 길이 검증
-     *
-     * 에러 코드 (service에서 검증):
-     *  - ARTICLE_005: "[ARTICLE_005] 유효하지 않은 설비 ID입니다."
-     *  - ARTICLE_012: "[ARTICLE_012] 삭제 사유는 10자 이상 500자 이하여야 합니다."
-     *
-     * 에러 코드 (service에서 검증):
-     *  - APPROVAL_001: "[APPROVAL_001] 반려 사유는 10자 이상 500자 이하여야 합니다."
-     *  - APPROVAL_002: "[APPROVAL_002] 승인 의견은 500자 이하여야 합니다."
-     *
-     * 반환:
-     *  - HTTP Status: 400 Bad Request
-     *  - errorCode: "BAD_REQUEST"
-     *  - message: "[ARTICLE_XXX] 또는 [APPROVAL_XXX] 에러 메시지"
-     *
-     * 예시 1 (제목 검증 실패):
-     * {
-     *   "success": false,
-     *   "errorCode": "BAD_REQUEST",
-     *   "message": "[ARTICLE_001] 제목은 5자 이상 200자 이하여야 합니다."
-     * }
-     *
-     * 예시 2 (반려 사유 검증 실패):
-     * {
-     *   "success": false,
-     *   "errorCode": "BAD_REQUEST",
-     *   "message": "[APPROVAL_001] 반려 사유는 10자 이상 500자 이하여야 합니다."
-     * }
-     */
-    @ExceptionHandler(IllegalArgumentException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<Void> handleIllegalArgument(IllegalArgumentException e) {
-        return ApiResponse.failure("BAD_REQUEST", e.getMessage());
-    }
-
-    /**
-     * 비즈니스 로직 상태 검증 오류 처리
-     *
-     *  발생 위치:
-     *  - KnowledgeArticle.submit() → DRAFT 아닌 상태에서 제출
-     *  - KnowledgeArticle.approve() → 상태 검증 실패
-     *  - KnowledgeArticle.reject() → 상태 검증 실패
-     *  - KnowledgeArticle.update() → DRAFT 상태 검증 실패
-     *  - KnowledgeArticle.softDelete() → 삭제 불가 상태
-     *  - KnowledgeArticle.adminDelete() → 삭제 실패
-     *  - KnowledgeArticleService.delete() → 권한 검증 실패
-     *
-     * 에러 코드 (submit):
-     *  - ARTICLE_SUBMIT_INVALID: "[ARTICLE] DRAFT 상태에서만 제출할 수 있습니다."
-     *
-     * 에러 코드 (approve):
-     *  - APPROVAL_005: "[APPROVAL_005] 이미 승인된 문서입니다."
-     *  - APPROVAL_006: "[APPROVAL_006] 반려된 문서는 승인할 수 없습니다."
-     *  - APPROVAL_003: "[APPROVAL_003] PENDING 상태에서만 처리할 수 있습니다."
-     *
-     * 에러 코드 (reject):
-     *  - APPROVAL_007: "[APPROVAL_007] 이미 반려된 문서입니다."
-     *  - APPROVAL_008: "[APPROVAL_008] 승인 완료된 문서는 반려할 수 없습니다."
-     *  - APPROVAL_003: "[APPROVAL_003] PENDING 상태에서만 처리할 수 있습니다."
-     *
-     * 에러 코드 (update):
-     *  - ARTICLE_006: "[ARTICLE_006] DRAFT 상태에서만 수정할 수 있습니다."
-     *  - ARTICLE_008: "[ARTICLE_008] 이미 삭제된 문서입니다."
-     *
-     *  에러 코드 (softDelete):
-     *  - ARTICLE_008: "[ARTICLE_008] 이미 삭제된 문서입니다."
-     *  - ARTICLE_010: "[ARTICLE_010] 평가 진행 중인 문서는 삭제할 수 없습니다."
-     *  - ARTICLE_009: "[ARTICLE_009] 승인 완료된 문서는 직접 삭제할 수 없습니다."
-     *
-     *  에러 코드 (delete - 권한):
-     *  - ARTICLE_007: "[ARTICLE_007] 본인이 작성한 문서만 삭제할 수 있습니다."
-     *
-     * 반환:
-     *  - HTTP Status: 400 Bad Request
-     *  - errorCode: "BAD_REQUEST"
-     *  - message: "[ARTICLE/APPROVAL_XXX] 에러 메시지"
-     *
-     *  예시 1 (APPROVED 상태 삭제 시도):
-     * {
-     *   "success": false,
-     *   "errorCode": "BAD_REQUEST",
-     *   "message": "[ARTICLE_009] 승인 완료된 문서는 직접 삭제할 수 없습니다."
-     * }
-     *
-     *  예시 2 (이미 승인된 문서 승인 시도):
-     * {
-     *   "success": false,
-     *   "errorCode": "BAD_REQUEST",
-     *   "message": "[APPROVAL_005] 이미 승인된 문서입니다."
-     * }
-     *
-     * 예시 3 (본인이 아닌 문서 삭제 시도):
-     * {
-     *   "success": false,
-     *   "errorCode": "BAD_REQUEST",
-     *   "message": "[ARTICLE_007] 본인이 작성한 문서만 삭제할 수 있습니다."
-     * }
-     */
-    @ExceptionHandler(IllegalStateException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<Void> handleIllegalState(IllegalStateException e) {
-        return ApiResponse.failure("BAD_REQUEST", e.getMessage());
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadable(HttpMessageNotReadableException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.failure("VALIDATION_ERROR", "잘못된 요청 본문입니다."));
     }
 
     /**
@@ -252,10 +127,10 @@ public class GlobalExceptionHandler {
      * }
      */
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ApiResponse<Void> handleGeneralException(Exception e) {
+    public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception e) {
         // 예상 외의 예외는 ERROR 레벨로 로깅
         log.error("예상치 못한 오류 발생", e);
-        return ApiResponse.failure("INTERNAL_ERROR", "서버 오류가 발생했습니다.");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.failure("INTERNAL_ERROR", "서버 오류가 발생했습니다."));
     }
 }

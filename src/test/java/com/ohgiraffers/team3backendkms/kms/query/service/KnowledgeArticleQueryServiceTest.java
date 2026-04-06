@@ -21,7 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
@@ -35,13 +38,11 @@ class KnowledgeArticleQueryServiceTest {
     private KnowledgeArticleMapper knowledgeArticleMapper;
 
     @Nested
-    // getArticles 메서드
     @DisplayName("getArticles()")
     class GetArticles {
 
         @Test
-        // 지식 목록 조회 성공: 목록 응답 DTO를 반환한다
-        @DisplayName("Returns list of ArticleReadDto")
+        @DisplayName("Returns article list")
         void getArticles_success() {
             // given
             ArticleQueryRequest request = new ArticleQueryRequest();
@@ -67,8 +68,7 @@ class KnowledgeArticleQueryServiceTest {
         }
 
         @Test
-        // 지식 목록 조회 성공: 데이터가 없으면 빈 목록을 반환한다
-        @DisplayName("Returns empty list when no data")
+        @DisplayName("Returns empty list when no data exists")
         void getArticles_whenNoData_thenReturnEmptyList() {
             // given
             ArticleQueryRequest request = new ArticleQueryRequest();
@@ -100,13 +100,11 @@ class KnowledgeArticleQueryServiceTest {
     }
 
     @Nested
-    // getArticleDetail 메서드
     @DisplayName("getArticleDetail()")
     class GetArticleDetail {
 
         @Test
-        // 지식 상세 조회 성공: 상세 응답 DTO를 반환한다
-        @DisplayName("Returns ArticleDetailDto")
+        @DisplayName("Returns article detail")
         void getArticleDetail_success() {
             // given
             ArticleDetailDto dto = new ArticleDetailDto();
@@ -134,8 +132,7 @@ class KnowledgeArticleQueryServiceTest {
         }
 
         @Test
-        // 지식 상세 조회 실패: 문서가 없으면 예외가 발생한다
-        @DisplayName("Throws exception when article not found")
+        @DisplayName("Throws exception when article is not found")
         void getArticleDetail_whenNotFound_thenThrow() {
             // given
             given(knowledgeArticleMapper.findArticleById(999L)).willReturn(Optional.empty());
@@ -150,13 +147,11 @@ class KnowledgeArticleQueryServiceTest {
     }
 
     @Nested
-    // getTopContributors 메서드
     @DisplayName("getTopContributors()")
     class GetTopContributors {
 
         @Test
-        // 월간 기여자 랭킹 조회 성공: limit 개수만큼 반환한다
-        @DisplayName("Returns top contributors list with specified limit")
+        @DisplayName("Returns top contributors with requested limit")
         void getTopContributors_success() {
             // given
             ContributorRankDto dto1 = new ContributorRankDto();
@@ -186,8 +181,7 @@ class KnowledgeArticleQueryServiceTest {
         }
 
         @Test
-        // 월간 기여자 랭킹 조회: 데이터가 없으면 빈 목록을 반환한다
-        @DisplayName("Returns empty list when no contributors")
+        @DisplayName("Returns empty list when no contributor exists")
         void getTopContributors_whenNoData_thenReturnEmptyList() {
             // given
             given(knowledgeArticleMapper.findTopContributors(any(Map.class)))
@@ -203,13 +197,11 @@ class KnowledgeArticleQueryServiceTest {
     }
 
     @Nested
-    // getRecommendations 메서드
     @DisplayName("getRecommendations()")
     class GetRecommendations {
 
         @Test
-        // AI 지식 추천 조회 성공: TOP 5 목록을 반환한다
-        @DisplayName("Returns top 5 recommendations list")
+        @DisplayName("Returns recommendation list")
         void getRecommendations_success() {
             // given
             ArticleReadDto dto1 = new ArticleReadDto();
@@ -246,8 +238,7 @@ class KnowledgeArticleQueryServiceTest {
         }
 
         @Test
-        // AI 지식 추천 조회: 데이터가 없으면 빈 목록을 반환한다
-        @DisplayName("Returns empty list when no recommendations")
+        @DisplayName("Returns empty list when no recommendation exists")
         void getRecommendations_whenNoData_thenReturnEmptyList() {
             // given
             given(knowledgeArticleMapper.findRecommendations())

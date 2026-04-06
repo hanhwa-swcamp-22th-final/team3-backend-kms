@@ -28,7 +28,7 @@ public class KnowledgeArticleQueryService {
 
     public ArticleDetailDto getArticleDetail(Long articleId) {
         return knowledgeArticleMapper.findArticleById(articleId)
-                .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND));
     }
 
     public List<ContributorRankDto> getTopContributors(Integer limit) {

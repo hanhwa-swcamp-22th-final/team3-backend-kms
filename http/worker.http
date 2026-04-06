@@ -1,7 +1,6 @@
 ### 지식 문서 등록 (PENDING 상태로 제출)
 POST http://localhost:8080/api/kms/articles
 Content-Type: application/json
-#Authorization: Bearer {{workerToken}}
 
 {
   "authorId": 1774937276588944,
@@ -14,7 +13,6 @@ Content-Type: application/json
 ### 임시저장 (DRAFT) — 내용 길이 제한 없음
 POST http://localhost:8080/api/kms/articles/drafts
 Content-Type: application/json
-#Authorization: Bearer {{workerToken}}
 
 {
   "authorId": 1774937276588944,
@@ -24,6 +22,34 @@ Content-Type: application/json
   "content": "아직 작성 중입니다."
 }
 
+### 임시저장 문서 수정 (DRAFT 유지)
+PUT http://localhost:8080/api/kms/articles/{{articleId}}
+Content-Type: application/json
+
+{
+  "authorId": 1774937276588944,
+  "title": "",
+  "category": "ETC",
+  "equipmentId": 1774852819326802,
+  "content": "메모 수준으로만 저장합니다."
+}
+
+### 임시저장 문서 제출 (DRAFT -> PENDING)
+PUT http://localhost:8080/api/kms/articles/{{articleId}}/submit
+Content-Type: application/json
+
+{
+  "authorId": 1774937276588944,
+  "title": "제출할 문서 제목입니다",
+  "category": "ETC",
+  "equipmentId": 1774852819326802,
+  "content": "제출 시에는 본문을 충분히 작성해야 합니다. 최소 길이를 만족하는 내용으로 요청을 보냅니다."
+}
+
 ### 문서 삭제
-DELETE http://localhost:8080/api/kms/articles/{{articleId}}?requesterId={{authorId}}
-#Authorization: Bearer {{workerToken}}
+DELETE http://localhost:8080/api/kms/articles/{{articleId}}
+Content-Type: application/json
+
+{
+  "requesterId": 1774937276588944
+}

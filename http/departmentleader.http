@@ -1,17 +1,15 @@
-### DL 최종 승인 (TL_APPROVED → APPROVED)
-POST http://localhost:8080/api/kms/approval/{{articleId}}/approve
+### DL 승인 (PENDING → APPROVED)
+POST http://localhost:8080/api/kms/dl/approval/{{articleId}}/approve
 Content-Type: application/json
-Authorization: Bearer {{dlToken}}
 
 {
   "approverId": 1774590584056408,
   "reviewComment": "최종 승인합니다."
 }
 
-### DL 반려 (TL_APPROVED → REJECTED)
-POST http://localhost:8080/api/kms/approval/{{articleId}}/reject
+### DL 반려 (PENDING → REJECTED)
+POST http://localhost:8080/api/kms/dl/approval/{{articleId}}/reject
 Content-Type: application/json
-Authorization: Bearer {{dlToken}}
 
 {
   "reviewComment": "정책에 부합하지 않는 내용이 포함되어 있습니다. 수정 후 재제출해주세요."

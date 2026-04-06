@@ -1,6 +1,7 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.service;
 
 import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
+import com.ohgiraffers.team3backendkms.common.exception.BusinessException;
 import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
 import com.ohgiraffers.team3backendkms.common.idgenerator.IdGenerator;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
@@ -14,13 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class KnowledgeArticleService {
+public class KnowledgeArticleCommandService {
 
     private final KnowledgeArticleRepository knowledgeArticleRepository;
     private final IdGenerator idGenerator;
 
-
-    /* 지식 문서 등록 */
     public Long register(Long authorId, Long equipmentId,
                          String title, ArticleCategory category, String content) {
         validateEquipmentId(equipmentId);
@@ -29,7 +28,6 @@ public class KnowledgeArticleService {
         ).getArticleId();
     }
 
-    /* 지식 문서 임시저장 — equipmentId는 null 허용 */
     public Long draft(Long authorId, Long equipmentId,
                       String title, ArticleCategory category, String content) {
         validateEquipmentIdIfPresent(equipmentId);
@@ -38,111 +36,111 @@ public class KnowledgeArticleService {
         ).getArticleId();
     }
 
-    /* 지식 문서 수정 (Worker) */
-    public void update(Long articleId, String title, ArticleCategory category, String content, Long requesterId) {
+    public void updateDraft(Long articleId, String title, ArticleCategory category, Long equipmentId, String content, Long requesterId) {
         KnowledgeArticle article = findArticleById(articleId);
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
+            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
         if (article.getArticleStatus() != ArticleStatus.DRAFT) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_006.getMessage());
+            throw new BusinessException(ArticleErrorCode.ARTICLE_006);
         }
         if (!article.getAuthorId().equals(requesterId)) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_007.getMessage());
+            throw new BusinessException(ArticleErrorCode.ARTICLE_007);
         }
-        article.update(title, category, content);
+        validateEquipmentIdIfPresent(equipmentId);
+        article.updateDraft(title, category, equipmentId, content);
     }
 
-    /* 지식 문서 수정 (Admin) — 작성자 체크 없이 수정 가능 */
+    public void submitDraft(Long articleId, String title, ArticleCategory category, Long equipmentId, String content, Long requesterId) {
+        KnowledgeArticle article = findArticleById(articleId);
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
+        }
+        if (article.getArticleStatus() != ArticleStatus.DRAFT) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_SUBMIT_INVALID);
+        }
+        if (!article.getAuthorId().equals(requesterId)) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_007);
+        }
+        validateEquipmentId(equipmentId);
+        article.updateDraft(title, category, equipmentId, content);
+        article.submit();
+    }
+
     public void adminUpdate(Long articleId, String title, ArticleCategory category, String content) {
         KnowledgeArticle article = findArticleById(articleId);
         article.adminUpdate(title, category, content);
     }
 
-    /* 지식 상세 조회 후 조회수 증가 */
     public void incrementViewCount(Long articleId) {
         KnowledgeArticle article = findArticleById(articleId);
+        if (article.getArticleStatus() != ArticleStatus.APPROVED) {
+            return;
+        }
         article.incrementViewCount();
     }
 
-    /* 지식 문서 승인 */
-    public void approve(Long articleId, Long approverId, String reviewComment) {
-        KnowledgeArticle article = findArticleById(articleId);
-        if (Boolean.TRUE.equals(article.getIsDeleted())) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-        if (article.getArticleStatus() == ArticleStatus.APPROVED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_005.getMessage());
-        }
-        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_006.getMessage());
-        }
-        if (article.getArticleStatus() != ArticleStatus.PENDING) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
-        }
-        if (reviewComment != null && reviewComment.length() > 500) {
-            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_002.getMessage());
-        }
-        article.approve(approverId, reviewComment);
-    }
-
-    /* 지식 문서 반려 */
-    public void reject(Long articleId, String reviewComment) {
-        KnowledgeArticle article = findArticleById(articleId);
-        if (Boolean.TRUE.equals(article.getIsDeleted())) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_007.getMessage());
-        }
-        if (article.getArticleStatus() == ArticleStatus.APPROVED) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_008.getMessage());
-        }
-        if (article.getArticleStatus() != ArticleStatus.PENDING) {
-            throw new IllegalStateException(ArticleErrorCode.APPROVAL_003.getMessage());
-        }
-        if (reviewComment == null || reviewComment.length() < 10 || reviewComment.length() > 500) {
-            throw new IllegalArgumentException(ArticleErrorCode.APPROVAL_001.getMessage());
-        }
-        article.reject(reviewComment);
-    }
-
-    /* 지식 문서 삭제 (Worker) — DRAFT 상태 + 본인 확인 후 삭제 */
     public void delete(Long articleId, Long requesterId) {
         KnowledgeArticle article = findArticleById(articleId);
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
+            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
         if (article.getArticleStatus() == ArticleStatus.PENDING) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_010.getMessage());
+            throw new BusinessException(ArticleErrorCode.ARTICLE_010);
         }
         if (article.getArticleStatus() == ArticleStatus.REJECTED) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_010.getMessage());
+            throw new BusinessException(ArticleErrorCode.ARTICLE_010);
         }
         if (article.getArticleStatus() == ArticleStatus.APPROVED) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_009.getMessage());
+            throw new BusinessException(ArticleErrorCode.ARTICLE_009);
         }
         if (!article.getAuthorId().equals(requesterId)) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_007.getMessage());
+            throw new BusinessException(ArticleErrorCode.ARTICLE_007);
         }
         article.softDelete();
     }
 
-    /* 관리자 삭제 — 모든 상태 삭제 가능, 삭제 사유 필수 */
     public void adminDelete(Long articleId, String reason) {
         KnowledgeArticle article = findArticleById(articleId);
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
-            throw new IllegalStateException(ArticleErrorCode.ARTICLE_008.getMessage());
-        }
-        if (reason == null || reason.length() < 10 || reason.length() > 500) {
-            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_012.getMessage());
+            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
         article.adminDelete(reason);
     }
 
-    // =========================================================
-    // private 헬퍼 메서드
-    // =========================================================
+    public void approve(Long articleId, Long approverId, String reviewComment) {
+        KnowledgeArticle article = findArticleById(articleId);
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
+        }
+        if (article.getArticleStatus() == ArticleStatus.APPROVED) {
+            throw new BusinessException(ArticleErrorCode.APPROVAL_005);
+        }
+        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
+            throw new BusinessException(ArticleErrorCode.APPROVAL_006);
+        }
+        if (article.getArticleStatus() != ArticleStatus.PENDING) {
+            throw new BusinessException(ArticleErrorCode.APPROVAL_003);
+        }
+        article.approve(approverId, reviewComment);
+    }
+
+    public void reject(Long articleId, String reviewComment) {
+        KnowledgeArticle article = findArticleById(articleId);
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
+        }
+        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
+            throw new BusinessException(ArticleErrorCode.APPROVAL_007);
+        }
+        if (article.getArticleStatus() == ArticleStatus.APPROVED) {
+            throw new BusinessException(ArticleErrorCode.APPROVAL_008);
+        }
+        if (article.getArticleStatus() != ArticleStatus.PENDING) {
+            throw new BusinessException(ArticleErrorCode.APPROVAL_003);
+        }
+        article.reject(reviewComment);
+    }
 
     private KnowledgeArticle buildArticle(Long authorId, Long equipmentId,
                                           String title, ArticleCategory category,
@@ -163,19 +161,18 @@ public class KnowledgeArticleService {
 
     private void validateEquipmentId(Long equipmentId) {
         if (equipmentId == null || equipmentId <= 0) {
-            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_005.getMessage());
+            throw new BusinessException(ArticleErrorCode.ARTICLE_005);
         }
     }
 
-    /* equipmentId가 제공되면 양수 검증, null이면 허용 */
     private void validateEquipmentIdIfPresent(Long equipmentId) {
         if (equipmentId != null && equipmentId <= 0) {
-            throw new IllegalArgumentException(ArticleErrorCode.ARTICLE_005.getMessage());
+            throw new BusinessException(ArticleErrorCode.ARTICLE_005);
         }
     }
 
     private KnowledgeArticle findArticleById(Long articleId) {
         return knowledgeArticleRepository.findById(articleId)
-                .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND));
     }
 }

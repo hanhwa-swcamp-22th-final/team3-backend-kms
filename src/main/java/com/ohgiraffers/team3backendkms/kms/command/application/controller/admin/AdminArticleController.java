@@ -3,7 +3,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.controller.admin
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleAdminDeleteRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.AdminArticleUpdateRequest;
-import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
+import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/kms/admin/articles")
 public class AdminArticleController {
 
-    private final KnowledgeArticleService knowledgeArticleService;
+    private final KnowledgeArticleCommandService knowledgeArticleCommandService;
 
     /* 지식 문서 삭제 (Admin) */
     @DeleteMapping("/{articleId}")
@@ -23,7 +23,7 @@ public class AdminArticleController {
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
             @Valid @RequestBody ArticleAdminDeleteRequest request
     ) {
-        knowledgeArticleService.adminDelete(articleId, request.getDeletionReason());
+        knowledgeArticleCommandService.adminDelete(articleId, request.getDeletionReason());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -33,7 +33,7 @@ public class AdminArticleController {
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
             @Valid @RequestBody AdminArticleUpdateRequest request
     ) {
-        knowledgeArticleService.adminUpdate(
+        knowledgeArticleCommandService.adminUpdate(
                 articleId,
                 request.getTitle(),
                 request.getCategory(),

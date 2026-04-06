@@ -2,7 +2,7 @@ package com.ohgiraffers.team3backendkms.kms.query.controller;
 
 import com.ohgiraffers.team3backendkms.common.exception.GlobalExceptionHandler;
 import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
-import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleService;
+import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
@@ -43,14 +43,13 @@ class KnowledgeArticleQueryControllerTest {
     private KnowledgeArticleQueryService knowledgeArticleQueryService;
 
     @MockitoBean
-    private KnowledgeArticleService knowledgeArticleService;
+    private KnowledgeArticleCommandService knowledgeArticleCommandService;
 
     @Nested
     @DisplayName("GET /api/kms/articles")
     class GetArticles {
 
         @Test
-        // 지식 목록 API 성공: 목록 JSON을 반환한다
         @DisplayName("Returns 200 OK with list JSON")
         void getArticles_success() throws Exception {
             // given
@@ -76,7 +75,6 @@ class KnowledgeArticleQueryControllerTest {
         }
 
         @Test
-        // 지식 목록 API 성공: 쿼리 파라미터가 정상 바인딩된다
         @DisplayName("Binds query parameters correctly")
         void getArticles_withQueryParams_success() throws Exception {
             // given
@@ -105,7 +103,6 @@ class KnowledgeArticleQueryControllerTest {
     class GetArticleDetail {
 
         @Test
-        // 지식 상세 API 성공: 상세 JSON을 반환한다
         @DisplayName("Returns 200 OK with detail JSON")
         void getArticleDetail_success() throws Exception {
             // given
@@ -133,7 +130,6 @@ class KnowledgeArticleQueryControllerTest {
         }
 
         @Test
-        // 지식 상세 API 실패: 문서가 없으면 404를 반환한다
         @DisplayName("Returns 404 when article not found")
         void getArticleDetail_whenNotFound_thenNotFound() throws Exception {
             // given
@@ -153,7 +149,6 @@ class KnowledgeArticleQueryControllerTest {
     class GetTopContributors {
 
         @Test
-        // 월간 기여자 랭킹 조회 성공: 기여자 목록을 반환한다
         @DisplayName("Returns 200 OK with contributors list")
         void getTopContributors_success() throws Exception {
             // given
@@ -185,7 +180,6 @@ class KnowledgeArticleQueryControllerTest {
         }
 
         @Test
-        // 월간 기여자 랭킹 조회: 기본값으로 3을 사용한다
         @DisplayName("Uses default limit of 3 when not specified")
         void getTopContributors_withDefaultLimit() throws Exception {
             // given
@@ -205,7 +199,6 @@ class KnowledgeArticleQueryControllerTest {
     class GetRecommendations {
 
         @Test
-        // AI 지식 추천 조회 성공: TOP 5 목록을 반환한다
         @DisplayName("Returns 200 OK with recommendations list")
         void getRecommendations_success() throws Exception {
             // given
@@ -244,7 +237,6 @@ class KnowledgeArticleQueryControllerTest {
         }
 
         @Test
-        // AI 지식 추천 조회: 데이터가 없으면 빈 목록을 반환한다
         @DisplayName("Returns empty list when no recommendations")
         void getRecommendations_whenNoData() throws Exception {
             // given

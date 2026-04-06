@@ -68,11 +68,6 @@ public class KnowledgeArticle {
     private Long updatedBy;
 
     // =========================================================
-    // 예외 메시지 상수
-    // =========================================================
-
-
-    // =========================================================
     // 비즈니스 로직 메서드
     // =========================================================
 
@@ -95,12 +90,12 @@ public class KnowledgeArticle {
         this.articleRejectionReason = reviewComment;
     }
 
-    /* DRAFT → 필드 수정 후 PENDING 전환 */
-    public void update(String title, ArticleCategory category, String content) {
+    /* DRAFT → 필드 수정 후 DRAFT 유지 */
+    public void updateDraft(String title, ArticleCategory category, Long equipmentId, String content) {
         this.articleTitle = title;
         this.articleCategory = category;
+        this.equipmentId = equipmentId;
         this.articleContent = content;
-        this.articleStatus = ArticleStatus.PENDING;
     }
 
     /* 조회수 증가 */

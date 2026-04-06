@@ -1,37 +1,41 @@
 package com.ohgiraffers.team3backendkms.kms.query.mapper;
 
+import com.ohgiraffers.team3backendkms.common.idgenerator.TimeBasedIdGenerator;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
-import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mybatis.spring.boot.test.autoconfigure.AutoConfigureMybatis;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest
-@Transactional
+@DataJpaTest
+@AutoConfigureMybatis
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class KnowledgeArticleQueryMapperTest {
 
     @Autowired
     private KnowledgeArticleMapper knowledgeArticleMapper;
 
-
-    // 왜  mybatis에 JPA (Repository, entityManager, jdbc)가 들어갔냐면
     @Autowired
     private KnowledgeArticleRepository knowledgeArticleRepository;
 
@@ -48,170 +52,144 @@ class KnowledgeArticleQueryMapperTest {
     private static final Long TEST_ARTICLE_ID_1 = 9000000000001L;
     private static final Long TEST_ARTICLE_ID_2 = 9000000000002L;
     private static final Long TEST_ARTICLE_ID_3 = 9000000000003L;
+    private static final Long TEST_ARTICLE_ID_4 = 9000000000004L;
     private static final Long TEST_EQUIPMENT_ID = 9000000099L;
 
     @BeforeEach
     void setUp() {
-        // FK 체크 비활성화 후 테스트용 equipment, file_group 삽입
-      // BeforeEach로 각 @Test 메서드 실행 직전마다 호출
-      // file_group_id - 더미 파일 삽입하고, INSERT IGNORE - 중복이면 건너뛰고,
+        // given
         jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=0");
         jdbcTemplate.execute(
-            "INSERT IGNORE INTO attachment_file_group (file_group_id, reference_type) VALUES (0, 'KNOWLEDGE')"
+                "INSERT IGNORE INTO attachment_file_group (file_group_id, reference_type) VALUES (0, 'KNOWLEDGE')"
         );
         jdbcTemplate.execute(
-            "INSERT IGNORE INTO equipment " +
-            "(equipment_id, equipment_process_id, environment_standard_id, equipment_code, equipment_name, equipment_status, equipment_grade) " +
-            "VALUES (" + TEST_EQUIPMENT_ID + ", 1, 1, 'TEST-EQ-MAPPER', '매퍼테스트 설비', 'OPERATING', 'A')"
+                "INSERT IGNORE INTO equipment " +
+                        "(equipment_id, equipment_process_id, environment_standard_id, equipment_code, equipment_name, equipment_status, equipment_grade) " +
+                        "VALUES (" + TEST_EQUIPMENT_ID + ", 1, 1, 'TEST-EQ-MAPPER', '매퍼테스트 설비', 'OPERATING', 'A')"
         );
-        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=1"); // 테스트 끝나면 원래대로 복원
+        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=1");
 
-        // 실제 employee ID 조회
         validAuthorId = jdbcTemplate.queryForObject(
-                "SELECT employee_id FROM employee LIMIT 1", Long.class);
+                "SELECT employee_id FROM employee LIMIT 1", Long.class
+        );
         otherAuthorId = jdbcTemplate.queryForObject(
-                "SELECT employee_id FROM employee WHERE employee_id <> " + validAuthorId + " LIMIT 1", Long.class);
+                "SELECT employee_id FROM employee WHERE employee_id <> " + validAuthorId + " LIMIT 1", Long.class
+        );
         validEquipmentId = TEST_EQUIPMENT_ID;
 
-        KnowledgeArticle article1 = KnowledgeArticle.builder()
-                .articleId(TEST_ARTICLE_ID_1)
-                .authorId(validAuthorId)
-                .equipmentId(validEquipmentId)
-                .fileGroupId(0L)
-                .articleTitle("테스트 문서 제목 첫번째")
-                .articleCategory(ArticleCategory.TROUBLESHOOTING)
-                .articleContent("첫번째 문서 본문 내용입니다.")
-                .articleStatus(ArticleStatus.APPROVED)
-                .isDeleted(false)
-                .viewCount(10)
-                .createdAt(LocalDateTime.now().minusDays(2))
-                .build();
+        knowledgeArticleRepository.save(buildArticle(
+                TEST_ARTICLE_ID_1,
+                validAuthorId,
+                "테스트 문서 제목 첫번째",
+                ArticleCategory.TROUBLESHOOTING,
+                "첫번째 문서 본문 내용입니다.",
+                ArticleStatus.APPROVED,
+                false,
+                10,
+                LocalDateTime.now().minusDays(2)
+        ));
+        knowledgeArticleRepository.save(buildArticle(
+                TEST_ARTICLE_ID_2,
+                validAuthorId,
+                "테스트 문서 제목 두번째",
+                ArticleCategory.SAFETY,
+                "두번째 문서 본문 내용입니다.",
+                ArticleStatus.PENDING,
+                false,
+                5,
+                LocalDateTime.now().minusDays(1)
+        ));
+        knowledgeArticleRepository.save(buildArticle(
+                TEST_ARTICLE_ID_3,
+                validAuthorId,
+                "삭제된 문서 제목",
+                ArticleCategory.TROUBLESHOOTING,
+                "삭제된 문서 본문 내용입니다.",
+                ArticleStatus.DRAFT,
+                true,
+                0,
+                LocalDateTime.now()
+        ));
+        knowledgeArticleRepository.save(buildArticle(
+                TEST_ARTICLE_ID_4,
+                otherAuthorId,
+                "다른 작성자의 임시 문서",
+                ArticleCategory.PROCESS_IMPROVEMENT,
+                "다른 작성자의 비승인 문서 본문 내용입니다.",
+                ArticleStatus.DRAFT,
+                false,
+                1,
+                LocalDateTime.now().minusHours(3)
+        ));
 
-        KnowledgeArticle article2 = KnowledgeArticle.builder()
-                .articleId(TEST_ARTICLE_ID_2)
-                .authorId(validAuthorId)
-                .equipmentId(validEquipmentId)
-                .fileGroupId(0L)
-                .articleTitle("테스트 문서 제목 두번째")
-                .articleCategory(ArticleCategory.SAFETY)
-                .articleContent("두번째 문서 본문 내용입니다.")
-                .articleStatus(ArticleStatus.PENDING)
-                .isDeleted(false)
-                .viewCount(5)
-                .createdAt(LocalDateTime.now().minusDays(1))
-                .build();
-
-        KnowledgeArticle article3 = KnowledgeArticle.builder()
-                .articleId(TEST_ARTICLE_ID_3)
-                .authorId(validAuthorId)
-                .equipmentId(validEquipmentId)
-                .fileGroupId(0L)
-                .articleTitle("삭제된 문서 제목")
-                .articleCategory(ArticleCategory.TROUBLESHOOTING)
-                .articleContent("삭제된 문서 본문 내용입니다.")
-                .articleStatus(ArticleStatus.DRAFT)
-                .isDeleted(true)
-                .viewCount(0)
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        KnowledgeArticle article4 = KnowledgeArticle.builder()
-                .articleId(9000000000004L)
-                .authorId(otherAuthorId)
-                .equipmentId(validEquipmentId)
-                .fileGroupId(0L)
-                .articleTitle("다른 작성자의 임시 문서")
-                .articleCategory(ArticleCategory.PROCESS_IMPROVEMENT)
-                .articleContent("다른 작성자의 비승인 문서 본문 내용입니다.")
-                .articleStatus(ArticleStatus.DRAFT)
-                .isDeleted(false)
-                .viewCount(1)
-                .createdAt(LocalDateTime.now().minusHours(3))
-                .build();
-
-        // 여기쓸려고 위에서 JPA형식 사용
-        knowledgeArticleRepository.save(article1);
-        knowledgeArticleRepository.save(article2);
-        knowledgeArticleRepository.save(article3);
-        knowledgeArticleRepository.save(article4);
-        entityManager.flush(); // JPA → MyBatis 간 데이터 가시성 보장
+        entityManager.flush();
+        entityManager.clear();
     }
 
     @Nested
-    // findArticles 쿼리
     @DisplayName("findArticles()")
     class FindArticles {
 
         @Test
-        // 지식 목록 조회 성공: 전체 목록을 조회한다 (삭제된 문서 제외)
         @DisplayName("Returns list excluding deleted articles")
         void findArticles_success() {
-
-            // given - 지식게시글 조회조건을 가진 요청 객체 생성
-            ArticleQueryRequest request = new ArticleQueryRequest(); //
-
-
-          // when - findArticles 호출하여 동작확인
-          List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request); //
-
-          // then - stream은 list 안에 데이터를 하나씩 꺼네서 검사하여 삭제된문서가 결과에없는지 검증
-          assertNotNull(result);
-          boolean deletedIncluded = result.stream()
-              .anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_3));
-          assertFalse(deletedIncluded, "삭제된 문서는 목록에 포함되지 않아야 합니다");
-        }
-
-
-        @Test
-        // 지식 목록 조회 성공: 카테고리 필터가 반영된다
-        @DisplayName("Filters by category")
-        void findArticles_withCategoryFilter_success() {
-
-          // given - 지식게시글 조회조건을 가진 요청 객체 생성
+            // given
             ArticleQueryRequest request = new ArticleQueryRequest();
-            // 카테고리를 트러블슈팅으로 설정
-            request.setCategory(ArticleCategory.TROUBLESHOOTING);
 
-            // when - findArticles 호출하여 동작확인
+            // when
             List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
 
-          // then - stream은 list 안에 데이터를 하났기 꺼네서 검사하여 삭제된문서가 결과에없는지 검증
+            // then
             assertNotNull(result);
-            assertTrue(result.stream()
-                    .allMatch(a -> a.getArticleCategory() == ArticleCategory.TROUBLESHOOTING),
-                    "조회된 모든 문서는 TROUBLESHOOTING 카테고리여야 합니다");
+            assertFalse(result.stream().anyMatch(article -> article.getArticleId().equals(TEST_ARTICLE_ID_3)));
         }
 
         @Test
-        // 지식 목록 조회 성공: 정렬 조건이 반영된다 (popular)
+        @DisplayName("Filters by category")
+        void findArticles_withCategoryFilter_success() {
+            // given
+            ArticleQueryRequest request = new ArticleQueryRequest();
+            request.setCategory(ArticleCategory.TROUBLESHOOTING);
+
+            // when
+            List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
+
+            // then
+            assertNotNull(result);
+            assertTrue(result.stream().allMatch(article ->
+                    article.getArticleCategory() == ArticleCategory.TROUBLESHOOTING
+            ));
+        }
+
+        @Test
         @DisplayName("Sorts by view count when sort=popular")
         void findArticles_withSort_success() {
-            // given - 조회 요청 객체 생성, 정렬 기준을 "popular"로 설정
+            // given
             ArticleQueryRequest request = new ArticleQueryRequest();
             request.setSort("popular");
 
-            // when - DB에서 조회수 기준 내림차순으로 데이터 가져옴
+            // when
             List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
 
-            // then - 진짜 조회수가 내림차순인지 반복문으로 검증
+            // then
             assertNotNull(result);
             for (int i = 0; i < result.size() - 1; i++) {
-                assertTrue(
-                        result.get(i).getViewCount() >= result.get(i + 1).getViewCount(),
-                        "popular 정렬 시 조회수 내림차순이어야 합니다"
-                );
+                assertTrue(result.get(i).getViewCount() >= result.get(i + 1).getViewCount());
             }
         }
 
         @Test
         @DisplayName("Filters by article title keyword")
         void findArticles_withArticleTitleKeyword_success() {
+            // given
             ArticleQueryRequest request = new ArticleQueryRequest();
             request.setSearchType("articleTitle");
             request.setKeyword("첫번째");
 
+            // when
             List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
 
+            // then
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals(TEST_ARTICLE_ID_1, result.get(0).getArticleId());
@@ -220,16 +198,19 @@ class KnowledgeArticleQueryMapperTest {
         @Test
         @DisplayName("Filters by author name keyword")
         void findArticles_withAuthorNameKeyword_success() {
+            // given
             String otherAuthorName = jdbcTemplate.queryForObject(
-                    "SELECT employee_name FROM employee WHERE employee_id = " + otherAuthorId, String.class
+                    "SELECT employee_name FROM employee WHERE employee_id = " + otherAuthorId,
+                    String.class
             );
-
             ArticleQueryRequest request = new ArticleQueryRequest();
             request.setSearchType("authorName");
             request.setKeyword(otherAuthorName);
 
+            // when
             List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
 
+            // then
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals(otherAuthorId, result.get(0).getAuthorId());
@@ -238,13 +219,16 @@ class KnowledgeArticleQueryMapperTest {
         @Test
         @DisplayName("Filters by article ID keyword")
         void findArticles_withArticleIdKeyword_success() {
+            // given
             ArticleQueryRequest request = new ArticleQueryRequest();
             request.setSearchType("articleId");
             request.setKeyword(String.valueOf(TEST_ARTICLE_ID_1));
             request.setArticleIdKeyword(TEST_ARTICLE_ID_1);
 
+            // when
             List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
 
+            // then
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals(TEST_ARTICLE_ID_1, result.get(0).getArticleId());
@@ -253,76 +237,106 @@ class KnowledgeArticleQueryMapperTest {
         @Test
         @DisplayName("Worker can see own articles and approved articles only")
         void findArticles_withWorkerVisibility_success() {
+            // given
             ArticleQueryRequest request = new ArticleQueryRequest();
             request.setRequesterId(validAuthorId);
             request.setRequesterRole("WORKER");
 
+            // when
             List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
 
+            // then
             assertNotNull(result);
-            assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_1)));
-            assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_2)));
-            assertFalse(result.stream().anyMatch(a -> a.getArticleTitle().equals("다른 작성자의 임시 문서")));
+            assertTrue(result.stream().anyMatch(article -> article.getArticleId().equals(TEST_ARTICLE_ID_1)));
+            assertTrue(result.stream().anyMatch(article -> article.getArticleId().equals(TEST_ARTICLE_ID_2)));
+            assertFalse(result.stream().anyMatch(article -> article.getArticleId().equals(TEST_ARTICLE_ID_4)));
         }
 
         @Test
         @DisplayName("Team leader cannot see draft articles")
         void findArticles_withTeamLeaderVisibility_success() {
+            // given
             ArticleQueryRequest request = new ArticleQueryRequest();
             request.setRequesterRole("TEAMLEADER");
 
+            // when
             List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
 
+            // then
             assertNotNull(result);
-            assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_1)));
-            assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_2)));
-            assertFalse(result.stream().anyMatch(a -> a.getArticleTitle().equals("다른 작성자의 임시 문서")));
+            assertTrue(result.stream().anyMatch(article -> article.getArticleId().equals(TEST_ARTICLE_ID_1)));
+            assertTrue(result.stream().anyMatch(article -> article.getArticleId().equals(TEST_ARTICLE_ID_2)));
+            assertFalse(result.stream().anyMatch(article -> article.getArticleId().equals(TEST_ARTICLE_ID_4)));
         }
 
         @Test
         @DisplayName("Admin can see all articles including deleted articles")
         void findArticles_withAdminVisibility_success() {
+            // given
             ArticleQueryRequest request = new ArticleQueryRequest();
             request.setRequesterRole("ADMIN");
 
+            // when
             List<ArticleReadDto> result = knowledgeArticleMapper.findArticles(request);
 
+            // then
             assertNotNull(result);
-            assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_1)));
-            assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_2)));
-            assertTrue(result.stream().anyMatch(a -> a.getArticleTitle().equals("다른 작성자의 임시 문서")));
-            assertTrue(result.stream().anyMatch(a -> a.getArticleId().equals(TEST_ARTICLE_ID_3)));
+            assertTrue(result.stream().anyMatch(article -> article.getArticleId().equals(TEST_ARTICLE_ID_1)));
+            assertTrue(result.stream().anyMatch(article -> article.getArticleId().equals(TEST_ARTICLE_ID_2)));
+            assertTrue(result.stream().anyMatch(article -> article.getArticleId().equals(TEST_ARTICLE_ID_3)));
+            assertTrue(result.stream().anyMatch(article -> article.getArticleId().equals(TEST_ARTICLE_ID_4)));
         }
     }
 
     @Nested
-    // findArticleById 쿼리
     @DisplayName("findArticleById()")
     class FindArticleById {
 
         @Test
-        // 지식 상세 조회 성공: 문서 상세를 조회한다
         @DisplayName("Returns article detail by ID")
         void findArticleById_success() {
             // when
             Optional<ArticleDetailDto> result = knowledgeArticleMapper.findArticleById(TEST_ARTICLE_ID_1);
 
             // then
-            assertTrue(result.isPresent(), "문서가 존재해야 합니다"); // 존재 확인
-            assertEquals(TEST_ARTICLE_ID_1, result.get().getArticleId()); // ID 검증
-            assertEquals("테스트 문서 제목 첫번째", result.get().getArticleTitle()); // 제목 검증
-            assertEquals(ArticleCategory.TROUBLESHOOTING, result.get().getArticleCategory()); // 카테고리 검증
+            assertTrue(result.isPresent());
+            assertEquals(TEST_ARTICLE_ID_1, result.get().getArticleId());
+            assertEquals("테스트 문서 제목 첫번째", result.get().getArticleTitle());
+            assertEquals(ArticleCategory.TROUBLESHOOTING, result.get().getArticleCategory());
         }
 
         @Test
-        // 지식 상세 조회 실패: 존재하지 않는 ID면 empty를 반환한다
         @DisplayName("Returns empty when ID does not exist")
         void findArticleById_whenUnknownId_thenEmpty() {
             // when
             Optional<ArticleDetailDto> result = knowledgeArticleMapper.findArticleById(9999999999999L);
 
             // then
-            assertTrue(result.isEmpty(), "존재하지 않는 ID는 empty를 반환해야 합니다");
+            assertTrue(result.isEmpty());
         }
+    }
+
+    private KnowledgeArticle buildArticle(Long articleId,
+                                          Long authorId,
+                                          String title,
+                                          ArticleCategory category,
+                                          String content,
+                                          ArticleStatus status,
+                                          boolean isDeleted,
+                                          int viewCount,
+                                          LocalDateTime createdAt) {
+        return KnowledgeArticle.builder()
+                .articleId(articleId)
+                .authorId(authorId)
+                .equipmentId(validEquipmentId)
+                .fileGroupId(0L)
+                .articleTitle(title)
+                .articleCategory(category)
+                .articleContent(content)
+                .articleStatus(status)
+                .isDeleted(isDeleted)
+                .viewCount(viewCount)
+                .createdAt(createdAt)
+                .build();
     }
 }
