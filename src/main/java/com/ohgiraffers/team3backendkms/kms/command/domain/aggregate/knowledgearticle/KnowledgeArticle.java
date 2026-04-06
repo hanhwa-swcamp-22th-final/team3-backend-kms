@@ -116,6 +116,11 @@ public class KnowledgeArticle {
         this.articleDeletionReason = reason;
     }
 
+    /* PENDING 유지 — articleApprovalOpinion 저장 (보류) */
+    public void hold(String reviewComment) {
+        this.articleApprovalOpinion = reviewComment;
+    }
+
     /* 관리자 수정 — 상태 변경 없이 필드만 수정 */
     public void adminUpdate(String title, ArticleCategory category, String content) {
         this.articleTitle = title;

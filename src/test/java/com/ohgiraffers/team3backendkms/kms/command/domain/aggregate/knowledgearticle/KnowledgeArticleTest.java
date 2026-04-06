@@ -180,6 +180,25 @@ class KnowledgeArticleTest {
     }
 
     @Nested
+    @DisplayName("hold()")
+    class HoldTest {
+
+        @Test
+        @DisplayName("Stores review comment and keeps status unchanged")
+        void hold_StoresReviewCommentAndKeepsStatus() {
+            // given
+            KnowledgeArticle article = buildArticle(ArticleStatus.PENDING, 0);
+
+            // when
+            article.hold("보류 의견을 남깁니다.");
+
+            // then
+            assertEquals("보류 의견을 남깁니다.", article.getArticleApprovalOpinion());
+            assertEquals(ArticleStatus.PENDING, article.getArticleStatus());
+        }
+    }
+
+    @Nested
     @DisplayName("adminUpdate()")
     class AdminUpdateTest {
 
