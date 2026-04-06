@@ -59,7 +59,7 @@ class KnowledgeArticleApprovalControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(
                         Map.of(
-                                "status", "HOLD",
+                                "status", "PENDING",
                                 "reviewComment", "내용 보완이 필요합니다. 보류 처리합니다."
                         )
                     )))
@@ -72,7 +72,7 @@ class KnowledgeArticleApprovalControllerTest {
         void hold_WhenReviewCommentBlank_ThenBadRequest() throws Exception {
             // given
             Map<String, String> body = Map.of(
-                    "status", "HOLD",
+                    "status", "PENDING",
                     "reviewComment", ""
             );
 
@@ -91,7 +91,7 @@ class KnowledgeArticleApprovalControllerTest {
             // given
             String longComment = "가".repeat(501);
             Map<String, String> body = Map.of(
-                    "status", "HOLD",
+                    "status", "PENDING",
                     "reviewComment", longComment
             );
 
