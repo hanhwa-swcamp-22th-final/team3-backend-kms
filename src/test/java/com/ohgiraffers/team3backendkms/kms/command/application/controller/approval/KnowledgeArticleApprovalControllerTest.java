@@ -2,7 +2,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.controller.appro
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.common.exception.GlobalExceptionHandler;
-import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleApprovalService;
+import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -17,10 +17,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.willDoNothing;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -31,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(GlobalExceptionHandler.class)
 class KnowledgeArticleApprovalControllerTest {
 
-    private static final String BASE_URL = "/api/kms/approval";
+    private static final String BASE_URL = "/api/kms/articles";
 
     @Autowired
     private MockMvc mockMvc;
@@ -40,24 +41,27 @@ class KnowledgeArticleApprovalControllerTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private KnowledgeArticleApprovalService knowledgeArticleApprovalService;
+    private KnowledgeArticleCommandService knowledgeArticleCommandService;
 
     @Nested
-    @DisplayName("POST /api/kms/approval/{articleId}/hold")
+    @DisplayName("PATCH /api/kms/articles/{articleId}/approval")
     class Hold {
 
         @Test
         @DisplayName("Hold article API success: return 200 OK")
         void hold_Success() throws Exception {
             // given
-            willDoNothing().given(knowledgeArticleApprovalService)
-                .hold(anyLong(), anyString());
+            willDoNothing().given(knowledgeArticleCommandService)
+                .processApproval(anyLong(), any(), any(), anyString());
 
             // when & then
-            mockMvc.perform(post(BASE_URL + "/1/hold")
+            mockMvc.perform(patch(BASE_URL + "/1/approval")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(
-                        Map.of("reviewComment", "내용 보완이 필요합니다. 보류 처리합니다.")
+                        Map.of(
+                                "status", "HOLD",
+                                "reviewComment", "내용 보완이 필요합니다. 보류 처리합니다."
+                        )
                     )))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -67,10 +71,13 @@ class KnowledgeArticleApprovalControllerTest {
         @DisplayName("Hold article API failure: return 400 when reviewComment is blank")
         void hold_WhenReviewCommentBlank_ThenBadRequest() throws Exception {
             // given
-            Map<String, String> body = Map.of("reviewComment", "");
+            Map<String, String> body = Map.of(
+                    "status", "HOLD",
+                    "reviewComment", ""
+            );
 
             // when & then
-            mockMvc.perform(post(BASE_URL + "/1/hold")
+            mockMvc.perform(patch(BASE_URL + "/1/approval")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isBadRequest())
@@ -83,10 +90,13 @@ class KnowledgeArticleApprovalControllerTest {
         void hold_WhenReviewCommentTooLong_ThenBadRequest() throws Exception {
             // given
             String longComment = "가".repeat(501);
-            Map<String, String> body = Map.of("reviewComment", longComment);
+            Map<String, String> body = Map.of(
+                    "status", "HOLD",
+                    "reviewComment", longComment
+            );
 
             // when & then
-            mockMvc.perform(post(BASE_URL + "/1/hold")
+            mockMvc.perform(patch(BASE_URL + "/1/approval")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isBadRequest())

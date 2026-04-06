@@ -85,8 +85,9 @@ public class KnowledgeArticle {
     }
 
     /* PENDING → REJECTED */
-    public void reject(String reviewComment) {
+    public void reject(Long approverId, String reviewComment) {
         this.articleStatus = ArticleStatus.REJECTED;
+        this.approvedBy = approverId;
         this.articleRejectionReason = reviewComment;
     }
 
@@ -117,7 +118,8 @@ public class KnowledgeArticle {
     }
 
     /* PENDING 유지 — articleApprovalOpinion 저장 (보류) */
-    public void hold(String reviewComment) {
+    public void hold(Long approverId, String reviewComment) {
+        this.approvedBy = approverId;
         this.articleApprovalOpinion = reviewComment;
     }
 

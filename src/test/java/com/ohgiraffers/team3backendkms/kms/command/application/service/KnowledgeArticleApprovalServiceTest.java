@@ -3,6 +3,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.service;
 import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.BusinessException;
 import com.ohgiraffers.team3backendkms.common.idgenerator.IdGenerator;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ApprovalStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
@@ -90,7 +91,7 @@ class KnowledgeArticleApprovalServiceTest {
     }
 
     @Nested
-    @DisplayName("approve()")
+    @DisplayName("processApproval() - APPROVE")
     class ApproveTest {
 
         @Test
@@ -99,7 +100,7 @@ class KnowledgeArticleApprovalServiceTest {
             given(knowledgeArticleRepository.findById(1L))
                     .willReturn(Optional.of(pendingArticle));
 
-            knowledgeArticleCommandService.approve(1L, 99L, "최종 승인합니다.");
+            knowledgeArticleCommandService.processApproval(1L, 99L, ApprovalStatus.APPROVE, "최종 승인합니다.");
 
             assertEquals(ArticleStatus.APPROVED, pendingArticle.getArticleStatus());
         }
@@ -111,7 +112,7 @@ class KnowledgeArticleApprovalServiceTest {
                     .willReturn(Optional.of(draftArticle));
 
             BusinessException exception = assertThrows(BusinessException.class, () ->
-                    knowledgeArticleCommandService.approve(2L, 99L, "잘못된 승인 시도")
+                    knowledgeArticleCommandService.processApproval(2L, 99L, ApprovalStatus.APPROVE, "잘못된 승인 시도")
             );
 
             assertEquals(ArticleErrorCode.APPROVAL_003, exception.getErrorCode());
@@ -124,10 +125,10 @@ class KnowledgeArticleApprovalServiceTest {
                     .willReturn(Optional.of(approvedArticle));
 
             BusinessException exception = assertThrows(BusinessException.class, () ->
-                    knowledgeArticleCommandService.approve(3L, 99L, "재승인 시도")
+                    knowledgeArticleCommandService.processApproval(3L, 99L, ApprovalStatus.APPROVE, "재승인 시도")
             );
 
-            assertEquals(ArticleErrorCode.APPROVAL_005, exception.getErrorCode());
+            assertEquals(ArticleErrorCode.APPROVAL_003, exception.getErrorCode());
         }
 
         @Test
@@ -137,10 +138,10 @@ class KnowledgeArticleApprovalServiceTest {
                     .willReturn(Optional.of(rejectedArticle));
 
             BusinessException exception = assertThrows(BusinessException.class, () ->
-                    knowledgeArticleCommandService.approve(4L, 99L, "반려 문서 승인 시도")
+                    knowledgeArticleCommandService.processApproval(4L, 99L, ApprovalStatus.APPROVE, "반려 문서 승인 시도")
             );
 
-            assertEquals(ArticleErrorCode.APPROVAL_006, exception.getErrorCode());
+            assertEquals(ArticleErrorCode.APPROVAL_003, exception.getErrorCode());
         }
 
         @Test
@@ -150,7 +151,7 @@ class KnowledgeArticleApprovalServiceTest {
                     .willReturn(Optional.of(deletedArticle));
 
             BusinessException exception = assertThrows(BusinessException.class, () ->
-                    knowledgeArticleCommandService.approve(5L, 99L, "삭제된 문서 승인 시도")
+                    knowledgeArticleCommandService.processApproval(5L, 99L, ApprovalStatus.APPROVE, "삭제된 문서 승인 시도")
             );
 
             assertEquals(ArticleErrorCode.ARTICLE_008, exception.getErrorCode());
@@ -158,7 +159,7 @@ class KnowledgeArticleApprovalServiceTest {
     }
 
     @Nested
-    @DisplayName("reject()")
+    @DisplayName("processApproval() - REJECT")
     class RejectTest {
 
         @Test
@@ -169,9 +170,10 @@ class KnowledgeArticleApprovalServiceTest {
             given(knowledgeArticleRepository.findById(1L))
                     .willReturn(Optional.of(pendingArticle));
 
-            knowledgeArticleCommandService.reject(1L, reviewComment);
+            knowledgeArticleCommandService.processApproval(1L, 99L, ApprovalStatus.REJECT, reviewComment);
 
             assertEquals(ArticleStatus.REJECTED, pendingArticle.getArticleStatus());
+            assertEquals(99L, pendingArticle.getApprovedBy());
             assertEquals(reviewComment, pendingArticle.getArticleRejectionReason());
         }
 
@@ -182,7 +184,7 @@ class KnowledgeArticleApprovalServiceTest {
                     .willReturn(Optional.of(draftArticle));
 
             BusinessException exception = assertThrows(BusinessException.class, () ->
-                    knowledgeArticleCommandService.reject(2L, "잘못된 반려 시도입니다. 10자 이상.")
+                    knowledgeArticleCommandService.processApproval(2L, 99L, ApprovalStatus.REJECT, "잘못된 반려 시도입니다. 10자 이상.")
             );
 
             assertEquals(ArticleErrorCode.APPROVAL_003, exception.getErrorCode());
@@ -195,10 +197,10 @@ class KnowledgeArticleApprovalServiceTest {
                     .willReturn(Optional.of(rejectedArticle));
 
             BusinessException exception = assertThrows(BusinessException.class, () ->
-                    knowledgeArticleCommandService.reject(4L, "이미 반려된 문서 재반려 시도.")
+                    knowledgeArticleCommandService.processApproval(4L, 99L, ApprovalStatus.REJECT, "이미 반려된 문서 재반려 시도.")
             );
 
-            assertEquals(ArticleErrorCode.APPROVAL_007, exception.getErrorCode());
+            assertEquals(ArticleErrorCode.APPROVAL_003, exception.getErrorCode());
         }
 
         @Test
@@ -208,10 +210,10 @@ class KnowledgeArticleApprovalServiceTest {
                     .willReturn(Optional.of(approvedArticle));
 
             BusinessException exception = assertThrows(BusinessException.class, () ->
-                    knowledgeArticleCommandService.reject(3L, "승인 완료 문서 반려 시도입니다.")
+                    knowledgeArticleCommandService.processApproval(3L, 99L, ApprovalStatus.REJECT, "승인 완료 문서 반려 시도입니다.")
             );
 
-            assertEquals(ArticleErrorCode.APPROVAL_008, exception.getErrorCode());
+            assertEquals(ArticleErrorCode.APPROVAL_003, exception.getErrorCode());
         }
 
         @Test
@@ -221,7 +223,7 @@ class KnowledgeArticleApprovalServiceTest {
                     .willReturn(Optional.of(deletedArticle));
 
             BusinessException exception = assertThrows(BusinessException.class, () ->
-                    knowledgeArticleCommandService.reject(5L, "삭제된 문서 반려 시도입니다.")
+                    knowledgeArticleCommandService.processApproval(5L, 99L, ApprovalStatus.REJECT, "삭제된 문서 반려 시도입니다.")
             );
 
             assertEquals(ArticleErrorCode.ARTICLE_008, exception.getErrorCode());

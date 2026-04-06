@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -53,11 +53,12 @@ class KnowledgeArticleApprovalControllerIntegrationTest {
         // given
         KnowledgeArticle pendingArticle = saveArticle(ArticleStatus.PENDING, TITLE, CONTENT);
         Map<String, Object> request = Map.of(
+            "status", "HOLD",
             "reviewComment", "내용 보완이 필요합니다. 검토 후 재심사 예정입니다."
         );
 
         // when
-        mockMvc.perform(post("/api/kms/approval/{articleId}/hold", pendingArticle.getArticleId())
+        mockMvc.perform(patch("/api/kms/articles/{articleId}/approval", pendingArticle.getArticleId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -77,11 +78,12 @@ class KnowledgeArticleApprovalControllerIntegrationTest {
         // given
         KnowledgeArticle draftArticle = saveArticle(ArticleStatus.DRAFT, TITLE, CONTENT);
         Map<String, Object> request = Map.of(
+            "status", "HOLD",
             "reviewComment", "DRAFT 상태 문서 보류 시도입니다."
         );
 
         // when & then
-        mockMvc.perform(post("/api/kms/approval/{articleId}/hold", draftArticle.getArticleId())
+        mockMvc.perform(patch("/api/kms/articles/{articleId}/approval", draftArticle.getArticleId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())

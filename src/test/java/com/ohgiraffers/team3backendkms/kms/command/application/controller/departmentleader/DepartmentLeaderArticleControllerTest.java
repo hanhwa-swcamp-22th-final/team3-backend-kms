@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.willDoNothing;
@@ -51,7 +52,7 @@ class DepartmentLeaderArticleControllerTest {
         void approve_success() throws Exception {
             // given
             willDoNothing().given(knowledgeArticleCommandService)
-                .approve(anyLong(), anyLong(), anyString());
+                .processApproval(anyLong(), any(), any(), anyString());
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/1/approve")
@@ -73,13 +74,16 @@ class DepartmentLeaderArticleControllerTest {
         void reject_success() throws Exception {
             // given
             willDoNothing().given(knowledgeArticleCommandService)
-                .reject(anyLong(), anyString());
+                .processApproval(anyLong(), any(), any(), anyString());
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/1/reject")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(
-                        Map.of("reviewComment", "반려 사유는 10자 이상이어야 합니다.")
+                        Map.of(
+                                "approverId", 10,
+                                "reviewComment", "반려 사유는 10자 이상이어야 합니다."
+                        )
                     )))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -89,7 +93,10 @@ class DepartmentLeaderArticleControllerTest {
         @DisplayName("Reject article API failure: return 400 when reviewComment is too short")
         void reject_whenReviewCommentTooShort_thenBadRequest() throws Exception {
             // given
-            Map<String, String> body = Map.of("reviewComment", "짧음");
+            Map<String, Object> body = Map.of(
+                    "approverId", 10,
+                    "reviewComment", "짧음"
+            );
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/1/reject")
