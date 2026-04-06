@@ -47,4 +47,9 @@ Content-Type: application/json
 }
 
 ### 문서 삭제
-DELETE http://localhost:8080/api/kms/articles/{{articleId}}?requesterId={{authorId}}
+DELETE http://localhost:8080/api/kms/articles/{{articleId}}
+Content-Type: application/json
+
+{
+  "requesterId": 1774937276588944
+}

@@ -74,7 +74,7 @@ public class KnowledgeArticleCommandService {
 
     public void incrementViewCount(Long articleId) {
         KnowledgeArticle article = findArticleById(articleId);
-        if (article.getArticleStatus() == ArticleStatus.DRAFT) {
+        if (article.getArticleStatus() != ArticleStatus.APPROVED) {
             return;
         }
         article.incrementViewCount();
