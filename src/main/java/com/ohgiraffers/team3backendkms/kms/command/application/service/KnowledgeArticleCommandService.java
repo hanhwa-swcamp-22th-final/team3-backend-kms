@@ -74,7 +74,7 @@ public class KnowledgeArticleCommandService {
 
     public void incrementViewCount(Long articleId) {
         KnowledgeArticle article = findArticleById(articleId);
-        if (article.getArticleStatus() == ArticleStatus.DRAFT) {
+        if (article.getArticleStatus() != ArticleStatus.APPROVED) {
             return;
         }
         article.incrementViewCount();
@@ -106,6 +106,40 @@ public class KnowledgeArticleCommandService {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
         article.adminDelete(reason);
+    }
+
+    public void approve(Long articleId, Long approverId, String reviewComment) {
+        KnowledgeArticle article = findArticleById(articleId);
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
+        }
+        if (article.getArticleStatus() == ArticleStatus.APPROVED) {
+            throw new BusinessException(ArticleErrorCode.APPROVAL_005);
+        }
+        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
+            throw new BusinessException(ArticleErrorCode.APPROVAL_006);
+        }
+        if (article.getArticleStatus() != ArticleStatus.PENDING) {
+            throw new BusinessException(ArticleErrorCode.APPROVAL_003);
+        }
+        article.approve(approverId, reviewComment);
+    }
+
+    public void reject(Long articleId, String reviewComment) {
+        KnowledgeArticle article = findArticleById(articleId);
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
+        }
+        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
+            throw new BusinessException(ArticleErrorCode.APPROVAL_007);
+        }
+        if (article.getArticleStatus() == ArticleStatus.APPROVED) {
+            throw new BusinessException(ArticleErrorCode.APPROVAL_008);
+        }
+        if (article.getArticleStatus() != ArticleStatus.PENDING) {
+            throw new BusinessException(ArticleErrorCode.APPROVAL_003);
+        }
+        article.reject(reviewComment);
     }
 
     private KnowledgeArticle buildArticle(Long authorId, Long equipmentId,

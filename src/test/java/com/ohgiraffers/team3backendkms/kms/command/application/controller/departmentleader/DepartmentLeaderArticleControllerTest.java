@@ -2,7 +2,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.controller.depar
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.common.exception.GlobalExceptionHandler;
-import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleApprovalService;
+import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ class DepartmentLeaderArticleControllerTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private KnowledgeArticleApprovalService knowledgeArticleApprovalService;
+    private KnowledgeArticleCommandService knowledgeArticleCommandService;
 
     @Nested
     @DisplayName("POST /api/kms/dl/approval/{articleId}/approve")
@@ -50,7 +50,7 @@ class DepartmentLeaderArticleControllerTest {
         @DisplayName("Approve article API success: return successful response")
         void approve_success() throws Exception {
             // given
-            willDoNothing().given(knowledgeArticleApprovalService)
+            willDoNothing().given(knowledgeArticleCommandService)
                 .approve(anyLong(), anyLong(), anyString());
 
             // when & then
@@ -72,7 +72,7 @@ class DepartmentLeaderArticleControllerTest {
         @DisplayName("Reject article API success: return successful response")
         void reject_success() throws Exception {
             // given
-            willDoNothing().given(knowledgeArticleApprovalService)
+            willDoNothing().given(knowledgeArticleCommandService)
                 .reject(anyLong(), anyString());
 
             // when & then

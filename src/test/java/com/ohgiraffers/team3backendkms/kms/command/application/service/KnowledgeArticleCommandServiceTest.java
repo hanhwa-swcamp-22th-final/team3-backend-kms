@@ -40,6 +40,7 @@ class KnowledgeArticleCommandServiceTest {
 
     private KnowledgeArticle pendingArticle;
     private KnowledgeArticle draftArticle;
+    private KnowledgeArticle approvedArticle;
 
     @BeforeEach
     void setUp() {
@@ -61,6 +62,17 @@ class KnowledgeArticleCommandServiceTest {
                 .articleCategory(ArticleCategory.PROCESS_IMPROVEMENT)
                 .articleContent("임시저장 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
                 .articleStatus(ArticleStatus.DRAFT)
+                .isDeleted(false)
+                .viewCount(0)
+                .build();
+
+        approvedArticle = KnowledgeArticle.builder()
+                .articleId(3L)
+                .authorId(1L)
+                .articleTitle("승인된 문서 제목입니다")
+                .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                .articleContent("승인된 문서 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
+                .articleStatus(ArticleStatus.APPROVED)
                 .isDeleted(false)
                 .viewCount(0)
                 .build();
@@ -126,14 +138,14 @@ class KnowledgeArticleCommandServiceTest {
         @DisplayName("Increments view count by 1")
         void incrementViewCount_Success() {
             // given
-            given(knowledgeArticleRepository.findById(1L))
-                    .willReturn(Optional.of(pendingArticle));
+            given(knowledgeArticleRepository.findById(3L))
+                    .willReturn(Optional.of(approvedArticle));
 
             // when
-            knowledgeArticleCommandService.incrementViewCount(1L);
+            knowledgeArticleCommandService.incrementViewCount(3L);
 
             // then
-            assertEquals(1, pendingArticle.getViewCount());
+            assertEquals(1, approvedArticle.getViewCount());
         }
 
         @Test
