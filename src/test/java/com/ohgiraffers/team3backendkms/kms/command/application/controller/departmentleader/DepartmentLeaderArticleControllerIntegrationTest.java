@@ -69,10 +69,10 @@ class DepartmentLeaderArticleControllerIntegrationTest {
     void approveArticle_success() throws Exception {
         // given
         KnowledgeArticle pendingArticle = saveArticle(ArticleStatus.PENDING, TITLE, CONTENT);
-        Map<String, Object> request = Map.of("reviewComment", "검토 완료, 승인합니다.");
+        Map<String, Object> request = Map.of("status", "APPROVE", "reviewComment", "검토 완료, 승인합니다.");
 
         // when
-        mockMvc.perform(post("/api/kms/dl/approval/{articleId}/approve", pendingArticle.getArticleId())
+        mockMvc.perform(post("/api/kms/dl/articles/{articleId}/approval", pendingArticle.getArticleId())
                 .header("X-Employee-Id", approverId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -94,10 +94,10 @@ class DepartmentLeaderArticleControllerIntegrationTest {
     void pendingArticle_success() throws Exception {
         // given
         KnowledgeArticle pendingArticle = saveArticle(ArticleStatus.PENDING, TITLE, CONTENT);
-        Map<String, Object> request = Map.of("reviewComment", "내용 보완이 필요합니다. 검토 후 재심사 예정입니다.");
+        Map<String, Object> request = Map.of("status", "PENDING", "reviewComment", "내용 보완이 필요합니다. 검토 후 재심사 예정입니다.");
 
         // when
-        mockMvc.perform(post("/api/kms/dl/approval/{articleId}/pending", pendingArticle.getArticleId())
+        mockMvc.perform(post("/api/kms/dl/articles/{articleId}/approval", pendingArticle.getArticleId())
                 .header("X-Employee-Id", approverId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
