@@ -56,9 +56,10 @@ class DepartmentLeaderArticleControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/1/approve")
+                    .header("X-Employee-Id", 1L)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(
-                        Map.of("approverId", 10, "reviewComment", "최종 승인합니다.")
+                        Map.of("reviewComment", "최종 승인합니다.")
                     )))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -78,12 +79,10 @@ class DepartmentLeaderArticleControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/1/reject")
+                    .header("X-Employee-Id", 1L)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(
-                        Map.of(
-                                "approverId", 10,
-                                "reviewComment", "반려 사유는 10자 이상이어야 합니다."
-                        )
+                        Map.of("reviewComment", "반려 사유는 10자 이상이어야 합니다.")
                     )))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -93,13 +92,11 @@ class DepartmentLeaderArticleControllerTest {
         @DisplayName("Reject article API failure: return 400 when reviewComment is too short")
         void reject_whenReviewCommentTooShort_thenBadRequest() throws Exception {
             // given
-            Map<String, Object> body = Map.of(
-                    "approverId", 10,
-                    "reviewComment", "짧음"
-            );
+            Map<String, Object> body = Map.of("reviewComment", "짧음");
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/1/reject")
+                    .header("X-Employee-Id", 1L)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isBadRequest())

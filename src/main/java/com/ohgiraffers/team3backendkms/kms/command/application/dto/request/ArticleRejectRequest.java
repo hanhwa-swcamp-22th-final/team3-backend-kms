@@ -9,9 +9,6 @@ import org.hibernate.validator.constraints.Length;
 @NoArgsConstructor
 public class ArticleRejectRequest {
 
-    @NotNull(message = "승인자 ID는 필수입니다")
-    private Long approverId;
-
     @NotNull
     @Length(min = 10, max = 500, message = "반려 사유는 10자 이상 500자 이하여야 합니다")
     private String reviewComment;   // 필수 (10~500자) — DTO에서 검증

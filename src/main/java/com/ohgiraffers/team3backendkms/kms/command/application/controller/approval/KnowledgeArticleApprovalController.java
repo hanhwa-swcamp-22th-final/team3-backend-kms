@@ -7,7 +7,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,7 +20,7 @@ public class KnowledgeArticleApprovalController {
     public ResponseEntity<ApiResponse<Void>> processApproval(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
             @Valid @RequestBody ArticleApprovalProcessRequest request,
-            @AuthenticationPrincipal(expression = "employeeCode") Long approverId
+            @RequestHeader("X-Employee-Id") Long approverId
     ) {
         knowledgeArticleCommandService.processApproval(
                 articleId,

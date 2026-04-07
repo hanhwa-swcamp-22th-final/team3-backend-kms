@@ -53,12 +53,13 @@ class KnowledgeArticleApprovalControllerIntegrationTest {
         // given
         KnowledgeArticle pendingArticle = saveArticle(ArticleStatus.PENDING, TITLE, CONTENT);
         Map<String, Object> request = Map.of(
-            "status", "HOLD",
+            "status", "PENDING",
             "reviewComment", "내용 보완이 필요합니다. 검토 후 재심사 예정입니다."
         );
 
         // when
         mockMvc.perform(patch("/api/kms/articles/{articleId}/approval", pendingArticle.getArticleId())
+                .header("X-Employee-Id", AUTHOR_ID)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -78,12 +79,13 @@ class KnowledgeArticleApprovalControllerIntegrationTest {
         // given
         KnowledgeArticle draftArticle = saveArticle(ArticleStatus.DRAFT, TITLE, CONTENT);
         Map<String, Object> request = Map.of(
-            "status", "HOLD",
+            "status", "PENDING",
             "reviewComment", "DRAFT 상태 문서 보류 시도입니다."
         );
 
         // when & then
         mockMvc.perform(patch("/api/kms/articles/{articleId}/approval", draftArticle.getArticleId())
+                .header("X-Employee-Id", AUTHOR_ID)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())

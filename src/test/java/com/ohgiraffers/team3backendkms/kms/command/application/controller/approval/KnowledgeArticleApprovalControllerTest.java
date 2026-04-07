@@ -56,6 +56,7 @@ class KnowledgeArticleApprovalControllerTest {
 
             // when & then
             mockMvc.perform(patch(BASE_URL + "/1/approval")
+                    .header("X-Employee-Id", 1L)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(
                         Map.of(
@@ -78,6 +79,7 @@ class KnowledgeArticleApprovalControllerTest {
 
             // when & then
             mockMvc.perform(patch(BASE_URL + "/1/approval")
+                    .header("X-Employee-Id", 1L)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isBadRequest())
@@ -97,6 +99,7 @@ class KnowledgeArticleApprovalControllerTest {
 
             // when & then
             mockMvc.perform(patch(BASE_URL + "/1/approval")
+                    .header("X-Employee-Id", 1L)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isBadRequest())
