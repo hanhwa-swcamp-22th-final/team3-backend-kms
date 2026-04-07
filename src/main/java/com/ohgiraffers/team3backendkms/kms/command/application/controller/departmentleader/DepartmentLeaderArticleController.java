@@ -2,10 +2,8 @@ package com.ohgiraffers.team3backendkms.kms.command.application.controller.depar
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ApprovalStatus;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleApproveRequest;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRejectRequest;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleReviewRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +19,7 @@ public class DepartmentLeaderArticleController {
     @PostMapping("/{articleId}/approve")
     public ResponseEntity<ApiResponse<Void>> approve(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
-            @Valid @RequestBody ArticleApproveRequest request,
+            @RequestBody ArticleReviewRequest request,
             @RequestHeader("X-Employee-Id") Long approverId
     ) {
         knowledgeArticleCommandService.processApproval(
@@ -36,13 +34,28 @@ public class DepartmentLeaderArticleController {
     @PostMapping("/{articleId}/reject")
     public ResponseEntity<ApiResponse<Void>> reject(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
-            @Valid @RequestBody ArticleRejectRequest request,
+            @RequestBody ArticleReviewRequest request,
             @RequestHeader("X-Employee-Id") Long approverId
     ) {
         knowledgeArticleCommandService.processApproval(
                 articleId,
                 approverId,
                 ApprovalStatus.REJECT,
+                request.getReviewComment()
+        );
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @PostMapping("/{articleId}/pending")
+    public ResponseEntity<ApiResponse<Void>> pending(
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
+            @RequestBody ArticleReviewRequest request,
+            @RequestHeader("X-Employee-Id") Long approverId
+    ) {
+        knowledgeArticleCommandService.processApproval(
+                articleId,
+                approverId,
+                ApprovalStatus.PENDING,
                 request.getReviewComment()
         );
         return ResponseEntity.ok(ApiResponse.success(null));

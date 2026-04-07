@@ -156,6 +156,19 @@ class KnowledgeArticleApprovalServiceTest {
 
             assertEquals(ArticleErrorCode.ARTICLE_008, exception.getErrorCode());
         }
+
+        @Test
+        @DisplayName("Throws exception when reviewComment exceeds 500 chars (APPROVAL_002)")
+        void approve_ReviewCommentTooLong_ThrowsException() {
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleCommandService.processApproval(1L, 99L, ApprovalStatus.APPROVE, "가".repeat(501))
+            );
+
+            assertEquals(ArticleErrorCode.APPROVAL_002, exception.getErrorCode());
+        }
     }
 
     @Nested
@@ -227,6 +240,78 @@ class KnowledgeArticleApprovalServiceTest {
             );
 
             assertEquals(ArticleErrorCode.ARTICLE_008, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("Throws exception when reviewComment is null (APPROVAL_001)")
+        void reject_ReviewCommentNull_ThrowsException() {
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleCommandService.processApproval(1L, 99L, ApprovalStatus.REJECT, null)
+            );
+
+            assertEquals(ArticleErrorCode.APPROVAL_001, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("Throws exception when reviewComment is too short (APPROVAL_001)")
+        void reject_ReviewCommentTooShort_ThrowsException() {
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleCommandService.processApproval(1L, 99L, ApprovalStatus.REJECT, "짧음")
+            );
+
+            assertEquals(ArticleErrorCode.APPROVAL_001, exception.getErrorCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("processApproval() - PENDING")
+    class PendingTest {
+
+        @Test
+        @DisplayName("Keeps status as PENDING and saves review comment")
+        void pending_Success() {
+            String reviewComment = "내용 보완이 필요합니다. 검토 후 재심사 예정입니다.";
+
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            knowledgeArticleCommandService.processApproval(1L, 99L, ApprovalStatus.PENDING, reviewComment);
+
+            assertEquals(ArticleStatus.PENDING, pendingArticle.getArticleStatus());
+            assertEquals(99L, pendingArticle.getApprovedBy());
+            assertEquals(reviewComment, pendingArticle.getArticleApprovalOpinion());
+        }
+
+        @Test
+        @DisplayName("Throws exception when reviewComment is blank (APPROVAL_004)")
+        void pending_ReviewCommentBlank_ThrowsException() {
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleCommandService.processApproval(1L, 99L, ApprovalStatus.PENDING, "")
+            );
+
+            assertEquals(ArticleErrorCode.APPROVAL_004, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("Throws exception when reviewComment is null (APPROVAL_004)")
+        void pending_ReviewCommentNull_ThrowsException() {
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleCommandService.processApproval(1L, 99L, ApprovalStatus.PENDING, null)
+            );
+
+            assertEquals(ArticleErrorCode.APPROVAL_004, exception.getErrorCode());
         }
     }
 }

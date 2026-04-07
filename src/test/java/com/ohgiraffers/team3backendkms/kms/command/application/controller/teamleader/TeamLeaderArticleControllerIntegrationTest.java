@@ -89,6 +89,30 @@ class TeamLeaderArticleControllerIntegrationTest {
         assertNotNull(approvedArticle.getApprovedAt());
     }
 
+    @Test
+    @DisplayName("Pending article API integration success: stores review comment without changing status")
+    void pendingArticle_success() throws Exception {
+        // given
+        KnowledgeArticle pendingArticle = saveArticle(ArticleStatus.PENDING, TITLE, CONTENT);
+        Map<String, Object> request = Map.of("reviewComment", "내용 보완이 필요합니다. 검토 후 재심사 예정입니다.");
+
+        // when
+        mockMvc.perform(post("/api/kms/tl/approval/{articleId}/pending", pendingArticle.getArticleId())
+                .header("X-Employee-Id", approverId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+
+        flushAndClear();
+
+        // then
+        KnowledgeArticle held = knowledgeArticleRepository.findById(pendingArticle.getArticleId()).orElseThrow();
+        assertEquals(ArticleStatus.PENDING, held.getArticleStatus());
+        assertEquals("내용 보완이 필요합니다. 검토 후 재심사 예정입니다.", held.getArticleApprovalOpinion());
+        assertEquals(approverId, held.getApprovedBy());
+    }
+
     private KnowledgeArticle saveArticle(ArticleStatus status, String title, String content) {
         return knowledgeArticleRepository.save(KnowledgeArticle.builder()
             .articleId(new TimeBasedIdGenerator().generate())

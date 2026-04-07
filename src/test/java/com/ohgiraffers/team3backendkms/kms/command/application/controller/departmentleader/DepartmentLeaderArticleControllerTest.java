@@ -67,6 +67,30 @@ class DepartmentLeaderArticleControllerTest {
     }
 
     @Nested
+    @DisplayName("POST /api/kms/dl/approval/{articleId}/pending")
+    class Pending {
+
+        @Test
+        @DisplayName("Pending article API success: return successful response")
+        void pending_success() throws Exception {
+            // given
+            willDoNothing().given(knowledgeArticleCommandService)
+                .processApproval(anyLong(), any(), any(), anyString());
+
+            // when & then
+            mockMvc.perform(post(BASE_URL + "/1/pending")
+                    .header("X-Employee-Id", 1L)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(
+                        Map.of("reviewComment", "내용 보완이 필요합니다. 보류 처리합니다.")
+                    )))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+        }
+
+    }
+
+    @Nested
     @DisplayName("POST /api/kms/dl/approval/{articleId}/reject")
     class Reject {
 
@@ -88,20 +112,5 @@ class DepartmentLeaderArticleControllerTest {
                 .andExpect(jsonPath("$.success").value(true));
         }
 
-        @Test
-        @DisplayName("Reject article API failure: return 400 when reviewComment is too short")
-        void reject_whenReviewCommentTooShort_thenBadRequest() throws Exception {
-            // given
-            Map<String, Object> body = Map.of("reviewComment", "짧음");
-
-            // when & then
-            mockMvc.perform(post(BASE_URL + "/1/reject")
-                    .header("X-Employee-Id", 1L)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
-        }
     }
 }

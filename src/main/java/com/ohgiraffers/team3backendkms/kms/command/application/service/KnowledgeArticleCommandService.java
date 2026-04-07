@@ -123,9 +123,24 @@ public class KnowledgeArticleCommandService {
         }
 
         switch (status) {
-            case APPROVE -> article.approve(approverId, reviewComment);
-            case REJECT -> article.reject(approverId, reviewComment);
-            case PENDING -> article.hold(approverId, reviewComment);
+            case APPROVE -> {
+                if (reviewComment != null && reviewComment.length() > 500) {
+                    throw new BusinessException(ArticleErrorCode.APPROVAL_002);
+                }
+                article.approve(approverId, reviewComment);
+            }
+            case REJECT -> {
+                if (reviewComment == null || reviewComment.length() < 10 || reviewComment.length() > 500) {
+                    throw new BusinessException(ArticleErrorCode.APPROVAL_001);
+                }
+                article.reject(approverId, reviewComment);
+            }
+            case PENDING -> {
+                if (reviewComment == null || reviewComment.isBlank() || reviewComment.length() > 500) {
+                    throw new BusinessException(ArticleErrorCode.APPROVAL_004);
+                }
+                article.hold(approverId, reviewComment);
+            }
         }
     }
 
