@@ -40,4 +40,8 @@ public class KnowledgeTag {
     @LastModifiedBy
     @Column(name = "updated_by")
     private Long updatedBy;
+
+    public void updateTagName(String tagName) {
+        this.tagName = tagName;
+    }
 }

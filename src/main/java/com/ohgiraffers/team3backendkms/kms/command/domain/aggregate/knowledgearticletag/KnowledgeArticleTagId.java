@@ -2,12 +2,14 @@ package com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgear
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import jakarta.persistence.Table;
 import lombok.*;
 
 import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
+@Table(name = "knowledge_article_tag")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

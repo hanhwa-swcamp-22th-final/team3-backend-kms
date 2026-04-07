@@ -2,3 +2,28 @@
 # 이 저장소는 현재 KMS API만 구현되어 있습니다.
 # 아래 인증 API는 현재 리포지토리 기준 미구현이며 실행 예시로 사용하면 안 됩니다.
 # 실제 보안 설정은 src/main/java/com/ohgiraffers/team3backendkms/config/SecurityConfig.java 참고
+
+### Tag 등록
+POST http://localhost:9090/api/kms/admin/articles/tags
+Content-Type: application/json
+
+{
+  "tagName": "안전"
+}
+
+### Tag 수정
+PUT http://localhost:9090/api/kms/admin/articles/tags
+Content-Type: application/json
+
+{
+  "tagId": "1775540674515265",
+  "tagName": "안전제일"
+}
+
+### Tag 삭제
+DELETE http://localhost:9090/api/kms/admin/articles/tags
+Content-Type: application/json
+
+{
+  "tagId": "1775540674515265"
+}
