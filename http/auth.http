@@ -8,7 +8,7 @@ POST http://localhost:9090/api/kms/admin/articles/tags
 Content-Type: application/json
 
 {
-  "tagName": "안전"
+  "tagName": "장비"
 }
 
 ### Tag 수정

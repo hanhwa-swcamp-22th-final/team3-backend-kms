@@ -6,7 +6,9 @@ import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.Artic
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftUpdateRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleSubmitRequest;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.KnowledgeArticleTagUpdateRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
+import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleTagCommandService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class WorkerArticleController {
 
     private final KnowledgeArticleCommandService knowledgeArticleCommandService;
+    private final KnowledgeArticleTagCommandService knowledgeArticleTagCommandService;
 
     /* 지식 문서 등록 (PENDING) */
     @PostMapping
@@ -88,6 +91,16 @@ public class WorkerArticleController {
             @Valid @RequestBody ArticleDeleteRequest request
     ) {
         knowledgeArticleCommandService.delete(articleId, request.getRequesterId());
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /* 게시글 태그 연결 (전체 교체) */
+    @PutMapping("/{articleId}/tags")
+    public ResponseEntity<ApiResponse<Void>> updateArticleTags(
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
+            @Valid @RequestBody KnowledgeArticleTagUpdateRequest request
+    ) {
+        knowledgeArticleTagCommandService.updateArticleTags(articleId, request.getTagIds());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }
