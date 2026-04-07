@@ -1,3 +1,5 @@
+server:
+  port: 9090
 spring:
   application:
     name: team3-backend-kms

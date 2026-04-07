@@ -53,3 +53,11 @@ Content-Type: application/json
 {
   "requesterId": 1774937276588944
 }
+
+### Knowledge Tag 연결
+PUT http://localhost:9090/api/kms/articles/1775466731676304/tags
+Content-Type: application/json
+
+{
+  "tagIds": [1775544414105427, 1775544398734767, 1775544404025382]
+}
