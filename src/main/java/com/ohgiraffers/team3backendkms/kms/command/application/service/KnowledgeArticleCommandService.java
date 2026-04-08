@@ -7,7 +7,9 @@ import com.ohgiraffers.team3backendkms.common.idgenerator.IdGenerator;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeedithistory.KnowledgeEditHistory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
+import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeEditHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class KnowledgeArticleCommandService {
 
     private final KnowledgeArticleRepository knowledgeArticleRepository;
+    private final KnowledgeEditHistoryRepository knowledgeEditHistoryRepository;
     private final IdGenerator idGenerator;
 
     public Long register(Long authorId, Long equipmentId,
@@ -41,7 +44,7 @@ public class KnowledgeArticleCommandService {
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
-        if (article.getArticleStatus() != ArticleStatus.DRAFT) {
+        if (article.getArticleStatus() != ArticleStatus.DRAFT && article.getArticleStatus() != ArticleStatus.REJECTED) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_006);
         }
         if (!article.getAuthorId().equals(requesterId)) {
@@ -56,7 +59,7 @@ public class KnowledgeArticleCommandService {
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
-        if (article.getArticleStatus() != ArticleStatus.DRAFT) {
+        if (article.getArticleStatus() != ArticleStatus.DRAFT && article.getArticleStatus() != ArticleStatus.REJECTED) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_SUBMIT_INVALID);
         }
         if (!article.getAuthorId().equals(requesterId)) {
@@ -65,6 +68,27 @@ public class KnowledgeArticleCommandService {
         validateEquipmentId(equipmentId);
         article.updateDraft(title, category, equipmentId, content);
         article.submit();
+    }
+
+    public void startRevision(Long articleId, Long requesterId) {
+        KnowledgeArticle article = findArticleById(articleId);
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
+        }
+        if (!article.getAuthorId().equals(requesterId)) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_007);
+        }
+        if (article.getArticleStatus() != ArticleStatus.APPROVED) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_011);
+        }
+
+        Integer approvalVersion = article.getApprovalVersion() == null ? 0 : article.getApprovalVersion();
+        if (approvalVersion > 0
+                && !knowledgeEditHistoryRepository.existsByArticleIdAndApprovalVersion(articleId, approvalVersion)) {
+            knowledgeEditHistoryRepository.save(KnowledgeEditHistory.from(idGenerator.generate(), article));
+        }
+
+        article.startRevision();
     }
 
     public void adminUpdate(Long articleId, String title, ArticleCategory category, String content) {
@@ -154,6 +178,7 @@ public class KnowledgeArticleCommandService {
                 .articleCategory(category)
                 .articleContent(content)
                 .articleStatus(status)
+                .approvalVersion(0)
                 .isDeleted(false)
                 .viewCount(0)
                 .build();

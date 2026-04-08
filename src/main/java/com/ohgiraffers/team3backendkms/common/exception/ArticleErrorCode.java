@@ -160,6 +160,11 @@ public enum ArticleErrorCode {
     ARTICLE_010(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE_010] 평가 진행 중인 문서는 삭제할 수 없습니다."),
 
     /**
+     * 승인 완료 문서가 아닌 문서에서 수정 시작 시도
+     */
+    ARTICLE_011(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE_011] 승인 완료된 문서에서만 수정 시작할 수 있습니다."),
+
+    /**
      * 삭제 사유 길이 검증 (관리자 삭제 전용)
      * 발생 위치: KnowledgeArticle.adminDelete()
      * 호출 메서드: DELETE /api/kms/admin/articles/{articleId}

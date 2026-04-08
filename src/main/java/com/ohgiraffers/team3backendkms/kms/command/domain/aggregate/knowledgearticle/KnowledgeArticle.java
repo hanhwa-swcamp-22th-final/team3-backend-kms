@@ -40,6 +40,7 @@ public class KnowledgeArticle {
 
     private String articleApprovalOpinion;
     private LocalDateTime approvedAt;
+    private Integer approvalVersion;
 
     private String articleRejectionReason;
     private String articleDeletionReason;
@@ -82,12 +83,18 @@ public class KnowledgeArticle {
         this.approvedBy = approverId;
         this.articleApprovalOpinion = reviewComment;
         this.approvedAt = LocalDateTime.now();
+        this.approvalVersion = (this.approvalVersion == null ? 0 : this.approvalVersion) + 1;
     }
 
     /* PENDING → REJECTED */
     public void reject(String reviewComment) {
         this.articleStatus = ArticleStatus.REJECTED;
         this.articleRejectionReason = reviewComment;
+    }
+
+    /* APPROVED → DRAFT (수정 시작) */
+    public void startRevision() {
+        this.articleStatus = ArticleStatus.DRAFT;
     }
 
     /* DRAFT → 필드 수정 후 DRAFT 유지 */
