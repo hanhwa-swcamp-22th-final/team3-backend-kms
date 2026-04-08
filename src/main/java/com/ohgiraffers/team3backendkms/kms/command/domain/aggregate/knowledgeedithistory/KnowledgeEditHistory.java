@@ -1,7 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeedithistory;
 
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -65,15 +64,4 @@ public class KnowledgeEditHistory {
     @LastModifiedBy
     @Column(name = "updated_by")
     private Long updatedBy;
-
-    public static KnowledgeEditHistory from(Long historyId, KnowledgeArticle article) {
-        return KnowledgeEditHistory.builder()
-                .historyId(historyId)
-                .articleId(article.getArticleId())
-                .approvalVersion(article.getApprovalVersion())
-                .articlePreviousTitle(article.getArticleTitle())
-                .articlePreviousCategory(article.getArticleCategory())
-                .articlePreviousContent(article.getArticleContent())
-                .build();
-    }
 }

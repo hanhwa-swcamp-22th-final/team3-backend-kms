@@ -39,6 +39,7 @@ public class KnowledgeArticleCommandService {
         ).getArticleId();
     }
 
+// 제목, 카테고리, 내용 변경
     public void updateDraft(Long articleId, String title, ArticleCategory category, Long equipmentId, String content, Long requesterId) {
         KnowledgeArticle article = findArticleById(articleId);
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
@@ -76,7 +77,7 @@ public class KnowledgeArticleCommandService {
         }
         article.submit();
     }
-
+// 원본이 APPROVED인지 확인
     public Long startRevision(Long articleId, Long requesterId) {
         KnowledgeArticle originalArticle = findArticleById(articleId);
         if (Boolean.TRUE.equals(originalArticle.getIsDeleted())) {
@@ -99,13 +100,20 @@ public class KnowledgeArticleCommandService {
                         KnowledgeArticle.createRevisionCopy(idGenerator.generate(), originalArticle)
                 ).getArticleId());
     }
-
+// 수정본이면-> 원본찾기, 원본버전체크
     private void saveOriginalSnapshotIfNeeded(KnowledgeArticle revisionArticle) {
         KnowledgeArticle originalArticle = findArticleById(revisionArticle.getOriginalArticleId());
         Integer approvalVersion = originalArticle.getApprovalVersion();
         if (approvalVersion != null
                 && !knowledgeEditHistoryRepository.existsByArticleIdAndApprovalVersion(originalArticle.getArticleId(), approvalVersion)) {
-            knowledgeEditHistoryRepository.save(KnowledgeEditHistory.from(idGenerator.generate(), originalArticle));
+            knowledgeEditHistoryRepository.save(KnowledgeEditHistory.builder()
+                    .historyId(idGenerator.generate())
+                    .articleId(originalArticle.getArticleId())
+                    .approvalVersion(originalArticle.getApprovalVersion())
+                    .articlePreviousTitle(originalArticle.getArticleTitle())
+                    .articlePreviousCategory(originalArticle.getArticleCategory())
+                    .articlePreviousContent(originalArticle.getArticleContent())
+                    .build());
         }
     }
 

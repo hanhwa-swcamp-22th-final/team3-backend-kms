@@ -142,7 +142,7 @@ public class KnowledgeArticle {
         this.articleRejectionReason = null;
         this.approvalVersion = (this.approvalVersion == null ? 0 : this.approvalVersion) + 1;
     }
-
+// 복사본생성-원본APPROVAL 상태유지
     public static KnowledgeArticle createRevisionCopy(Long articleId, KnowledgeArticle original) {
         return KnowledgeArticle.builder()
                 .articleId(articleId)
