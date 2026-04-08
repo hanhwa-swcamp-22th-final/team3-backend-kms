@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -541,6 +542,68 @@ class KnowledgeArticleCommandServiceTest {
 
             // then
             assertEquals(3, pendingRevisionArticle.getApprovalVersion());
+        }
+    }
+
+    @Nested
+    @DisplayName("approved article rejected flow")
+    class ApprovedRejectedFlowTest {
+
+        @Test
+        @DisplayName("Keeps one history snapshot and allows resubmit after rejection")
+        void approvedRevisionRejectedFlow_Success() {
+            // given
+            KnowledgeArticle article = KnowledgeArticle.builder()
+                    .articleId(8L)
+                    .authorId(1L)
+                    .articleTitle("승인된 원본 제목입니다")
+                    .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                    .articleContent("승인된 원본 본문입니다. 수정 시작 전에 스냅샷으로 저장되어야 하는 승인본 내용입니다.")
+                    .articleStatus(ArticleStatus.APPROVED)
+                    .approvalVersion(1)
+                    .isDeleted(false)
+                    .viewCount(0)
+                    .build();
+
+            given(knowledgeArticleRepository.findById(8L))
+                    .willReturn(Optional.of(article));
+            given(knowledgeEditHistoryRepository.existsByArticleIdAndApprovalVersion(8L, 1))
+                    .willReturn(false);
+            given(idGenerator.generate()).willReturn(101L);
+
+            // when
+            knowledgeArticleCommandService.startRevision(8L, 1L);
+            knowledgeArticleCommandService.submitDraft(
+                    8L,
+                    "재승인 요청 제목입니다",
+                    ArticleCategory.PROCESS_IMPROVEMENT,
+                    88L,
+                    "재승인 요청 본문입니다. 수정 후 승인 대기 상태로 보내는 단계입니다. 충분한 길이를 확보했습니다.",
+                    1L
+            );
+            knowledgeArticleCommandService.reject(8L, "반려 사유를 충분한 길이로 남깁니다.");
+            knowledgeArticleCommandService.updateDraft(
+                    8L,
+                    "반려 후 수정 제목입니다",
+                    ArticleCategory.SAFETY,
+                    99L,
+                    "반려 후 다시 수정한 본문입니다. 수정 이력은 이미 저장되어 있고 다시 제출 가능해야 합니다.",
+                    1L
+            );
+            knowledgeArticleCommandService.submitDraft(
+                    8L,
+                    "반려 후 재제출 제목입니다",
+                    ArticleCategory.SAFETY,
+                    99L,
+                    "반려 후 재제출하는 본문입니다. 최종적으로 다시 승인 대기로 전환되는지를 검증합니다.",
+                    1L
+            );
+
+            // then
+            verify(knowledgeEditHistoryRepository, times(1)).save(any());
+            assertEquals(ArticleStatus.PENDING, article.getArticleStatus());
+            assertEquals(1, article.getApprovalVersion());
+            assertEquals("반려 후 재제출 제목입니다", article.getArticleTitle());
         }
     }
 

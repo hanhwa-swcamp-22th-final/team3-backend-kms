@@ -8,7 +8,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -37,18 +40,6 @@ public class KnowledgeEditHistory {
     @Column(name = "approval_version")
     private Integer approvalVersion;
 
-    @Column(name = "author_id")
-    private Long authorId;
-
-    @Column(name = "editor_id")
-    private Long editorId;
-
-    @Column(name = "approved_by")
-    private Long approvedBy;
-
-    @Column(name = "equipment_id")
-    private Long equipmentId;
-
     @Column(name = "article_title")
     private String articleTitle;
 
@@ -56,29 +47,37 @@ public class KnowledgeEditHistory {
     @Column(name = "article_category")
     private ArticleCategory articleCategory;
 
-    @Column(name = "article_content", columnDefinition = "TEXT")
-    private String articleContent;
+    @Column(name = "article_previous_content", columnDefinition = "TEXT")
+    private String articlePreviousContent;
 
-    @Column(name = "approved_at")
-    private LocalDateTime approvedAt;
+    @Column(name = "edited_at")
+    private LocalDateTime editedAt;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    public static KnowledgeEditHistory from(Long historyId, KnowledgeArticle article, Long editorId) {
+    @CreatedBy
+    @Column(name = "created_by", updatable = false)
+    private Long createdBy;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @LastModifiedBy
+    @Column(name = "updated_by")
+    private Long updatedBy;
+
+    public static KnowledgeEditHistory from(Long historyId, KnowledgeArticle article) {
         return KnowledgeEditHistory.builder()
                 .historyId(historyId)
                 .articleId(article.getArticleId())
                 .approvalVersion(article.getApprovalVersion())
-                .authorId(article.getAuthorId())
-                .editorId(editorId)
-                .approvedBy(article.getApprovedBy())
-                .equipmentId(article.getEquipmentId())
                 .articleTitle(article.getArticleTitle())
                 .articleCategory(article.getArticleCategory())
-                .articleContent(article.getArticleContent())
-                .approvedAt(article.getApprovedAt())
+                .articlePreviousContent(article.getArticleContent())
+                .editedAt(LocalDateTime.now())
                 .build();
     }
 }

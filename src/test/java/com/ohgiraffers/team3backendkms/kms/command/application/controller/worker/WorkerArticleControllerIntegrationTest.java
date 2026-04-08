@@ -50,7 +50,6 @@ class WorkerArticleControllerIntegrationTest {
     private static final String CONTENT = "통합 테스트용 본문입니다. 이 본문은 최소 50자 이상이어야 등록이 가능합니다. 충분한 길이를 확보했습니다.";
     // 제출 테스트에서 사용할 수정 본문이다.
     private static final String UPDATED_CONTENT = "수정된 통합 테스트 본문입니다. 이 본문도 최소 50자 이상이어야 하며 상태 전환까지 검증합니다.";
-
     // 실제 HTTP 요청처럼 컨트롤러를 호출하기 위한 도구다.
     @Autowired
     private MockMvc mockMvc;
@@ -214,9 +213,95 @@ class WorkerArticleControllerIntegrationTest {
         );
 
         assertNotNull(history.get("history_id"));
-        assertEquals(AUTHOR_ID, ((Number) history.get("editor_id")).longValue());
         assertEquals(TITLE, history.get("article_title"));
-        assertEquals(CONTENT, history.get("article_content"));
+        assertEquals(CONTENT, history.get("article_previous_content"));
+        assertNotNull(history.get("edited_at"));
+    }
+
+    @Test
+    @DisplayName("Approved article rejected flow integration success: keep one history and allow resubmit")
+    void approvedArticleRejectedFlow_success() throws Exception {
+        // given
+        KnowledgeArticle approvedArticle = saveArticle(ArticleStatus.APPROVED, TITLE, CONTENT, 0);
+
+        // when 1. 수정 시작
+        mockMvc.perform(put(BASE_URL + "/{articleId}/revision", approvedArticle.getArticleId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("requesterId", AUTHOR_ID))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+
+        // when 2. 재제출
+        mockMvc.perform(put(BASE_URL + "/{articleId}/submit", approvedArticle.getArticleId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "authorId", AUTHOR_ID,
+                    "equipmentId", EQUIPMENT_ID,
+                    "title", "재승인 요청 제목입니다",
+                    "category", "PROCESS_IMPROVEMENT",
+                    "content", UPDATED_CONTENT
+                ))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+
+        // when 3. 반려
+        mockMvc.perform(post("/api/kms/tl/approval/{articleId}/reject", approvedArticle.getArticleId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "reviewComment", "반려 사유를 충분한 길이로 남깁니다."
+                ))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+
+        // when 4. 반려 후 수정
+        mockMvc.perform(put(BASE_URL + "/{articleId}", approvedArticle.getArticleId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "authorId", AUTHOR_ID,
+                    "equipmentId", EQUIPMENT_ID,
+                    "title", "반려 후 수정 제목입니다",
+                    "category", "SAFETY",
+                    "content", "반려 후 다시 수정한 본문입니다. 수정 이력은 이미 저장되어 있고 다시 제출할 수 있어야 합니다."
+                ))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+
+        // when 5. 반려 후 재제출
+        mockMvc.perform(put(BASE_URL + "/{articleId}/submit", approvedArticle.getArticleId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "authorId", AUTHOR_ID,
+                    "equipmentId", EQUIPMENT_ID,
+                    "title", "반려 후 재제출 제목입니다",
+                    "category", "SAFETY",
+                    "content", "반려 후 재제출하는 본문입니다. 최종적으로 다시 승인 대기 상태가 되어야 합니다. 충분한 길이를 확보했습니다."
+                ))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+
+        flushAndClear();
+
+        // then
+        KnowledgeArticle resubmittedArticle = knowledgeArticleRepository.findById(approvedArticle.getArticleId()).orElseThrow();
+        assertEquals(ArticleStatus.PENDING, resubmittedArticle.getArticleStatus());
+        assertEquals(1, resubmittedArticle.getApprovalVersion());
+        assertEquals("반려 후 재제출 제목입니다", resubmittedArticle.getArticleTitle());
+
+        Integer historyCount = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM knowledge_edit_history WHERE article_id = ?",
+            Integer.class,
+            approvedArticle.getArticleId()
+        );
+        assertEquals(1, historyCount);
+
+        Map<String, Object> history = jdbcTemplate.queryForMap(
+            "SELECT * FROM knowledge_edit_history WHERE article_id = ? AND approval_version = ?",
+            approvedArticle.getArticleId(),
+            1
+        );
+        assertEquals(TITLE, history.get("article_title"));
+        assertEquals(CONTENT, history.get("article_previous_content"));
+        assertNotNull(history.get("edited_at"));
     }
 
     private Long extractArticleId(MvcResult result) throws Exception {

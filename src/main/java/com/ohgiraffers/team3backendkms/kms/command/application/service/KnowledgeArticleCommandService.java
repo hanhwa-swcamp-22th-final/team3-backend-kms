@@ -89,7 +89,7 @@ public class KnowledgeArticleCommandService {
         Integer approvalVersion = article.getApprovalVersion();
         if (approvalVersion != null
                 && !knowledgeEditHistoryRepository.existsByArticleIdAndApprovalVersion(articleId, approvalVersion)) {
-            knowledgeEditHistoryRepository.save(KnowledgeEditHistory.from(idGenerator.generate(), article, requesterId));
+            knowledgeEditHistoryRepository.save(KnowledgeEditHistory.from(idGenerator.generate(), article));
         }
 
         article.startRevision();
