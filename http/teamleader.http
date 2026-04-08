@@ -1,0 +1,16 @@
+### TL 1차 승인 (PENDING → APPROVED)
+POST http://localhost:8080/api/kms/tl/approval/{{articleId}}/approve
+Content-Type: application/json
+
+{
+  "approverId": 1774590584056408,
+  "reviewComment": "내용 검토 완료. 1차 승인합니다."
+}
+
+### TL 반려 (PENDING → REJECTED)
+POST http://localhost:8080/api/kms/tl/approval/{{articleId}}/reject
+Content-Type: application/json
+
+{
+  "reviewComment": "내용이 불충분합니다. 보완 후 재제출 바랍니다."
+}
