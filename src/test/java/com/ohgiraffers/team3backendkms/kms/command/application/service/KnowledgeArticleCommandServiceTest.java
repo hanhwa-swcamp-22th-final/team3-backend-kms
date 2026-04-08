@@ -534,7 +534,7 @@ class KnowledgeArticleCommandServiceTest {
         }
 
         @Test
-        @DisplayName("Increases approval version again on re-approval")
+        @DisplayName("Saves history and increases approval version on revision approval")
         void approve_Reapproval_IncreasesApprovalVersionAgain() {
             // given
             KnowledgeArticle originalArticle = KnowledgeArticle.builder()
@@ -566,11 +566,14 @@ class KnowledgeArticleCommandServiceTest {
                     .willReturn(Optional.of(pendingRevisionArticle));
             given(knowledgeArticleRepository.findById(3L))
                     .willReturn(Optional.of(originalArticle));
+            given(knowledgeEditHistoryRepository.existsByArticleIdAndApprovalVersion(3L, 2))
+                    .willReturn(false);
 
             // when
             knowledgeArticleCommandService.approve(6L, 20L, "재승인합니다.");
 
             // then
+            verify(knowledgeEditHistoryRepository).save(any());
             verify(knowledgeArticleRepository).delete(pendingRevisionArticle);
             assertEquals(3, originalArticle.getApprovalVersion());
             assertEquals("재승인 대기 문서입니다", originalArticle.getArticleTitle());
@@ -583,7 +586,7 @@ class KnowledgeArticleCommandServiceTest {
     class ApprovedRejectedFlowTest {
 
         @Test
-        @DisplayName("Keeps one history snapshot and allows resubmit after rejection")
+        @DisplayName("Keeps revision copy and allows resubmit after rejection without saving history")
         void approvedRevisionRejectedFlow_Success() {
             // given
             KnowledgeArticle originalArticle = KnowledgeArticle.builder()
@@ -616,8 +619,6 @@ class KnowledgeArticleCommandServiceTest {
                     .willReturn(Optional.of(revisionArticle));
             given(knowledgeArticleRepository.findFirstByOriginalArticleIdAndAuthorIdAndIsDeletedFalseOrderByCreatedAtDesc(8L, 1L))
                     .willReturn(Optional.empty());
-            given(knowledgeEditHistoryRepository.existsByArticleIdAndApprovalVersion(8L, 1))
-                    .willReturn(false, true);
             given(idGenerator.generate()).willReturn(101L);
             given(knowledgeArticleRepository.save(any())).willReturn(revisionArticle);
 
@@ -650,7 +651,7 @@ class KnowledgeArticleCommandServiceTest {
             );
 
             // then
-            verify(knowledgeEditHistoryRepository, times(1)).save(any());
+            verify(knowledgeEditHistoryRepository, never()).save(any());
             assertEquals(ArticleStatus.APPROVED, originalArticle.getArticleStatus());
             assertEquals(ArticleStatus.PENDING, revisionArticle.getArticleStatus());
             assertEquals(1, revisionArticle.getApprovalVersion());

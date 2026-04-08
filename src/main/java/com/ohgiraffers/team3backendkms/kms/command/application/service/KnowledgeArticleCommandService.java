@@ -72,9 +72,6 @@ public class KnowledgeArticleCommandService {
         }
         validateEquipmentId(equipmentId);
         article.updateDraft(title, category, equipmentId, content);
-        if (article.isRevisionCopy()) {
-            saveOriginalSnapshotIfNeeded(article);
-        }
         article.submit();
     }
 // 원본이 APPROVED인지 확인
@@ -174,6 +171,7 @@ public class KnowledgeArticleCommandService {
         }
         if (article.isRevisionCopy()) {
             KnowledgeArticle originalArticle = findArticleById(article.getOriginalArticleId());
+            saveOriginalSnapshotIfNeeded(article);
             originalArticle.applyApprovedRevision(article, approverId, reviewComment);
             knowledgeArticleRepository.delete(article);
             return;

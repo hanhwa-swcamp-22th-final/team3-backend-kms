@@ -221,7 +221,7 @@ class WorkerArticleControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("Approved article rejected flow integration success: keep one history and allow resubmit")
+    @DisplayName("Approved article rejected flow integration success: keep revision copy and allow resubmit without history save")
     void approvedArticleRejectedFlow_success() throws Exception {
         // given
         KnowledgeArticle approvedArticle = saveArticle(ArticleStatus.APPROVED, TITLE, CONTENT, 0);
@@ -304,15 +304,7 @@ class WorkerArticleControllerIntegrationTest {
             Integer.class,
             approvedArticle.getArticleId()
         );
-        assertEquals(1, historyCount);
-
-        Map<String, Object> history = jdbcTemplate.queryForMap(
-            "SELECT * FROM knowledge_edit_history WHERE article_id = ? AND approval_version = ?",
-            approvedArticle.getArticleId(),
-            1
-        );
-        assertEquals(TITLE, history.get("article_previous_title"));
-        assertEquals(CONTENT, history.get("article_previous_content"));
+        assertEquals(0, historyCount);
     }
 
     private Long extractArticleId(MvcResult result) throws Exception {
