@@ -71,28 +71,42 @@ public class KnowledgeArticleCommandService {
         }
         validateEquipmentId(equipmentId);
         article.updateDraft(title, category, equipmentId, content);
+        if (article.isRevisionCopy()) {
+            saveOriginalSnapshotIfNeeded(article);
+        }
         article.submit();
     }
 
-    public void startRevision(Long articleId, Long requesterId) {
-        KnowledgeArticle article = findArticleById(articleId);
-        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+    public Long startRevision(Long articleId, Long requesterId) {
+        KnowledgeArticle originalArticle = findArticleById(articleId);
+        if (Boolean.TRUE.equals(originalArticle.getIsDeleted())) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
-        if (!article.getAuthorId().equals(requesterId)) {
+        if (!originalArticle.getAuthorId().equals(requesterId)) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_007);
         }
-        if (article.getArticleStatus() != ArticleStatus.APPROVED) {
+        if (originalArticle.getArticleStatus() != ArticleStatus.APPROVED) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_011);
+        }
+        if (originalArticle.isRevisionCopy()) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_011);
         }
 
-        Integer approvalVersion = article.getApprovalVersion();
-        if (approvalVersion != null
-                && !knowledgeEditHistoryRepository.existsByArticleIdAndApprovalVersion(articleId, approvalVersion)) {
-            knowledgeEditHistoryRepository.save(KnowledgeEditHistory.from(idGenerator.generate(), article));
-        }
+        return knowledgeArticleRepository
+                .findFirstByOriginalArticleIdAndAuthorIdAndIsDeletedFalseOrderByCreatedAtDesc(articleId, requesterId)
+                .map(KnowledgeArticle::getArticleId)
+                .orElseGet(() -> knowledgeArticleRepository.save(
+                        KnowledgeArticle.createRevisionCopy(idGenerator.generate(), originalArticle)
+                ).getArticleId());
+    }
 
-        article.startRevision();
+    private void saveOriginalSnapshotIfNeeded(KnowledgeArticle revisionArticle) {
+        KnowledgeArticle originalArticle = findArticleById(revisionArticle.getOriginalArticleId());
+        Integer approvalVersion = originalArticle.getApprovalVersion();
+        if (approvalVersion != null
+                && !knowledgeEditHistoryRepository.existsByArticleIdAndApprovalVersion(originalArticle.getArticleId(), approvalVersion)) {
+            knowledgeEditHistoryRepository.save(KnowledgeEditHistory.from(idGenerator.generate(), originalArticle));
+        }
     }
 
     public void adminUpdate(Long articleId, String title, ArticleCategory category, String content) {
@@ -150,6 +164,12 @@ public class KnowledgeArticleCommandService {
         if (article.getArticleStatus() != ArticleStatus.PENDING) {
             throw new BusinessException(ArticleErrorCode.APPROVAL_003);
         }
+        if (article.isRevisionCopy()) {
+            KnowledgeArticle originalArticle = findArticleById(article.getOriginalArticleId());
+            originalArticle.applyApprovedRevision(article, approverId, reviewComment);
+            knowledgeArticleRepository.delete(article);
+            return;
+        }
         article.approve(approverId, reviewComment);
     }
 
@@ -175,6 +195,7 @@ public class KnowledgeArticleCommandService {
                                           String content, ArticleStatus status) {
         return KnowledgeArticle.builder()
                 .articleId(idGenerator.generate())
+                .originalArticleId(null)
                 .authorId(authorId)
                 .equipmentId(equipmentId)
                 .fileGroupId(0L)

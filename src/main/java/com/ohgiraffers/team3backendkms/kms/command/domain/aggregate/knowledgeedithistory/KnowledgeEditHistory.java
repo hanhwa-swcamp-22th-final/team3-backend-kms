@@ -40,18 +40,15 @@ public class KnowledgeEditHistory {
     @Column(name = "approval_version")
     private Integer approvalVersion;
 
-    @Column(name = "article_title")
-    private String articleTitle;
+    @Column(name = "article_previous_title")
+    private String articlePreviousTitle;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "article_category")
-    private ArticleCategory articleCategory;
+    @Column(name = "article_previous_category")
+    private ArticleCategory articlePreviousCategory;
 
     @Column(name = "article_previous_content", columnDefinition = "TEXT")
     private String articlePreviousContent;
-
-    @Column(name = "edited_at")
-    private LocalDateTime editedAt;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
@@ -74,10 +71,9 @@ public class KnowledgeEditHistory {
                 .historyId(historyId)
                 .articleId(article.getArticleId())
                 .approvalVersion(article.getApprovalVersion())
-                .articleTitle(article.getArticleTitle())
-                .articleCategory(article.getArticleCategory())
+                .articlePreviousTitle(article.getArticleTitle())
+                .articlePreviousCategory(article.getArticleCategory())
                 .articlePreviousContent(article.getArticleContent())
-                .editedAt(LocalDateTime.now())
                 .build();
     }
 }

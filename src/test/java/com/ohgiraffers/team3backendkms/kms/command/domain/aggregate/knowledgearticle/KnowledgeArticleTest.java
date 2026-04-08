@@ -66,21 +66,23 @@ class KnowledgeArticleTest {
     }
 
     @Nested
-    @DisplayName("startRevision()")
-    class StartRevisionTest {
+    @DisplayName("createRevisionCopy()")
+    class CreateRevisionCopyTest {
 
         @Test
-        @DisplayName("Changes status from APPROVED to DRAFT")
-        void startRevision_ChangesStatusToDraft() {
+        @DisplayName("Creates revision copy without changing original")
+        void createRevisionCopy_CreatesDraftCopy() {
             // given
-            KnowledgeArticle article = buildArticle(ArticleStatus.APPROVED, 0);
+            KnowledgeArticle original = buildArticle(ArticleStatus.APPROVED, 0);
 
             // when
-            article.startRevision();
+            KnowledgeArticle revision = KnowledgeArticle.createRevisionCopy(2L, original);
 
             // then
-            assertEquals(ArticleStatus.DRAFT, article.getArticleStatus());
-            assertEquals(1, article.getApprovalVersion());
+            assertEquals(2L, revision.getArticleId());
+            assertEquals(original.getArticleId(), revision.getOriginalArticleId());
+            assertEquals(ArticleStatus.DRAFT, revision.getArticleStatus());
+            assertEquals(original.getArticleTitle(), revision.getArticleTitle());
         }
     }
 

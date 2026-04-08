@@ -22,6 +22,7 @@ public class KnowledgeArticle {
     @Id
     private Long articleId;
 
+    private Long originalArticleId;
     private Long authorId;
     private Long approvedBy;
     private Long equipmentId;
@@ -92,11 +93,6 @@ public class KnowledgeArticle {
         this.articleRejectionReason = reviewComment;
     }
 
-    /* APPROVED → DRAFT (수정 시작) */
-    public void startRevision() {
-        this.articleStatus = ArticleStatus.DRAFT;
-    }
-
     /* DRAFT → 필드 수정 후 DRAFT 유지 */
     public void updateDraft(String title, ArticleCategory category, Long equipmentId, String content) {
         this.articleTitle = title;
@@ -128,5 +124,45 @@ public class KnowledgeArticle {
         this.articleTitle = title;
         this.articleCategory = category;
         this.articleContent = content;
+    }
+
+    public boolean isRevisionCopy() {
+        return this.originalArticleId != null;
+    }
+
+    public void applyApprovedRevision(KnowledgeArticle revision, Long approverId, String reviewComment) {
+        this.equipmentId = revision.getEquipmentId();
+        this.articleTitle = revision.getArticleTitle();
+        this.articleCategory = revision.getArticleCategory();
+        this.articleContent = revision.getArticleContent();
+        this.articleStatus = ArticleStatus.APPROVED;
+        this.approvedBy = approverId;
+        this.articleApprovalOpinion = reviewComment;
+        this.approvedAt = LocalDateTime.now();
+        this.articleRejectionReason = null;
+        this.approvalVersion = (this.approvalVersion == null ? 0 : this.approvalVersion) + 1;
+    }
+
+    public static KnowledgeArticle createRevisionCopy(Long articleId, KnowledgeArticle original) {
+        return KnowledgeArticle.builder()
+                .articleId(articleId)
+                .originalArticleId(original.getArticleId())
+                .authorId(original.getAuthorId())
+                .approvedBy(original.getApprovedBy())
+                .equipmentId(original.getEquipmentId())
+                .fileGroupId(original.getFileGroupId())
+                .articleTitle(original.getArticleTitle())
+                .articleCategory(original.getArticleCategory())
+                .articleContent(original.getArticleContent())
+                .articleStatus(ArticleStatus.DRAFT)
+                .articleApprovalOpinion(original.getArticleApprovalOpinion())
+                .approvedAt(original.getApprovedAt())
+                .approvalVersion(original.getApprovalVersion())
+                .articleRejectionReason(null)
+                .articleDeletionReason(null)
+                .deletedAt(null)
+                .isDeleted(false)
+                .viewCount(original.getViewCount())
+                .build();
     }
 }

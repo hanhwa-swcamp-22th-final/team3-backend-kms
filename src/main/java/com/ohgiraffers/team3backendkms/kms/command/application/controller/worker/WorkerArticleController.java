@@ -68,14 +68,14 @@ public class WorkerArticleController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    /* 승인된 지식 문서 수정 시작 (APPROVED -> DRAFT) */
+    /* 승인된 지식 문서 수정 시작 (복사본 생성/조회) */
     @PutMapping("/{articleId}/revision")
-    public ResponseEntity<ApiResponse<Void>> startRevision(
+    public ResponseEntity<ApiResponse<Long>> startRevision(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
             @Valid @RequestBody ArticleRevisionStartRequest request
     ) {
-        knowledgeArticleCommandService.startRevision(articleId, request.getRequesterId());
-        return ResponseEntity.ok(ApiResponse.success(null));
+        Long revisionArticleId = knowledgeArticleCommandService.startRevision(articleId, request.getRequesterId());
+        return ResponseEntity.ok(ApiResponse.success(revisionArticleId));
     }
 
     /* 임시저장 문서 제출 (DRAFT -> PENDING) */

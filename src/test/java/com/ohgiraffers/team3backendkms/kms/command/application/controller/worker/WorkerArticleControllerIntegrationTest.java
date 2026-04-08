@@ -184,7 +184,7 @@ class WorkerArticleControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("Start revision API integration success: save edit history and change approved article to draft")
+    @DisplayName("Start revision API integration success: create revision copy and keep original approved")
     void startRevision_success() throws Exception {
         // given
         KnowledgeArticle approvedArticle = saveArticle(ArticleStatus.APPROVED, TITLE, CONTENT, 0);
@@ -193,29 +193,31 @@ class WorkerArticleControllerIntegrationTest {
         );
 
         // when
-        mockMvc.perform(put(BASE_URL + "/{articleId}/revision", approvedArticle.getArticleId())
+        MvcResult result = mockMvc.perform(put(BASE_URL + "/{articleId}/revision", approvedArticle.getArticleId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true));
+            .andExpect(jsonPath("$.success").value(true))
+            .andReturn();
 
         flushAndClear();
 
         // then
-        KnowledgeArticle revisedArticle = knowledgeArticleRepository.findById(approvedArticle.getArticleId()).orElseThrow();
-        assertEquals(ArticleStatus.DRAFT, revisedArticle.getArticleStatus());
-        assertEquals(1, revisedArticle.getApprovalVersion());
+        Long revisionArticleId = extractArticleId(result);
+        KnowledgeArticle originalArticle = knowledgeArticleRepository.findById(approvedArticle.getArticleId()).orElseThrow();
+        KnowledgeArticle revisionArticle = knowledgeArticleRepository.findById(revisionArticleId).orElseThrow();
 
-        Map<String, Object> history = jdbcTemplate.queryForMap(
-            "SELECT * FROM knowledge_edit_history WHERE article_id = ? AND approval_version = ?",
-            approvedArticle.getArticleId(),
-            1
+        assertEquals(ArticleStatus.APPROVED, originalArticle.getArticleStatus());
+        assertEquals(1, originalArticle.getApprovalVersion());
+        assertEquals(ArticleStatus.DRAFT, revisionArticle.getArticleStatus());
+        assertEquals(approvedArticle.getArticleId(), revisionArticle.getOriginalArticleId());
+
+        Integer historyCount = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM knowledge_edit_history WHERE article_id = ?",
+            Integer.class,
+            approvedArticle.getArticleId()
         );
-
-        assertNotNull(history.get("history_id"));
-        assertEquals(TITLE, history.get("article_title"));
-        assertEquals(CONTENT, history.get("article_previous_content"));
-        assertNotNull(history.get("edited_at"));
+        assertEquals(0, historyCount);
     }
 
     @Test
@@ -225,14 +227,17 @@ class WorkerArticleControllerIntegrationTest {
         KnowledgeArticle approvedArticle = saveArticle(ArticleStatus.APPROVED, TITLE, CONTENT, 0);
 
         // when 1. 수정 시작
-        mockMvc.perform(put(BASE_URL + "/{articleId}/revision", approvedArticle.getArticleId())
+        MvcResult revisionResult = mockMvc.perform(put(BASE_URL + "/{articleId}/revision", approvedArticle.getArticleId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of("requesterId", AUTHOR_ID))))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true));
+            .andExpect(jsonPath("$.success").value(true))
+            .andReturn();
+
+        Long revisionArticleId = extractArticleId(revisionResult);
 
         // when 2. 재제출
-        mockMvc.perform(put(BASE_URL + "/{articleId}/submit", approvedArticle.getArticleId())
+        mockMvc.perform(put(BASE_URL + "/{articleId}/submit", revisionArticleId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of(
                     "authorId", AUTHOR_ID,
@@ -245,7 +250,7 @@ class WorkerArticleControllerIntegrationTest {
             .andExpect(jsonPath("$.success").value(true));
 
         // when 3. 반려
-        mockMvc.perform(post("/api/kms/tl/approval/{articleId}/reject", approvedArticle.getArticleId())
+        mockMvc.perform(post("/api/kms/tl/approval/{articleId}/reject", revisionArticleId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of(
                     "reviewComment", "반려 사유를 충분한 길이로 남깁니다."
@@ -254,7 +259,7 @@ class WorkerArticleControllerIntegrationTest {
             .andExpect(jsonPath("$.success").value(true));
 
         // when 4. 반려 후 수정
-        mockMvc.perform(put(BASE_URL + "/{articleId}", approvedArticle.getArticleId())
+        mockMvc.perform(put(BASE_URL + "/{articleId}", revisionArticleId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of(
                     "authorId", AUTHOR_ID,
@@ -267,7 +272,7 @@ class WorkerArticleControllerIntegrationTest {
             .andExpect(jsonPath("$.success").value(true));
 
         // when 5. 반려 후 재제출
-        mockMvc.perform(put(BASE_URL + "/{articleId}/submit", approvedArticle.getArticleId())
+        mockMvc.perform(put(BASE_URL + "/{articleId}/submit", revisionArticleId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of(
                     "authorId", AUTHOR_ID,
@@ -282,10 +287,17 @@ class WorkerArticleControllerIntegrationTest {
         flushAndClear();
 
         // then
-        KnowledgeArticle resubmittedArticle = knowledgeArticleRepository.findById(approvedArticle.getArticleId()).orElseThrow();
-        assertEquals(ArticleStatus.PENDING, resubmittedArticle.getArticleStatus());
-        assertEquals(1, resubmittedArticle.getApprovalVersion());
-        assertEquals("반려 후 재제출 제목입니다", resubmittedArticle.getArticleTitle());
+        KnowledgeArticle originalArticle = knowledgeArticleRepository.findById(approvedArticle.getArticleId()).orElseThrow();
+        KnowledgeArticle revisionArticle = knowledgeArticleRepository.findById(revisionArticleId).orElseThrow();
+
+        assertEquals(ArticleStatus.APPROVED, originalArticle.getArticleStatus());
+        assertEquals(TITLE, originalArticle.getArticleTitle());
+        assertEquals(1, originalArticle.getApprovalVersion());
+
+        assertEquals(ArticleStatus.PENDING, revisionArticle.getArticleStatus());
+        assertEquals(1, revisionArticle.getApprovalVersion());
+        assertEquals("반려 후 재제출 제목입니다", revisionArticle.getArticleTitle());
+        assertEquals(approvedArticle.getArticleId(), revisionArticle.getOriginalArticleId());
 
         Integer historyCount = jdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM knowledge_edit_history WHERE article_id = ?",
@@ -299,9 +311,8 @@ class WorkerArticleControllerIntegrationTest {
             approvedArticle.getArticleId(),
             1
         );
-        assertEquals(TITLE, history.get("article_title"));
+        assertEquals(TITLE, history.get("article_previous_title"));
         assertEquals(CONTENT, history.get("article_previous_content"));
-        assertNotNull(history.get("edited_at"));
     }
 
     private Long extractArticleId(MvcResult result) throws Exception {
@@ -314,6 +325,7 @@ class WorkerArticleControllerIntegrationTest {
         // 테스트에서 공통으로 사용할 문서를 직접 저장한다.
         return knowledgeArticleRepository.save(KnowledgeArticle.builder()
             .articleId(new TimeBasedIdGenerator().generate())
+            .originalArticleId(null)
             .authorId(AUTHOR_ID)
             .equipmentId(EQUIPMENT_ID)
             .fileGroupId(0L)

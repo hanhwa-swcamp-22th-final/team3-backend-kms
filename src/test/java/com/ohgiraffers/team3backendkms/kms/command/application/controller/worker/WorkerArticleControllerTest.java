@@ -159,14 +159,15 @@ class WorkerArticleControllerTest {
         @DisplayName("Start revision API success: return successful response")
         void startRevision_success() throws Exception {
             // given
-            willDoNothing().given(knowledgeArticleCommandService).startRevision(anyLong(), anyLong());
+            given(knowledgeArticleCommandService.startRevision(anyLong(), anyLong())).willReturn(2L);
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/1/revision")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(Map.of("requesterId", 10))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value(2));
         }
     }
 
