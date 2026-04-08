@@ -408,6 +408,48 @@ class KnowledgeArticleCommandServiceTest {
 
             assertEquals(ArticleErrorCode.ARTICLE_011, exception.getErrorCode());
         }
+
+        @Test
+        @DisplayName("Throws exception when article is already deleted")
+        void startRevision_WhenDeleted_ThrowsException() {
+            // given
+            KnowledgeArticle deletedApprovedArticle = KnowledgeArticle.builder()
+                    .articleId(7L)
+                    .authorId(1L)
+                    .articleTitle("삭제된 승인 문서입니다")
+                    .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                    .articleContent("삭제된 승인 문서 본문 내용입니다. 수정 시작 전 삭제 여부를 검증하기 위한 본문입니다.")
+                    .articleStatus(ArticleStatus.APPROVED)
+                    .approvalVersion(1)
+                    .isDeleted(true)
+                    .viewCount(0)
+                    .build();
+
+            given(knowledgeArticleRepository.findById(7L))
+                    .willReturn(Optional.of(deletedApprovedArticle));
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleCommandService.startRevision(7L, 1L)
+            );
+
+            assertEquals(ArticleErrorCode.ARTICLE_008, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("Throws exception when requester is not the author")
+        void startRevision_WhenRequesterIsNotAuthor_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(3L))
+                    .willReturn(Optional.of(approvedArticle));
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleCommandService.startRevision(3L, 999L)
+            );
+
+            assertEquals(ArticleErrorCode.ARTICLE_007, exception.getErrorCode());
+        }
     }
 
     @Nested

@@ -82,10 +82,10 @@ public class KnowledgeArticleCommandService {
             throw new BusinessException(ArticleErrorCode.ARTICLE_011);
         }
 
-        Integer approvalVersion = article.getApprovalVersion() == null ? 0 : article.getApprovalVersion();
-        if (approvalVersion > 0
+        Integer approvalVersion = article.getApprovalVersion();
+        if (approvalVersion != null
                 && !knowledgeEditHistoryRepository.existsByArticleIdAndApprovalVersion(articleId, approvalVersion)) {
-            knowledgeEditHistoryRepository.save(KnowledgeEditHistory.from(idGenerator.generate(), article));
+            knowledgeEditHistoryRepository.save(KnowledgeEditHistory.from(idGenerator.generate(), article, requesterId));
         }
 
         article.startRevision();
