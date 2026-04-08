@@ -44,7 +44,9 @@ public class KnowledgeArticleCommandService {
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
-        if (article.getArticleStatus() != ArticleStatus.DRAFT && article.getArticleStatus() != ArticleStatus.REJECTED) {
+        if (article.getArticleStatus() != ArticleStatus.DRAFT
+                && article.getArticleStatus() != ArticleStatus.PENDING
+                && article.getArticleStatus() != ArticleStatus.REJECTED) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_006);
         }
         if (!article.getAuthorId().equals(requesterId)) {
@@ -59,7 +61,9 @@ public class KnowledgeArticleCommandService {
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
-        if (article.getArticleStatus() != ArticleStatus.DRAFT && article.getArticleStatus() != ArticleStatus.REJECTED) {
+        if (article.getArticleStatus() != ArticleStatus.DRAFT
+                && article.getArticleStatus() != ArticleStatus.PENDING
+                && article.getArticleStatus() != ArticleStatus.REJECTED) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_SUBMIT_INVALID);
         }
         if (!article.getAuthorId().equals(requesterId)) {

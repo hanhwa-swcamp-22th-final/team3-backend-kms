@@ -271,6 +271,29 @@ class KnowledgeArticleCommandServiceTest {
         }
 
         @Test
+        @DisplayName("Updates article and keeps status as PENDING when PENDING")
+        void updateDraft_PendingArticle_Success() {
+            // given
+            String newTitle = "수정된 승인대기 문서 제목입니다";
+            ArticleCategory newCategory = ArticleCategory.PROCESS_IMPROVEMENT;
+            Long newEquipmentId = 77L;
+            String newContent = "승인대기 상태에서 수정된 본문 내용입니다. 승인 전 단계에서는 수정이 가능해야 함을 검증합니다.";
+
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            // when
+            knowledgeArticleCommandService.updateDraft(1L, newTitle, newCategory, newEquipmentId, newContent, 1L);
+
+            // then
+            assertEquals(newTitle, pendingArticle.getArticleTitle());
+            assertEquals(newCategory, pendingArticle.getArticleCategory());
+            assertEquals(newEquipmentId, pendingArticle.getEquipmentId());
+            assertEquals(newContent, pendingArticle.getArticleContent());
+            assertEquals(ArticleStatus.PENDING, pendingArticle.getArticleStatus());
+        }
+
+        @Test
         @DisplayName("Throws exception when requester is not the author (ARTICLE_007)")
         void updateDraft_NotAuthor_ThrowsException() {
             // given
@@ -318,6 +341,29 @@ class KnowledgeArticleCommandServiceTest {
             assertEquals(newEquipmentId, draftArticle.getEquipmentId());
             assertEquals(newContent, draftArticle.getArticleContent());
             assertEquals(ArticleStatus.PENDING, draftArticle.getArticleStatus());
+        }
+
+        @Test
+        @DisplayName("Updates article and keeps status as PENDING when PENDING")
+        void submitDraft_PendingArticle_Success() {
+            // given
+            String newTitle = "승인대기 중 다시 수정한 제목입니다";
+            ArticleCategory newCategory = ArticleCategory.PROCESS_IMPROVEMENT;
+            Long newEquipmentId = 55L;
+            String newContent = "이미 승인대기 중인 문서의 본문을 수정한 내용입니다. 수정 후에도 상태는 승인대기로 유지됩니다.";
+
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            // when
+            knowledgeArticleCommandService.submitDraft(1L, newTitle, newCategory, newEquipmentId, newContent, 1L);
+
+            // then
+            assertEquals(newTitle, pendingArticle.getArticleTitle());
+            assertEquals(newCategory, pendingArticle.getArticleCategory());
+            assertEquals(newEquipmentId, pendingArticle.getEquipmentId());
+            assertEquals(newContent, pendingArticle.getArticleContent());
+            assertEquals(ArticleStatus.PENDING, pendingArticle.getArticleStatus());
         }
 
         @Test

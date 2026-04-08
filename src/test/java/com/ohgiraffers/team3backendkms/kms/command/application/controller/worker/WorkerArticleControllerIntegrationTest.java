@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -183,6 +184,41 @@ class WorkerArticleControllerIntegrationTest {
         assertEquals(ArticleStatus.PENDING, updatedArticle.getArticleStatus());
     }
 
+    @Test
+    @DisplayName("Start revision API integration success: save edit history and change approved article to draft")
+    void startRevision_success() throws Exception {
+        // given
+        KnowledgeArticle approvedArticle = saveArticle(ArticleStatus.APPROVED, TITLE, CONTENT, 0);
+        Map<String, Object> request = Map.of(
+            "requesterId", AUTHOR_ID
+        );
+
+        // when
+        mockMvc.perform(put(BASE_URL + "/{articleId}/revision", approvedArticle.getArticleId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+
+        flushAndClear();
+
+        // then
+        KnowledgeArticle revisedArticle = knowledgeArticleRepository.findById(approvedArticle.getArticleId()).orElseThrow();
+        assertEquals(ArticleStatus.DRAFT, revisedArticle.getArticleStatus());
+        assertEquals(1, revisedArticle.getApprovalVersion());
+
+        Map<String, Object> history = jdbcTemplate.queryForMap(
+            "SELECT * FROM knowledge_edit_history WHERE article_id = ? AND approval_version = ?",
+            approvedArticle.getArticleId(),
+            1
+        );
+
+        assertNotNull(history.get("history_id"));
+        assertEquals(AUTHOR_ID, ((Number) history.get("editor_id")).longValue());
+        assertEquals(TITLE, history.get("article_title"));
+        assertEquals(CONTENT, history.get("article_content"));
+    }
+
     private Long extractArticleId(MvcResult result) throws Exception {
         // 응답 JSON에서 data 필드를 읽어 생성된 문서 ID를 꺼낸다.
         JsonNode response = objectMapper.readTree(result.getResponse().getContentAsString());
@@ -200,6 +236,7 @@ class WorkerArticleControllerIntegrationTest {
             .articleCategory(ArticleCategory.TROUBLESHOOTING)
             .articleContent(content)
             .articleStatus(status)
+            .approvalVersion(status == ArticleStatus.APPROVED ? 1 : 0)
             .isDeleted(false)
             .viewCount(viewCount)
             .build());
