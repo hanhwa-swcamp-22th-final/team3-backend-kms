@@ -302,7 +302,33 @@ public enum ArticleErrorCode {
     // ==========================================================
 
     TAG_001(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[TAG_001] 이미 존재하는 태그 이름입니다."),
-    TAG_NOT_FOUND(HttpStatus.NOT_FOUND, "NOT_FOUND", "[TAG] 태그를 찾을 수 없습니다.");
+    TAG_NOT_FOUND(HttpStatus.NOT_FOUND, "NOT_FOUND", "[TAG] 태그를 찾을 수 없습니다."),
+
+    // ==========================================================
+    // 북마크 검증 (bookmark add, remove)
+    // ==========================================================
+
+    /**
+     * 이미 북마크한 게시글에 북마크 추가 시도
+     * 발생 위치: KnowledgeBookmarkCommandService.addBookmark()
+     * 조건: repository.existsById(id) == true
+     * HTTP 응답:
+     *   - Status: 409
+     *   - errorCode: "CONFLICT"
+     *   - message: "[BOOKMARK_001] 이미 북마크한 게시글입니다."
+     */
+    BOOKMARK_001(HttpStatus.CONFLICT, "CONFLICT", "[BOOKMARK_001] 이미 북마크한 게시글입니다."),
+
+    /**
+     * 존재하지 않는 북마크 취소 시도
+     * 발생 위치: KnowledgeBookmarkCommandService.removeBookmark()
+     * 조건: repository.existsById(id) == false
+     * HTTP 응답:
+     *   - Status: 404
+     *   - errorCode: "NOT_FOUND"
+     *   - message: "[BOOKMARK_002] 북마크를 찾을 수 없습니다."
+     */
+    BOOKMARK_002(HttpStatus.NOT_FOUND, "NOT_FOUND", "[BOOKMARK_002] 북마크를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;
