@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -49,7 +50,6 @@ class WorkerArticleControllerIntegrationTest {
     private static final String CONTENT = "통합 테스트용 본문입니다. 이 본문은 최소 50자 이상이어야 등록이 가능합니다. 충분한 길이를 확보했습니다.";
     // 제출 테스트에서 사용할 수정 본문이다.
     private static final String UPDATED_CONTENT = "수정된 통합 테스트 본문입니다. 이 본문도 최소 50자 이상이어야 하며 상태 전환까지 검증합니다.";
-
     // 실제 HTTP 요청처럼 컨트롤러를 호출하기 위한 도구다.
     @Autowired
     private MockMvc mockMvc;
@@ -183,6 +183,130 @@ class WorkerArticleControllerIntegrationTest {
         assertEquals(ArticleStatus.PENDING, updatedArticle.getArticleStatus());
     }
 
+    @Test
+    @DisplayName("Start revision API integration success: create revision copy and keep original approved")
+    void startRevision_success() throws Exception {
+        // given
+        KnowledgeArticle approvedArticle = saveArticle(ArticleStatus.APPROVED, TITLE, CONTENT, 0);
+        Map<String, Object> request = Map.of(
+            "requesterId", AUTHOR_ID
+        );
+
+        // when
+        MvcResult result = mockMvc.perform(put(BASE_URL + "/{articleId}/revision", approvedArticle.getArticleId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andReturn();
+
+        flushAndClear();
+
+        // then
+        Long revisionArticleId = extractArticleId(result);
+        KnowledgeArticle originalArticle = knowledgeArticleRepository.findById(approvedArticle.getArticleId()).orElseThrow();
+        KnowledgeArticle revisionArticle = knowledgeArticleRepository.findById(revisionArticleId).orElseThrow();
+
+        assertEquals(ArticleStatus.APPROVED, originalArticle.getArticleStatus());
+        assertEquals(1, originalArticle.getApprovalVersion());
+        assertEquals(ArticleStatus.DRAFT, revisionArticle.getArticleStatus());
+        assertEquals(approvedArticle.getArticleId(), revisionArticle.getOriginalArticleId());
+
+        Integer historyCount = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM knowledge_edit_history WHERE article_id = ?",
+            Integer.class,
+            approvedArticle.getArticleId()
+        );
+        assertEquals(0, historyCount);
+    }
+
+    @Test
+    @DisplayName("Approved article rejected flow integration success: keep revision copy and allow resubmit without history save")
+    void approvedArticleRejectedFlow_success() throws Exception {
+        // given
+        KnowledgeArticle approvedArticle = saveArticle(ArticleStatus.APPROVED, TITLE, CONTENT, 0);
+
+        // when 1. 수정 시작
+        MvcResult revisionResult = mockMvc.perform(put(BASE_URL + "/{articleId}/revision", approvedArticle.getArticleId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("requesterId", AUTHOR_ID))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andReturn();
+
+        Long revisionArticleId = extractArticleId(revisionResult);
+
+        // when 2. 재제출
+        mockMvc.perform(put(BASE_URL + "/{articleId}/submit", revisionArticleId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "authorId", AUTHOR_ID,
+                    "equipmentId", EQUIPMENT_ID,
+                    "title", "재승인 요청 제목입니다",
+                    "category", "PROCESS_IMPROVEMENT",
+                    "content", UPDATED_CONTENT
+                ))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+
+        // when 3. 반려
+        mockMvc.perform(post("/api/kms/tl/approval/{articleId}/reject", revisionArticleId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "reviewComment", "반려 사유를 충분한 길이로 남깁니다."
+                ))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+
+        // when 4. 반려 후 수정
+        mockMvc.perform(put(BASE_URL + "/{articleId}", revisionArticleId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "authorId", AUTHOR_ID,
+                    "equipmentId", EQUIPMENT_ID,
+                    "title", "반려 후 수정 제목입니다",
+                    "category", "SAFETY",
+                    "content", "반려 후 다시 수정한 본문입니다. 수정 이력은 이미 저장되어 있고 다시 제출할 수 있어야 합니다."
+                ))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+
+        // when 5. 반려 후 재제출
+        mockMvc.perform(put(BASE_URL + "/{articleId}/submit", revisionArticleId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "authorId", AUTHOR_ID,
+                    "equipmentId", EQUIPMENT_ID,
+                    "title", "반려 후 재제출 제목입니다",
+                    "category", "SAFETY",
+                    "content", "반려 후 재제출하는 본문입니다. 최종적으로 다시 승인 대기 상태가 되어야 합니다. 충분한 길이를 확보했습니다."
+                ))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+
+        flushAndClear();
+
+        // then
+        KnowledgeArticle originalArticle = knowledgeArticleRepository.findById(approvedArticle.getArticleId()).orElseThrow();
+        KnowledgeArticle revisionArticle = knowledgeArticleRepository.findById(revisionArticleId).orElseThrow();
+
+        assertEquals(ArticleStatus.APPROVED, originalArticle.getArticleStatus());
+        assertEquals(TITLE, originalArticle.getArticleTitle());
+        assertEquals(1, originalArticle.getApprovalVersion());
+
+        assertEquals(ArticleStatus.PENDING, revisionArticle.getArticleStatus());
+        assertEquals(1, revisionArticle.getApprovalVersion());
+        assertEquals("반려 후 재제출 제목입니다", revisionArticle.getArticleTitle());
+        assertEquals(approvedArticle.getArticleId(), revisionArticle.getOriginalArticleId());
+
+        Integer historyCount = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM knowledge_edit_history WHERE article_id = ?",
+            Integer.class,
+            approvedArticle.getArticleId()
+        );
+        assertEquals(0, historyCount);
+    }
+
     private Long extractArticleId(MvcResult result) throws Exception {
         // 응답 JSON에서 data 필드를 읽어 생성된 문서 ID를 꺼낸다.
         JsonNode response = objectMapper.readTree(result.getResponse().getContentAsString());
@@ -193,6 +317,7 @@ class WorkerArticleControllerIntegrationTest {
         // 테스트에서 공통으로 사용할 문서를 직접 저장한다.
         return knowledgeArticleRepository.save(KnowledgeArticle.builder()
             .articleId(new TimeBasedIdGenerator().generate())
+            .originalArticleId(null)
             .authorId(AUTHOR_ID)
             .equipmentId(EQUIPMENT_ID)
             .fileGroupId(0L)
@@ -200,6 +325,7 @@ class WorkerArticleControllerIntegrationTest {
             .articleCategory(ArticleCategory.TROUBLESHOOTING)
             .articleContent(content)
             .articleStatus(status)
+            .approvalVersion(status == ArticleStatus.APPROVED ? 1 : 0)
             .isDeleted(false)
             .viewCount(viewCount)
             .build());

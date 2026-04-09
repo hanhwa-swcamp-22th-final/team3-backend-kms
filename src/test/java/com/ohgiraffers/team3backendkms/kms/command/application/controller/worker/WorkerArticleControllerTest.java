@@ -3,6 +3,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.controller.worke
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.common.exception.GlobalExceptionHandler;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
+import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleTagCommandService;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -41,6 +42,9 @@ class WorkerArticleControllerTest {
 
     @MockitoBean
     private KnowledgeArticleCommandService knowledgeArticleCommandService;
+
+    @MockitoBean
+    private KnowledgeArticleTagCommandService knowledgeArticleTagCommandService;
 
     @Nested
     @DisplayName("POST /api/kms/articles")
@@ -144,6 +148,26 @@ class WorkerArticleControllerTest {
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+        }
+    }
+
+    @Nested
+    @DisplayName("PUT /api/kms/articles/{articleId}/revision")
+    class StartRevision {
+
+        @Test
+        @DisplayName("Start revision API success: return successful response")
+        void startRevision_success() throws Exception {
+            // given
+            given(knowledgeArticleCommandService.startRevision(anyLong(), anyLong())).willReturn(2L);
+
+            // when & then
+            mockMvc.perform(put(BASE_URL + "/1/revision")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(Map.of("requesterId", 10))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value(2));
         }
     }
 

@@ -22,6 +22,7 @@ public class KnowledgeArticle {
     @Id
     private Long articleId;
 
+    private Long originalArticleId;
     private Long authorId;
     private Long approvedBy;
     private Long equipmentId;
@@ -40,6 +41,7 @@ public class KnowledgeArticle {
 
     private String articleApprovalOpinion;
     private LocalDateTime approvedAt;
+    private Integer approvalVersion;
 
     private String articleRejectionReason;
     private String articleDeletionReason;
@@ -82,6 +84,7 @@ public class KnowledgeArticle {
         this.approvedBy = approverId;
         this.articleApprovalOpinion = reviewComment;
         this.approvedAt = LocalDateTime.now();
+        this.approvalVersion = (this.approvalVersion == null ? 0 : this.approvalVersion) + 1;
     }
 
     /* PENDING → REJECTED */
@@ -128,5 +131,45 @@ public class KnowledgeArticle {
         this.articleTitle = title;
         this.articleCategory = category;
         this.articleContent = content;
+    }
+
+    public boolean isRevisionCopy() {
+        return this.originalArticleId != null;
+    }
+
+    public void applyApprovedRevision(KnowledgeArticle revision, Long approverId, String reviewComment) {
+        this.equipmentId = revision.getEquipmentId();
+        this.articleTitle = revision.getArticleTitle();
+        this.articleCategory = revision.getArticleCategory();
+        this.articleContent = revision.getArticleContent();
+        this.articleStatus = ArticleStatus.APPROVED;
+        this.approvedBy = approverId;
+        this.articleApprovalOpinion = reviewComment;
+        this.approvedAt = LocalDateTime.now();
+        this.articleRejectionReason = null;
+        this.approvalVersion = (this.approvalVersion == null ? 0 : this.approvalVersion) + 1;
+    }
+// 복사본생성-원본APPROVAL 상태유지
+    public static KnowledgeArticle createRevisionCopy(Long articleId, KnowledgeArticle original) {
+        return KnowledgeArticle.builder()
+                .articleId(articleId)
+                .originalArticleId(original.getArticleId())
+                .authorId(original.getAuthorId())
+                .approvedBy(original.getApprovedBy())
+                .equipmentId(original.getEquipmentId())
+                .fileGroupId(original.getFileGroupId())
+                .articleTitle(original.getArticleTitle())
+                .articleCategory(original.getArticleCategory())
+                .articleContent(original.getArticleContent())
+                .articleStatus(ArticleStatus.DRAFT)
+                .articleApprovalOpinion(original.getArticleApprovalOpinion())
+                .approvedAt(original.getApprovedAt())
+                .approvalVersion(original.getApprovalVersion())
+                .articleRejectionReason(null)
+                .articleDeletionReason(null)
+                .deletedAt(null)
+                .isDeleted(false)
+                .viewCount(original.getViewCount())
+                .build();
     }
 }

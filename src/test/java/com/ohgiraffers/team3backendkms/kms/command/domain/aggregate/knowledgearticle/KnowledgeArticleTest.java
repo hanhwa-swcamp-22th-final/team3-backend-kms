@@ -19,6 +19,7 @@ class KnowledgeArticleTest {
                 .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent("기본 본문 내용입니다. 도메인 테스트를 위해 충분한 길이의 문장을 작성합니다.")
                 .articleStatus(status)
+                .approvalVersion(status == ArticleStatus.APPROVED ? 1 : 0)
                 .isDeleted(false)
                 .viewCount(viewCount)
                 .build();
@@ -60,6 +61,28 @@ class KnowledgeArticleTest {
             assertEquals(20L, article.getApprovedBy());
             assertEquals("승인합니다.", article.getArticleApprovalOpinion());
             assertNotNull(article.getApprovedAt());
+            assertEquals(1, article.getApprovalVersion());
+        }
+    }
+
+    @Nested
+    @DisplayName("createRevisionCopy()")
+    class CreateRevisionCopyTest {
+
+        @Test
+        @DisplayName("Creates revision copy without changing original")
+        void createRevisionCopy_CreatesDraftCopy() {
+            // given
+            KnowledgeArticle original = buildArticle(ArticleStatus.APPROVED, 0);
+
+            // when
+            KnowledgeArticle revision = KnowledgeArticle.createRevisionCopy(2L, original);
+
+            // then
+            assertEquals(2L, revision.getArticleId());
+            assertEquals(original.getArticleId(), revision.getOriginalArticleId());
+            assertEquals(ArticleStatus.DRAFT, revision.getArticleStatus());
+            assertEquals(original.getArticleTitle(), revision.getArticleTitle());
         }
     }
 

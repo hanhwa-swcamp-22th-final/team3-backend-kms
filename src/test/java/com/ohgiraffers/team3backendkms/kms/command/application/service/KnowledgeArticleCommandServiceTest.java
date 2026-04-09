@@ -7,6 +7,7 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
+import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeEditHistoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,6 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,6 +37,9 @@ class KnowledgeArticleCommandServiceTest {
 
     @Mock
     private KnowledgeArticleRepository knowledgeArticleRepository;
+
+    @Mock
+    private KnowledgeEditHistoryRepository knowledgeEditHistoryRepository;
 
     @Mock
     private IdGenerator idGenerator;
@@ -51,6 +57,7 @@ class KnowledgeArticleCommandServiceTest {
                 .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent("테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
                 .articleStatus(ArticleStatus.PENDING)
+                .approvalVersion(0)
                 .isDeleted(false)
                 .viewCount(0)
                 .build();
@@ -62,6 +69,7 @@ class KnowledgeArticleCommandServiceTest {
                 .articleCategory(ArticleCategory.PROCESS_IMPROVEMENT)
                 .articleContent("임시저장 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
                 .articleStatus(ArticleStatus.DRAFT)
+                .approvalVersion(0)
                 .isDeleted(false)
                 .viewCount(0)
                 .build();
@@ -73,6 +81,7 @@ class KnowledgeArticleCommandServiceTest {
                 .articleCategory(ArticleCategory.TROUBLESHOOTING)
                 .articleContent("승인된 문서 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다.")
                 .articleStatus(ArticleStatus.APPROVED)
+                .approvalVersion(1)
                 .isDeleted(false)
                 .viewCount(0)
                 .build();
@@ -263,6 +272,29 @@ class KnowledgeArticleCommandServiceTest {
         }
 
         @Test
+        @DisplayName("Updates article and keeps status as PENDING when PENDING")
+        void updateDraft_PendingArticle_Success() {
+            // given
+            String newTitle = "수정된 승인대기 문서 제목입니다";
+            ArticleCategory newCategory = ArticleCategory.PROCESS_IMPROVEMENT;
+            Long newEquipmentId = 77L;
+            String newContent = "승인대기 상태에서 수정된 본문 내용입니다. 승인 전 단계에서는 수정이 가능해야 함을 검증합니다.";
+
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            // when
+            knowledgeArticleCommandService.updateDraft(1L, newTitle, newCategory, newEquipmentId, newContent, 1L);
+
+            // then
+            assertEquals(newTitle, pendingArticle.getArticleTitle());
+            assertEquals(newCategory, pendingArticle.getArticleCategory());
+            assertEquals(newEquipmentId, pendingArticle.getEquipmentId());
+            assertEquals(newContent, pendingArticle.getArticleContent());
+            assertEquals(ArticleStatus.PENDING, pendingArticle.getArticleStatus());
+        }
+
+        @Test
         @DisplayName("Throws exception when requester is not the author (ARTICLE_007)")
         void updateDraft_NotAuthor_ThrowsException() {
             // given
@@ -310,6 +342,320 @@ class KnowledgeArticleCommandServiceTest {
             assertEquals(newEquipmentId, draftArticle.getEquipmentId());
             assertEquals(newContent, draftArticle.getArticleContent());
             assertEquals(ArticleStatus.PENDING, draftArticle.getArticleStatus());
+        }
+
+        @Test
+        @DisplayName("Updates article and keeps status as PENDING when PENDING")
+        void submitDraft_PendingArticle_Success() {
+            // given
+            String newTitle = "승인대기 중 다시 수정한 제목입니다";
+            ArticleCategory newCategory = ArticleCategory.PROCESS_IMPROVEMENT;
+            Long newEquipmentId = 55L;
+            String newContent = "이미 승인대기 중인 문서의 본문을 수정한 내용입니다. 수정 후에도 상태는 승인대기로 유지됩니다.";
+
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            // when
+            knowledgeArticleCommandService.submitDraft(1L, newTitle, newCategory, newEquipmentId, newContent, 1L);
+
+            // then
+            assertEquals(newTitle, pendingArticle.getArticleTitle());
+            assertEquals(newCategory, pendingArticle.getArticleCategory());
+            assertEquals(newEquipmentId, pendingArticle.getEquipmentId());
+            assertEquals(newContent, pendingArticle.getArticleContent());
+            assertEquals(ArticleStatus.PENDING, pendingArticle.getArticleStatus());
+        }
+
+        @Test
+        @DisplayName("Changes REJECTED article to PENDING after update")
+        void submitDraft_RejectedArticle_Success() {
+            // given
+            KnowledgeArticle rejectedArticle = KnowledgeArticle.builder()
+                    .articleId(4L)
+                    .authorId(1L)
+                    .articleTitle("반려된 문서 제목입니다")
+                    .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                    .articleContent("반려된 문서 본문 내용입니다. 수정 후 다시 제출하는 흐름을 검증하기 위한 본문입니다.")
+                    .articleStatus(ArticleStatus.REJECTED)
+                    .approvalVersion(1)
+                    .isDeleted(false)
+                    .viewCount(0)
+                    .build();
+
+            given(knowledgeArticleRepository.findById(4L))
+                    .willReturn(Optional.of(rejectedArticle));
+
+            // when
+            knowledgeArticleCommandService.submitDraft(
+                    4L,
+                    "재제출 제목입니다",
+                    ArticleCategory.PROCESS_IMPROVEMENT,
+                    99L,
+                    "반려 후 재제출하는 본문 내용입니다. 충분한 길이의 내용을 담아 다시 제출하는 흐름을 검증합니다.",
+                    1L
+            );
+
+            // then
+            assertEquals(ArticleStatus.PENDING, rejectedArticle.getArticleStatus());
+        }
+    }
+
+    @Nested
+    @DisplayName("startRevision()")
+    class StartRevisionTest {
+
+        @Test
+        @DisplayName("Creates revision copy from approved article")
+        void startRevision_Success() {
+            // given
+            given(knowledgeArticleRepository.findById(3L))
+                    .willReturn(Optional.of(approvedArticle));
+            given(knowledgeArticleRepository.findFirstByOriginalArticleIdAndAuthorIdAndIsDeletedFalseOrderByCreatedAtDesc(3L, 1L))
+                    .willReturn(Optional.empty());
+            given(idGenerator.generate()).willReturn(100L);
+            given(knowledgeArticleRepository.save(any())).willAnswer(invocation -> invocation.getArgument(0));
+
+            // when
+            Long revisionId = knowledgeArticleCommandService.startRevision(3L, 1L);
+
+            // then
+            verify(knowledgeArticleRepository).save(any());
+            assertEquals(100L, revisionId);
+            assertEquals(ArticleStatus.APPROVED, approvedArticle.getArticleStatus());
+        }
+
+        @Test
+        @DisplayName("Returns existing revision copy when one already exists")
+        void startRevision_WhenRevisionExists_ReturnsExistingRevision() {
+            // given
+            KnowledgeArticle revisionArticle = KnowledgeArticle.builder()
+                    .articleId(9L)
+                    .originalArticleId(3L)
+                    .authorId(1L)
+                    .articleTitle("수정본 제목입니다")
+                    .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                    .articleContent("수정본 본문입니다. 아직 제출 전 상태의 복사본입니다. 충분한 길이의 본문입니다.")
+                    .articleStatus(ArticleStatus.DRAFT)
+                    .approvalVersion(1)
+                    .isDeleted(false)
+                    .viewCount(0)
+                    .build();
+
+            given(knowledgeArticleRepository.findById(3L))
+                    .willReturn(Optional.of(approvedArticle));
+            given(knowledgeArticleRepository.findFirstByOriginalArticleIdAndAuthorIdAndIsDeletedFalseOrderByCreatedAtDesc(3L, 1L))
+                    .willReturn(Optional.of(revisionArticle));
+
+            // when
+            Long revisionId = knowledgeArticleCommandService.startRevision(3L, 1L);
+
+            // then
+            verify(knowledgeArticleRepository, never()).save(any());
+            assertEquals(9L, revisionId);
+            assertEquals(ArticleStatus.APPROVED, approvedArticle.getArticleStatus());
+        }
+
+        @Test
+        @DisplayName("Throws exception when article is not APPROVED")
+        void startRevision_WhenNotApproved_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(2L))
+                    .willReturn(Optional.of(draftArticle));
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleCommandService.startRevision(2L, 1L)
+            );
+
+            assertEquals(ArticleErrorCode.ARTICLE_011, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("Throws exception when article is already deleted")
+        void startRevision_WhenDeleted_ThrowsException() {
+            // given
+            KnowledgeArticle deletedApprovedArticle = KnowledgeArticle.builder()
+                    .articleId(7L)
+                    .authorId(1L)
+                    .articleTitle("삭제된 승인 문서입니다")
+                    .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                    .articleContent("삭제된 승인 문서 본문 내용입니다. 수정 시작 전 삭제 여부를 검증하기 위한 본문입니다.")
+                    .articleStatus(ArticleStatus.APPROVED)
+                    .approvalVersion(1)
+                    .isDeleted(true)
+                    .viewCount(0)
+                    .build();
+
+            given(knowledgeArticleRepository.findById(7L))
+                    .willReturn(Optional.of(deletedApprovedArticle));
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleCommandService.startRevision(7L, 1L)
+            );
+
+            assertEquals(ArticleErrorCode.ARTICLE_008, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("Throws exception when requester is not the author")
+        void startRevision_WhenRequesterIsNotAuthor_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.findById(3L))
+                    .willReturn(Optional.of(approvedArticle));
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleCommandService.startRevision(3L, 999L)
+            );
+
+            assertEquals(ArticleErrorCode.ARTICLE_007, exception.getErrorCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("approve()")
+    class ApproveCommandTest {
+
+        @Test
+        @DisplayName("Increases approval version on approval")
+        void approve_IncreasesApprovalVersion() {
+            // given
+            given(knowledgeArticleRepository.findById(1L))
+                    .willReturn(Optional.of(pendingArticle));
+
+            // when
+            knowledgeArticleCommandService.approve(1L, 20L, "승인합니다.");
+
+            // then
+            assertEquals(ArticleStatus.APPROVED, pendingArticle.getArticleStatus());
+            assertEquals(1, pendingArticle.getApprovalVersion());
+        }
+
+        @Test
+        @DisplayName("Saves history and increases approval version on revision approval")
+        void approve_Reapproval_IncreasesApprovalVersionAgain() {
+            // given
+            KnowledgeArticle originalArticle = KnowledgeArticle.builder()
+                    .articleId(3L)
+                    .authorId(1L)
+                    .articleTitle("원본 승인 문서입니다")
+                    .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                    .articleContent("원본 승인 문서 본문입니다. 승인 후 수정본 승인 시 갱신될 원본입니다.")
+                    .articleStatus(ArticleStatus.APPROVED)
+                    .approvalVersion(2)
+                    .isDeleted(false)
+                    .viewCount(0)
+                    .build();
+
+            KnowledgeArticle pendingRevisionArticle = KnowledgeArticle.builder()
+                    .articleId(6L)
+                    .originalArticleId(3L)
+                    .authorId(1L)
+                    .articleTitle("재승인 대기 문서입니다")
+                    .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                    .articleContent("재승인 전 본문 내용입니다. 다시 승인될 때 버전이 증가하는지를 확인합니다.")
+                    .articleStatus(ArticleStatus.PENDING)
+                    .approvalVersion(2)
+                    .isDeleted(false)
+                    .viewCount(0)
+                    .build();
+
+            given(knowledgeArticleRepository.findById(6L))
+                    .willReturn(Optional.of(pendingRevisionArticle));
+            given(knowledgeArticleRepository.findById(3L))
+                    .willReturn(Optional.of(originalArticle));
+            given(knowledgeEditHistoryRepository.existsByArticleIdAndApprovalVersion(3L, 2))
+                    .willReturn(false);
+
+            // when
+            knowledgeArticleCommandService.approve(6L, 20L, "재승인합니다.");
+
+            // then
+            verify(knowledgeEditHistoryRepository).save(any());
+            verify(knowledgeArticleRepository).delete(pendingRevisionArticle);
+            assertEquals(3, originalArticle.getApprovalVersion());
+            assertEquals("재승인 대기 문서입니다", originalArticle.getArticleTitle());
+            assertEquals(ArticleStatus.APPROVED, originalArticle.getArticleStatus());
+        }
+    }
+
+    @Nested
+    @DisplayName("approved article rejected flow")
+    class ApprovedRejectedFlowTest {
+
+        @Test
+        @DisplayName("Keeps revision copy and allows resubmit after rejection without saving history")
+        void approvedRevisionRejectedFlow_Success() {
+            // given
+            KnowledgeArticle originalArticle = KnowledgeArticle.builder()
+                    .articleId(8L)
+                    .authorId(1L)
+                    .articleTitle("승인된 원본 제목입니다")
+                    .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                    .articleContent("승인된 원본 본문입니다. 수정 시작 전에 스냅샷으로 저장되어야 하는 승인본 내용입니다.")
+                    .articleStatus(ArticleStatus.APPROVED)
+                    .approvalVersion(1)
+                    .isDeleted(false)
+                    .viewCount(0)
+                    .build();
+            KnowledgeArticle revisionArticle = KnowledgeArticle.builder()
+                    .articleId(18L)
+                    .originalArticleId(8L)
+                    .authorId(1L)
+                    .articleTitle("수정본 제목입니다")
+                    .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                    .articleContent("수정본 본문입니다. 복사본에서 수정과 반려 후 재제출 흐름을 검증합니다.")
+                    .articleStatus(ArticleStatus.DRAFT)
+                    .approvalVersion(1)
+                    .isDeleted(false)
+                    .viewCount(0)
+                    .build();
+
+            given(knowledgeArticleRepository.findById(8L))
+                    .willReturn(Optional.of(originalArticle));
+            given(knowledgeArticleRepository.findById(18L))
+                    .willReturn(Optional.of(revisionArticle));
+            given(knowledgeArticleRepository.findFirstByOriginalArticleIdAndAuthorIdAndIsDeletedFalseOrderByCreatedAtDesc(8L, 1L))
+                    .willReturn(Optional.empty());
+            given(idGenerator.generate()).willReturn(101L);
+            given(knowledgeArticleRepository.save(any())).willReturn(revisionArticle);
+
+            // when
+            Long revisionId = knowledgeArticleCommandService.startRevision(8L, 1L);
+            knowledgeArticleCommandService.submitDraft(
+                    revisionId,
+                    "재승인 요청 제목입니다",
+                    ArticleCategory.PROCESS_IMPROVEMENT,
+                    88L,
+                    "재승인 요청 본문입니다. 수정 후 승인 대기 상태로 보내는 단계입니다. 충분한 길이를 확보했습니다.",
+                    1L
+            );
+            knowledgeArticleCommandService.reject(revisionId, "반려 사유를 충분한 길이로 남깁니다.");
+            knowledgeArticleCommandService.updateDraft(
+                    revisionId,
+                    "반려 후 수정 제목입니다",
+                    ArticleCategory.SAFETY,
+                    99L,
+                    "반려 후 다시 수정한 본문입니다. 수정 이력은 이미 저장되어 있고 다시 제출 가능해야 합니다.",
+                    1L
+            );
+            knowledgeArticleCommandService.submitDraft(
+                    revisionId,
+                    "반려 후 재제출 제목입니다",
+                    ArticleCategory.SAFETY,
+                    99L,
+                    "반려 후 재제출하는 본문입니다. 최종적으로 다시 승인 대기로 전환되는지를 검증합니다.",
+                    1L
+            );
+
+            // then
+            verify(knowledgeEditHistoryRepository, never()).save(any());
+            assertEquals(ArticleStatus.APPROVED, originalArticle.getArticleStatus());
+            assertEquals(ArticleStatus.PENDING, revisionArticle.getArticleStatus());
+            assertEquals(1, revisionArticle.getApprovalVersion());
+            assertEquals("반려 후 재제출 제목입니다", revisionArticle.getArticleTitle());
         }
     }
 

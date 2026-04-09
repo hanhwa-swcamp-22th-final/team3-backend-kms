@@ -5,6 +5,7 @@ import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.Artic
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftUpdateRequest;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRevisionStartRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleSubmitRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.KnowledgeArticleTagUpdateRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
@@ -65,6 +66,16 @@ public class WorkerArticleController {
                 request.getAuthorId()
         );
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /* 승인된 지식 문서 수정 시작 (복사본 생성/조회) */
+    @PutMapping("/{articleId}/revision")
+    public ResponseEntity<ApiResponse<Long>> startRevision(
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
+            @Valid @RequestBody ArticleRevisionStartRequest request
+    ) {
+        Long revisionArticleId = knowledgeArticleCommandService.startRevision(articleId, request.getRequesterId());
+        return ResponseEntity.ok(ApiResponse.success(revisionArticleId));
     }
 
     /* 임시저장 문서 제출 (DRAFT -> PENDING) */

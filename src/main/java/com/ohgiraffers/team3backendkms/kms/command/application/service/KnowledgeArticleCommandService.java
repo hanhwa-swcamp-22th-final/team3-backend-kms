@@ -8,7 +8,9 @@ import com.ohgiraffers.team3backendkms.common.idgenerator.IdGenerator;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeedithistory.KnowledgeEditHistory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
+import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeEditHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class KnowledgeArticleCommandService {
 
     private final KnowledgeArticleRepository knowledgeArticleRepository;
+    private final KnowledgeEditHistoryRepository knowledgeEditHistoryRepository;
     private final IdGenerator idGenerator;
 
     public Long register(Long authorId, Long equipmentId,
@@ -37,12 +40,15 @@ public class KnowledgeArticleCommandService {
         ).getArticleId();
     }
 
+// 제목, 카테고리, 내용 변경
     public void updateDraft(Long articleId, String title, ArticleCategory category, Long equipmentId, String content, Long requesterId) {
         KnowledgeArticle article = findArticleById(articleId);
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
-        if (article.getArticleStatus() != ArticleStatus.DRAFT) {
+        if (article.getArticleStatus() != ArticleStatus.DRAFT
+                && article.getArticleStatus() != ArticleStatus.PENDING
+                && article.getArticleStatus() != ArticleStatus.REJECTED) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_006);
         }
         if (!article.getAuthorId().equals(requesterId)) {
@@ -57,7 +63,9 @@ public class KnowledgeArticleCommandService {
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
-        if (article.getArticleStatus() != ArticleStatus.DRAFT) {
+        if (article.getArticleStatus() != ArticleStatus.DRAFT
+                && article.getArticleStatus() != ArticleStatus.PENDING
+                && article.getArticleStatus() != ArticleStatus.REJECTED) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_SUBMIT_INVALID);
         }
         if (!article.getAuthorId().equals(requesterId)) {
@@ -66,6 +74,45 @@ public class KnowledgeArticleCommandService {
         validateEquipmentId(equipmentId);
         article.updateDraft(title, category, equipmentId, content);
         article.submit();
+    }
+// 원본이 APPROVED인지 확인
+    public Long startRevision(Long articleId, Long requesterId) {
+        KnowledgeArticle originalArticle = findArticleById(articleId);
+        if (Boolean.TRUE.equals(originalArticle.getIsDeleted())) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
+        }
+        if (!originalArticle.getAuthorId().equals(requesterId)) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_007);
+        }
+        if (originalArticle.getArticleStatus() != ArticleStatus.APPROVED) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_011);
+        }
+        if (originalArticle.isRevisionCopy()) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_011);
+        }
+
+        return knowledgeArticleRepository
+                .findFirstByOriginalArticleIdAndAuthorIdAndIsDeletedFalseOrderByCreatedAtDesc(articleId, requesterId)
+                .map(KnowledgeArticle::getArticleId)
+                .orElseGet(() -> knowledgeArticleRepository.save(
+                        KnowledgeArticle.createRevisionCopy(idGenerator.generate(), originalArticle)
+                ).getArticleId());
+    }
+// 수정본이면-> 원본찾기, 원본버전체크
+    private void saveOriginalSnapshotIfNeeded(KnowledgeArticle revisionArticle) {
+        KnowledgeArticle originalArticle = findArticleById(revisionArticle.getOriginalArticleId());
+        Integer approvalVersion = originalArticle.getApprovalVersion();
+        if (approvalVersion != null
+                && !knowledgeEditHistoryRepository.existsByArticleIdAndApprovalVersion(originalArticle.getArticleId(), approvalVersion)) {
+            knowledgeEditHistoryRepository.save(KnowledgeEditHistory.builder()
+                    .historyId(idGenerator.generate())
+                    .articleId(originalArticle.getArticleId())
+                    .approvalVersion(originalArticle.getApprovalVersion())
+                    .articlePreviousTitle(originalArticle.getArticleTitle())
+                    .articlePreviousCategory(originalArticle.getArticleCategory())
+                    .articlePreviousContent(originalArticle.getArticleContent())
+                    .build());
+        }
     }
 
     public void adminUpdate(Long articleId, String title, ArticleCategory category, String content) {
@@ -121,6 +168,15 @@ public class KnowledgeArticleCommandService {
         if (article.getArticleStatus() != ArticleStatus.PENDING) {
             throw new BusinessException(ArticleErrorCode.APPROVAL_003);
         }
+        if (article.isRevisionCopy()) {
+            KnowledgeArticle originalArticle = findArticleById(article.getOriginalArticleId());
+            saveOriginalSnapshotIfNeeded(article);
+            originalArticle.applyApprovedRevision(article, approverId, reviewComment);
+            knowledgeArticleRepository.delete(article);
+            return;
+        }
+        article.approve(approverId, reviewComment);
+    }
 
         switch (status) {
             case APPROVE -> {
@@ -149,6 +205,7 @@ public class KnowledgeArticleCommandService {
                                           String content, ArticleStatus status) {
         return KnowledgeArticle.builder()
                 .articleId(idGenerator.generate())
+                .originalArticleId(null)
                 .authorId(authorId)
                 .equipmentId(equipmentId)
                 .fileGroupId(0L)
@@ -156,6 +213,7 @@ public class KnowledgeArticleCommandService {
                 .articleCategory(category)
                 .articleContent(content)
                 .articleStatus(status)
+                .approvalVersion(0)
                 .isDeleted(false)
                 .viewCount(0)
                 .build();
