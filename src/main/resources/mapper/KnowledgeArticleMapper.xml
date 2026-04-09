@@ -232,4 +232,41 @@
             2)                                                                  AS rejectionRate
     </select>
 
+    <!-- 내 지식 상태별 통계 조회 -->
+    <select id="findMyArticleStats"
+            parameterType="long"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleStatsDto">
+        SELECT
+            COALESCE(SUM(CASE WHEN article_status = 'APPROVED' THEN 1 ELSE 0 END), 0) AS approvedCount,
+            COALESCE(SUM(CASE WHEN article_status = 'PENDING' THEN 1 ELSE 0 END), 0) AS pendingCount,
+            COALESCE(SUM(CASE WHEN article_status = 'REJECTED' THEN 1 ELSE 0 END), 0) AS rejectedCount,
+            COALESCE(SUM(CASE WHEN article_status = 'DRAFT' THEN 1 ELSE 0 END), 0) AS draftCount
+        FROM knowledge_article
+        WHERE author_id = #{authorId}
+          AND is_deleted = false
+    </select>
+
+    <!-- 내 지식 목록 조회 -->
+    <select id="findMyArticles"
+            parameterType="com.ohgiraffers.team3backendkms.kms.query.dto.request.MyArticleQueryRequest"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleDto">
+        SELECT
+            article_id       AS articleId,
+            article_title    AS articleTitle,
+            article_category AS articleCategory,
+            article_status   AS articleStatus,
+            created_at       AS createdAt,
+            updated_at       AS updatedAt
+        FROM knowledge_article
+        WHERE author_id = #{authorId}
+          AND is_deleted = false
+        <if test="status != null">
+            AND article_status = #{status}
+        </if>
+        ORDER BY created_at DESC
+        <if test="page != null and size != null">
+            LIMIT #{size} OFFSET #{offset}
+        </if>
+    </select>
+
 </mapper>

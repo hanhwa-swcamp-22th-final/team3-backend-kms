@@ -156,6 +156,14 @@ public class KnowledgeArticleCommandService {
         article.adminDelete(reason);
     }
 
+    public void approve(Long articleId, Long approverId, String reviewComment) {
+        processApproval(articleId, approverId, ApprovalStatus.APPROVE, reviewComment);
+    }
+
+    public void reject(Long articleId, String reviewComment) {
+        processApproval(articleId, null, ApprovalStatus.REJECT, reviewComment);
+    }
+
     public void processApproval(Long articleId, Long approverId, ApprovalStatus status, String reviewComment) {
         KnowledgeArticle article = findArticleById(articleId);
 
@@ -168,17 +176,17 @@ public class KnowledgeArticleCommandService {
         if (article.getArticleStatus() != ArticleStatus.PENDING) {
             throw new BusinessException(ArticleErrorCode.APPROVAL_003);
         }
-        if (article.isRevisionCopy()) {
-            KnowledgeArticle originalArticle = findArticleById(article.getOriginalArticleId());
-            saveOriginalSnapshotIfNeeded(article);
-            originalArticle.applyApprovedRevision(article, approverId, reviewComment);
-            knowledgeArticleRepository.delete(article);
-            return;
-        }
         switch (status) {
             case APPROVE -> {
                 if (reviewComment != null && reviewComment.length() > 500) {
                     throw new BusinessException(ArticleErrorCode.APPROVAL_002);
+                }
+                if (article.isRevisionCopy()) {
+                    KnowledgeArticle originalArticle = findArticleById(article.getOriginalArticleId());
+                    saveOriginalSnapshotIfNeeded(article);
+                    originalArticle.applyApprovedRevision(article, approverId, reviewComment);
+                    knowledgeArticleRepository.delete(article);
+                    return;
                 }
                 article.approve(approverId, reviewComment);
             }

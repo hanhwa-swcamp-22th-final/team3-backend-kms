@@ -12,18 +12,12 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-public class ArticleDetailDto {
+public class MyArticleDto {
 
     private Long articleId;
-    private Long authorId;
-    private String authorName;
     private String articleTitle;
     private ArticleCategory articleCategory;
-    private String articleContent;
     private ArticleStatus articleStatus;
-    private String articleApprovalOpinion;
-    private String articleRejectionReason;
-    private Integer viewCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<KnowledgeTagReadDto> tags;
