@@ -10,6 +10,7 @@ import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleQuerySe
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class KnowledgeArticleQueryController {
 
     /* 지식 목록 조회 */
     @GetMapping("/articles")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<List<ArticleReadDto>>> getArticles(
             @ModelAttribute ArticleQueryRequest request
     ) {
