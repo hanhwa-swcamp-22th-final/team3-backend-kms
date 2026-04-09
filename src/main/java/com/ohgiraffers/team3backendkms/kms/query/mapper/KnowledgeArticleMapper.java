@@ -1,7 +1,11 @@
 package com.ohgiraffers.team3backendkms.kms.query.mapper;
 
+import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.request.ApprovalQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import org.apache.ibatis.annotations.Mapper;
@@ -20,4 +24,10 @@ public interface KnowledgeArticleMapper {
     List<ContributorRankDto> findTopContributors(Map<String, Object> params);
 
     List<ArticleReadDto> findRecommendations();
+
+    ApprovalStatsDto findApprovalStats();
+
+    List<ApprovalArticleDto> findApprovalArticles(ApprovalQueryRequest request);
+
+    Optional<ApprovalArticleDetailDto> findApprovalArticleById(Long articleId);
 }

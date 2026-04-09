@@ -88,8 +88,9 @@ public class KnowledgeArticle {
     }
 
     /* PENDING → REJECTED */
-    public void reject(String reviewComment) {
+    public void reject(Long approverId, String reviewComment) {
         this.articleStatus = ArticleStatus.REJECTED;
+        this.approvedBy = approverId;
         this.articleRejectionReason = reviewComment;
     }
 
@@ -117,6 +118,12 @@ public class KnowledgeArticle {
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
         this.articleDeletionReason = reason;
+    }
+
+    /* PENDING 유지 — articleApprovalOpinion 저장 (보류) */
+    public void hold(Long approverId, String reviewComment) {
+        this.approvedBy = approverId;
+        this.articleApprovalOpinion = reviewComment;
     }
 
     /* 관리자 수정 — 상태 변경 없이 필드만 수정 */
