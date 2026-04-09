@@ -74,10 +74,11 @@ class KnowledgeArticleTest {
             KnowledgeArticle article = buildArticle(ArticleStatus.PENDING, 0);
 
             // when
-            article.reject("반려 사유를 남깁니다.");
+            article.reject(99L, "반려 사유를 남깁니다.");
 
             // then
             assertEquals(ArticleStatus.REJECTED, article.getArticleStatus());
+            assertEquals(99L, article.getApprovedBy());
             assertEquals("반려 사유를 남깁니다.", article.getArticleRejectionReason());
         }
     }
@@ -176,6 +177,26 @@ class KnowledgeArticleTest {
             assertTrue(article.getIsDeleted());
             assertNotNull(article.getDeletedAt());
             assertEquals("관리자 삭제 사유입니다.", article.getArticleDeletionReason());
+        }
+    }
+
+    @Nested
+    @DisplayName("hold()")
+    class HoldTest {
+
+        @Test
+        @DisplayName("Stores review comment and keeps status unchanged")
+        void hold_StoresReviewCommentAndKeepsStatus() {
+            // given
+            KnowledgeArticle article = buildArticle(ArticleStatus.PENDING, 0);
+
+            // when
+            article.hold(99L, "보류 의견을 남깁니다.");
+
+            // then
+            assertEquals(99L, article.getApprovedBy());
+            assertEquals("보류 의견을 남깁니다.", article.getArticleApprovalOpinion());
+            assertEquals(ArticleStatus.PENDING, article.getArticleStatus());
         }
     }
 

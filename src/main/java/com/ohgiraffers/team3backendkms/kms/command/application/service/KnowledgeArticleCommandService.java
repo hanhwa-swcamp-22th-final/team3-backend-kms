@@ -3,6 +3,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.service;
 import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.BusinessException;
 import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ApprovalStatus;
 import com.ohgiraffers.team3backendkms.common.idgenerator.IdGenerator;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
@@ -108,38 +109,39 @@ public class KnowledgeArticleCommandService {
         article.adminDelete(reason);
     }
 
-    public void approve(Long articleId, Long approverId, String reviewComment) {
+    public void processApproval(Long articleId, Long approverId, ApprovalStatus status, String reviewComment) {
         KnowledgeArticle article = findArticleById(articleId);
-        if (Boolean.TRUE.equals(article.getIsDeleted())) {
-            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
-        }
-        if (article.getArticleStatus() == ArticleStatus.APPROVED) {
-            throw new BusinessException(ArticleErrorCode.APPROVAL_005);
-        }
-        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
-            throw new BusinessException(ArticleErrorCode.APPROVAL_006);
-        }
-        if (article.getArticleStatus() != ArticleStatus.PENDING) {
-            throw new BusinessException(ArticleErrorCode.APPROVAL_003);
-        }
-        article.approve(approverId, reviewComment);
-    }
 
-    public void reject(Long articleId, String reviewComment) {
-        KnowledgeArticle article = findArticleById(articleId);
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
-        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
-            throw new BusinessException(ArticleErrorCode.APPROVAL_007);
-        }
-        if (article.getArticleStatus() == ArticleStatus.APPROVED) {
-            throw new BusinessException(ArticleErrorCode.APPROVAL_008);
+        if (status == null) {
+            throw new BusinessException(ArticleErrorCode.APPROVAL_003);
         }
         if (article.getArticleStatus() != ArticleStatus.PENDING) {
             throw new BusinessException(ArticleErrorCode.APPROVAL_003);
         }
-        article.reject(reviewComment);
+
+        switch (status) {
+            case APPROVE -> {
+                if (reviewComment != null && reviewComment.length() > 500) {
+                    throw new BusinessException(ArticleErrorCode.APPROVAL_002);
+                }
+                article.approve(approverId, reviewComment);
+            }
+            case REJECT -> {
+                if (reviewComment == null || reviewComment.length() < 10 || reviewComment.length() > 500) {
+                    throw new BusinessException(ArticleErrorCode.APPROVAL_001);
+                }
+                article.reject(approverId, reviewComment);
+            }
+            case PENDING -> {
+                if (reviewComment == null || reviewComment.isBlank() || reviewComment.length() > 500) {
+                    throw new BusinessException(ArticleErrorCode.APPROVAL_004);
+                }
+                article.hold(approverId, reviewComment);
+            }
+        }
     }
 
     private KnowledgeArticle buildArticle(Long authorId, Long equipmentId,

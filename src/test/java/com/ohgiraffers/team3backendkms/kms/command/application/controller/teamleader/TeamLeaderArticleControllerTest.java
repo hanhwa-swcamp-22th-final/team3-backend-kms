@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.willDoNothing;
@@ -31,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(GlobalExceptionHandler.class)
 class TeamLeaderArticleControllerTest {
 
-    private static final String BASE_URL = "/api/kms/tl/approval";
+    private static final String BASE_URL = "/api/kms/tl/articles";
 
     @Autowired
     private MockMvc mockMvc;
@@ -43,61 +44,67 @@ class TeamLeaderArticleControllerTest {
     private KnowledgeArticleCommandService knowledgeArticleCommandService;
 
     @Nested
-    @DisplayName("POST /api/kms/tl/approval/{articleId}/approve")
-    class Approve {
+    @DisplayName("POST /api/kms/tl/articles/{articleId}/approval")
+    class ProcessApproval {
 
         @Test
-        @DisplayName("Approve article API success: return successful response")
+        @DisplayName("APPROVE: return successful response")
         void approve_success() throws Exception {
-            // given
             willDoNothing().given(knowledgeArticleCommandService)
-                .approve(anyLong(), anyLong(), anyString());
+                .processApproval(anyLong(), any(), any(), any());
 
-            // when & then
-            mockMvc.perform(post(BASE_URL + "/1/approve")
+            mockMvc.perform(post(BASE_URL + "/1/approval")
+                    .header("X-Employee-Id", 1L)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(
-                        Map.of("approverId", 10, "reviewComment", "최종 승인합니다.")
+                        Map.of("status", "APPROVE", "reviewComment", "최종 승인합니다.")
                     )))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
         }
-    }
-
-    @Nested
-    @DisplayName("POST /api/kms/tl/approval/{articleId}/reject")
-    class Reject {
 
         @Test
-        @DisplayName("Reject article API success: return successful response")
+        @DisplayName("REJECT: return successful response")
         void reject_success() throws Exception {
-            // given
             willDoNothing().given(knowledgeArticleCommandService)
-                .reject(anyLong(), anyString());
+                .processApproval(anyLong(), any(), any(), any());
 
-            // when & then
-            mockMvc.perform(post(BASE_URL + "/1/reject")
+            mockMvc.perform(post(BASE_URL + "/1/approval")
+                    .header("X-Employee-Id", 1L)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(
-                        Map.of("reviewComment", "반려 사유는 10자 이상이어야 합니다.")
+                        Map.of("status", "REJECT", "reviewComment", "반려 사유는 10자 이상이어야 합니다.")
                     )))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
         }
 
         @Test
-        @DisplayName("Reject article API failure: return 400 when reviewComment is too short")
-        void reject_whenReviewCommentTooShort_thenBadRequest() throws Exception {
-            // given
-            Map<String, String> body = Map.of("reviewComment", "짧음");
+        @DisplayName("PENDING: return successful response")
+        void pending_success() throws Exception {
+            willDoNothing().given(knowledgeArticleCommandService)
+                .processApproval(anyLong(), any(), any(), any());
 
-            // when & then
-            mockMvc.perform(post(BASE_URL + "/1/reject")
+            mockMvc.perform(post(BASE_URL + "/1/approval")
+                    .header("X-Employee-Id", 1L)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+                    .content(objectMapper.writeValueAsString(
+                        Map.of("status", "PENDING", "reviewComment", "내용 보완이 필요합니다. 보류 처리합니다.")
+                    )))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+        }
+
+        @Test
+        @DisplayName("status 없으면 400 반환")
+        void missingStatus_returns400() throws Exception {
+            mockMvc.perform(post(BASE_URL + "/1/approval")
+                    .header("X-Employee-Id", 1L)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(
+                        Map.of("reviewComment", "상태 없는 요청")
+                    )))
+                .andExpect(status().isBadRequest());
         }
     }
 }
