@@ -1,3 +1,5 @@
+server:
+  port: 8083
 spring:
   application:
     name: team3-backend-kms
@@ -22,8 +24,3 @@ mybatis:
   type-aliases-package: com.ohgiraffers.team3backendkms
   configuration:
     map-underscore-to-camel-case: true
-
-# JWT
-jwt:
-  expiration: 1800000 # 30 minutes
-  refresh-expiration: 604800000 # 7 days
