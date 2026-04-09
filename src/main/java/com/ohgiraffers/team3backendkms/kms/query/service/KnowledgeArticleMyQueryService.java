@@ -1,6 +1,7 @@
 package com.ohgiraffers.team3backendkms.kms.query.service;
 
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleHistoryDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.MyArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeArticleMapper;
@@ -29,5 +30,9 @@ public class KnowledgeArticleMyQueryService {
                 knowledgeTagMapper.findTagsByArticleId(article.getArticleId())
         ));
         return articles;
+    }
+
+    public List<MyArticleHistoryDto> getMyRecentArticleHistory(Long authorId) {
+        return knowledgeArticleMapper.findMyRecentArticleHistory(authorId);
     }
 }

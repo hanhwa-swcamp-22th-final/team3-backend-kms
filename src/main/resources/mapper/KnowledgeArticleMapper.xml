@@ -76,15 +76,20 @@
             e.employee_name             AS authorName,
             ka.article_title            AS articleTitle,
             ka.article_category         AS articleCategory,
+            ka.equipment_id             AS equipmentId,
+            eq.equipment_name           AS equipmentName,
             ka.article_content          AS articleContent,
             ka.article_status           AS articleStatus,
             ka.article_approval_opinion AS articleApprovalOpinion,
             ka.article_rejection_reason AS articleRejectionReason,
             ka.view_count               AS viewCount,
+            0                           AS commentCount,
+            0                           AS reuseCount,
             ka.created_at               AS createdAt,
             ka.updated_at               AS updatedAt
         FROM knowledge_article ka
         LEFT JOIN employee e ON ka.author_id = e.employee_id
+        LEFT JOIN equipment eq ON ka.equipment_id = eq.equipment_id
         WHERE ka.article_id = #{articleId}
           AND ka.is_deleted = false
     </select>
@@ -251,22 +256,45 @@
             parameterType="com.ohgiraffers.team3backendkms.kms.query.dto.request.MyArticleQueryRequest"
             resultType="com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleDto">
         SELECT
-            article_id       AS articleId,
-            article_title    AS articleTitle,
-            article_category AS articleCategory,
-            article_status   AS articleStatus,
-            created_at       AS createdAt,
-            updated_at       AS updatedAt
-        FROM knowledge_article
-        WHERE author_id = #{authorId}
-          AND is_deleted = false
+            ka.article_id       AS articleId,
+            ka.article_title    AS articleTitle,
+            ka.article_category AS articleCategory,
+            ka.article_status   AS articleStatus,
+            ka.equipment_id     AS equipmentId,
+            eq.equipment_name   AS equipmentName,
+            ka.article_content  AS articleContent,
+            ka.view_count       AS viewCount,
+            0                   AS commentCount,
+            0                   AS reuseCount,
+            ka.created_at       AS createdAt,
+            ka.updated_at       AS updatedAt
+        FROM knowledge_article ka
+        LEFT JOIN equipment eq ON ka.equipment_id = eq.equipment_id
+        WHERE ka.author_id = #{authorId}
+          AND ka.is_deleted = false
         <if test="status != null">
-            AND article_status = #{status}
+            AND ka.article_status = #{status}
         </if>
-        ORDER BY created_at DESC
+        ORDER BY ka.created_at DESC
         <if test="page != null and size != null">
             LIMIT #{size} OFFSET #{offset}
         </if>
+    </select>
+
+    <!-- 최근 수정 문서 조회 -->
+    <select id="findMyRecentArticleHistory"
+            parameterType="long"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleHistoryDto">
+        SELECT
+            ka.article_id     AS id,
+            ka.article_title  AS title,
+            ka.updated_at     AS updatedAt,
+            ka.article_status AS articleStatus
+        FROM knowledge_article ka
+        WHERE ka.author_id = #{authorId}
+          AND ka.is_deleted = false
+        ORDER BY ka.updated_at DESC, ka.created_at DESC
+        LIMIT 3
     </select>
 
 </mapper>

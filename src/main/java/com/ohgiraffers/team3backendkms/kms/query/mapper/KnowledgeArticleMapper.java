@@ -6,6 +6,7 @@ import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleHistoryDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ApprovalQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
@@ -37,4 +38,6 @@ public interface KnowledgeArticleMapper {
     MyArticleStatsDto findMyArticleStats(Long authorId);
 
     List<MyArticleDto> findMyArticles(MyArticleQueryRequest request);
+
+    List<MyArticleHistoryDto> findMyRecentArticleHistory(Long authorId);
 }

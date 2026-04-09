@@ -334,6 +334,7 @@ class KnowledgeArticleQueryMapperTest {
                 .articleCategory(category)
                 .articleContent(content)
                 .articleStatus(status)
+                .approvalVersion(0)
                 .isDeleted(isDeleted)
                 .viewCount(viewCount)
                 .createdAt(createdAt)
