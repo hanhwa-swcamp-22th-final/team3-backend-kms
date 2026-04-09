@@ -1,7 +1,7 @@
 package com.ohgiraffers.team3backendkms.kms.query.controller;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
-import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
+
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
@@ -15,7 +15,6 @@ import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleQuerySe
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

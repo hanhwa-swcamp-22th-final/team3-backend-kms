@@ -175,9 +175,6 @@ public class KnowledgeArticleCommandService {
             knowledgeArticleRepository.delete(article);
             return;
         }
-        article.approve(approverId, reviewComment);
-    }
-
         switch (status) {
             case APPROVE -> {
                 if (reviewComment != null && reviewComment.length() > 500) {
