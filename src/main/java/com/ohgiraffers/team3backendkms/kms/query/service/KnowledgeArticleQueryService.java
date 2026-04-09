@@ -7,6 +7,7 @@ import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeArticleMapper;
+import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeTagMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ import java.util.Map;
 public class KnowledgeArticleQueryService {
 
     private final KnowledgeArticleMapper knowledgeArticleMapper;
+    private final KnowledgeTagMapper knowledgeTagMapper;
 
     public List<ArticleReadDto> getArticles(ArticleQueryRequest request) {
         normalizeQueryRequest(request);
@@ -27,8 +29,10 @@ public class KnowledgeArticleQueryService {
     }
 
     public ArticleDetailDto getArticleDetail(Long articleId) {
-        return knowledgeArticleMapper.findArticleById(articleId)
+        ArticleDetailDto detail = knowledgeArticleMapper.findArticleById(articleId)
                 .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND));
+        detail.setTags(knowledgeTagMapper.findTagsByArticleId(articleId));
+        return detail;
     }
 
     public List<ContributorRankDto> getTopContributors(Integer limit) {

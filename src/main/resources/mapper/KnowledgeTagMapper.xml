@@ -14,4 +14,16 @@
         ORDER BY tag_name
     </select>
 
+    <select id="findTagsByArticleId"
+            parameterType="long"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.KnowledgeTagReadDto">
+        SELECT
+            kt.tag_id   AS tagId,
+            kt.tag_name AS tagName
+        FROM knowledge_article_tag kat
+        INNER JOIN knowledge_tag kt ON kat.tag_id = kt.tag_id
+        WHERE kat.article_id = #{articleId}
+        ORDER BY kt.tag_name
+    </select>
+
 </mapper>

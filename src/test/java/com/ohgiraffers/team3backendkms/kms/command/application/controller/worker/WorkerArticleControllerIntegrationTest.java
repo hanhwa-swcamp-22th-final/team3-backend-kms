@@ -250,9 +250,11 @@ class WorkerArticleControllerIntegrationTest {
             .andExpect(jsonPath("$.success").value(true));
 
         // when 3. 반려
-        mockMvc.perform(post("/api/kms/tl/approval/{articleId}/reject", revisionArticleId)
+        mockMvc.perform(post("/api/kms/tl/articles/{articleId}/approval", revisionArticleId)
+                .header("X-Employee-Id", AUTHOR_ID)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of(
+                    "status", "REJECT",
                     "reviewComment", "반려 사유를 충분한 길이로 남깁니다."
                 ))))
             .andExpect(status().isOk())

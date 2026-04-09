@@ -1,7 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.query.controller;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
-
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;

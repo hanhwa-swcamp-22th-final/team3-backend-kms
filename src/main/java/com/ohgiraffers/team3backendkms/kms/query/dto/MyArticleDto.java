@@ -13,20 +13,16 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-public class ArticleDetailDto {
+public class MyArticleDto {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd");
 
     private Long articleId;
-    private Long authorId;
-    private String authorName;
     private String articleTitle;
     private ArticleCategory articleCategory;
+    private ArticleStatus articleStatus;
     private Long equipmentId;
     private String equipmentName;
     private String articleContent;
-    private ArticleStatus articleStatus;
-    private String articleApprovalOpinion;
-    private String articleRejectionReason;
     private Integer viewCount;
     private Integer commentCount;
     private Integer reuseCount;
@@ -46,12 +42,12 @@ public class ArticleDetailDto {
         return articleCategory == null ? null : articleCategory.getDisplayName();
     }
 
-    public String getEquipment() {
-        return equipmentName;
-    }
-
     public String getStatus() {
         return articleStatus == null ? null : articleStatus.getDisplayName();
+    }
+
+    public String getEquipment() {
+        return equipmentName;
     }
 
     public String getDate() {

@@ -76,15 +76,20 @@
             e.employee_name             AS authorName,
             ka.article_title            AS articleTitle,
             ka.article_category         AS articleCategory,
+            ka.equipment_id             AS equipmentId,
+            eq.equipment_name           AS equipmentName,
             ka.article_content          AS articleContent,
             ka.article_status           AS articleStatus,
             ka.article_approval_opinion AS articleApprovalOpinion,
             ka.article_rejection_reason AS articleRejectionReason,
             ka.view_count               AS viewCount,
+            0                           AS commentCount,
+            0                           AS reuseCount,
             ka.created_at               AS createdAt,
             ka.updated_at               AS updatedAt
         FROM knowledge_article ka
         LEFT JOIN employee e ON ka.author_id = e.employee_id
+        LEFT JOIN equipment eq ON ka.equipment_id = eq.equipment_id
         WHERE ka.article_id = #{articleId}
           AND ka.is_deleted = false
     </select>
@@ -230,6 +235,66 @@
                     0.0
                 ),
             2)                                                                  AS rejectionRate
+    </select>
+
+    <!-- 내 지식 상태별 통계 조회 -->
+    <select id="findMyArticleStats"
+            parameterType="long"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleStatsDto">
+        SELECT
+            COALESCE(SUM(CASE WHEN article_status = 'APPROVED' THEN 1 ELSE 0 END), 0) AS approvedCount,
+            COALESCE(SUM(CASE WHEN article_status = 'PENDING' THEN 1 ELSE 0 END), 0) AS pendingCount,
+            COALESCE(SUM(CASE WHEN article_status = 'REJECTED' THEN 1 ELSE 0 END), 0) AS rejectedCount,
+            COALESCE(SUM(CASE WHEN article_status = 'DRAFT' THEN 1 ELSE 0 END), 0) AS draftCount
+        FROM knowledge_article
+        WHERE author_id = #{authorId}
+          AND is_deleted = false
+    </select>
+
+    <!-- 내 지식 목록 조회 -->
+    <select id="findMyArticles"
+            parameterType="com.ohgiraffers.team3backendkms.kms.query.dto.request.MyArticleQueryRequest"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleDto">
+        SELECT
+            ka.article_id       AS articleId,
+            ka.article_title    AS articleTitle,
+            ka.article_category AS articleCategory,
+            ka.article_status   AS articleStatus,
+            ka.equipment_id     AS equipmentId,
+            eq.equipment_name   AS equipmentName,
+            ka.article_content  AS articleContent,
+            ka.view_count       AS viewCount,
+            0                   AS commentCount,
+            0                   AS reuseCount,
+            ka.created_at       AS createdAt,
+            ka.updated_at       AS updatedAt
+        FROM knowledge_article ka
+        LEFT JOIN equipment eq ON ka.equipment_id = eq.equipment_id
+        WHERE ka.author_id = #{authorId}
+          AND ka.is_deleted = false
+        <if test="status != null">
+            AND ka.article_status = #{status}
+        </if>
+        ORDER BY ka.created_at DESC
+        <if test="page != null and size != null">
+            LIMIT #{size} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 최근 수정 문서 조회 -->
+    <select id="findMyRecentArticleHistory"
+            parameterType="long"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleHistoryDto">
+        SELECT
+            ka.article_id     AS id,
+            ka.article_title  AS title,
+            ka.updated_at     AS updatedAt,
+            ka.article_status AS articleStatus
+        FROM knowledge_article ka
+        WHERE ka.author_id = #{authorId}
+          AND ka.is_deleted = false
+        ORDER BY ka.updated_at DESC, ka.created_at DESC
+        LIMIT 3
     </select>
 
 </mapper>

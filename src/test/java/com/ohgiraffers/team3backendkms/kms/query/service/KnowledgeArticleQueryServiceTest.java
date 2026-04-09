@@ -5,9 +5,11 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.KnowledgeTagReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeArticleMapper;
+import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeTagMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -36,6 +38,9 @@ class KnowledgeArticleQueryServiceTest {
 
     @Mock
     private KnowledgeArticleMapper knowledgeArticleMapper;
+
+    @Mock
+    private KnowledgeTagMapper knowledgeTagMapper;
 
     @Nested
     @DisplayName("getArticles()")
@@ -119,7 +124,11 @@ class KnowledgeArticleQueryServiceTest {
             dto.setViewCount(5);
             dto.setCreatedAt(LocalDateTime.now());
             dto.setUpdatedAt(LocalDateTime.now());
+            KnowledgeTagReadDto tag = new KnowledgeTagReadDto();
+            tag.setTagId(100L);
+            tag.setTagName("가공");
             given(knowledgeArticleMapper.findArticleById(1L)).willReturn(Optional.of(dto));
+            given(knowledgeTagMapper.findTagsByArticleId(1L)).willReturn(List.of(tag));
 
             // when
             ArticleDetailDto result = knowledgeArticleQueryService.getArticleDetail(1L);
@@ -129,6 +138,8 @@ class KnowledgeArticleQueryServiceTest {
             assertEquals(1L, result.getArticleId());
             assertEquals("테스트 제목입니다", result.getArticleTitle());
             assertEquals(ArticleStatus.APPROVED, result.getArticleStatus());
+            assertEquals(1, result.getTags().size());
+            assertEquals("가공", result.getTags().get(0).getTagName());
         }
 
         @Test

@@ -9,4 +9,6 @@ import java.util.List;
 public interface KnowledgeTagMapper {
 
     List<KnowledgeTagReadDto> findAllTags();
+
+    List<KnowledgeTagReadDto> findTagsByArticleId(Long articleId);
 }
