@@ -5,6 +5,7 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleHistoryDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.MyArticleQueryRequest;
 import jakarta.persistence.EntityManager;
@@ -246,6 +247,32 @@ class KnowledgeArticleMyQueryMapperTest {
         }
     }
 
+    @Nested
+    @DisplayName("findMyRecentArticleHistory()")
+    class FindMyRecentArticleHistory {
+
+        @Test
+        @DisplayName("Returns latest three articles by updatedAt")
+        void findMyRecentArticleHistory_success() {
+            List<MyArticleHistoryDto> result = knowledgeArticleMapper.findMyRecentArticleHistory(validAuthorId);
+
+            assertNotNull(result);
+            assertEquals(3, result.size());
+            for (int i = 0; i < result.size() - 1; i++) {
+                assertFalse(result.get(i).getUpdatedAt().isBefore(result.get(i + 1).getUpdatedAt()));
+            }
+        }
+
+        @Test
+        @DisplayName("Excludes deleted and other author's articles")
+        void findMyRecentArticleHistory_filtersCorrectly() {
+            List<MyArticleHistoryDto> result = knowledgeArticleMapper.findMyRecentArticleHistory(validAuthorId);
+
+            assertTrue(result.stream().noneMatch(h -> h.getId().equals(TEST_ARTICLE_ID_DELETED)));
+            assertTrue(result.stream().noneMatch(h -> h.getId().equals(TEST_ARTICLE_ID_OTHER)));
+        }
+    }
+
     private KnowledgeArticle buildArticle(Long articleId, Long authorId, String title,
                                           ArticleCategory category, ArticleStatus status,
                                           boolean isDeleted, LocalDateTime createdAt) {
@@ -262,6 +289,7 @@ class KnowledgeArticleMyQueryMapperTest {
                 .isDeleted(isDeleted)
                 .viewCount(0)
                 .createdAt(createdAt)
+                .updatedAt(createdAt)
                 .build();
     }
 }

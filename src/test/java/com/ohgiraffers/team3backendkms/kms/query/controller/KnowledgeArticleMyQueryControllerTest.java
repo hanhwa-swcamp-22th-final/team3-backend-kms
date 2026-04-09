@@ -5,6 +5,7 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.query.dto.KnowledgeTagReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleHistoryDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.MyArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleMyQueryService;
@@ -109,6 +110,38 @@ class KnowledgeArticleMyQueryControllerTest {
         @DisplayName("Returns 400 when authorId is missing")
         void getMyArticles_whenAuthorIdMissing_thenBadRequest() throws Exception {
             mockMvc.perform(get("/api/kms/my/articles"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/kms/my/articles/history")
+    class GetMyRecentArticleHistory {
+
+        @Test
+        @DisplayName("Returns 200 OK with recent history")
+        void getMyRecentArticleHistory_success() throws Exception {
+            MyArticleHistoryDto history = new MyArticleHistoryDto();
+            history.setId(1L);
+            history.setTitle("최근 수정 문서");
+            history.setArticleStatus(ArticleStatus.PENDING);
+            history.setUpdatedAt(LocalDateTime.of(2026, 4, 9, 9, 0));
+
+            given(knowledgeArticleMyQueryService.getMyRecentArticleHistory(10L))
+                    .willReturn(List.of(history));
+
+            mockMvc.perform(get("/api/kms/my/articles/history").param("authorId", "10"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data[0].id").value(1))
+                    .andExpect(jsonPath("$.data[0].title").value("최근 수정 문서"))
+                    .andExpect(jsonPath("$.data[0].status").value("승인 대기"));
+        }
+
+        @Test
+        @DisplayName("Returns 400 when authorId is missing")
+        void getMyRecentArticleHistory_whenAuthorIdMissing_thenBadRequest() throws Exception {
+            mockMvc.perform(get("/api/kms/my/articles/history"))
                     .andExpect(status().isBadRequest());
         }
     }

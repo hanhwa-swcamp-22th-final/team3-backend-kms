@@ -4,6 +4,7 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.query.dto.KnowledgeTagReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleHistoryDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.MyArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeArticleMapper;
@@ -102,6 +103,29 @@ class KnowledgeArticleMyQueryServiceTest {
 
             assertNotNull(result);
             assertTrue(result.isEmpty());
+        }
+    }
+
+    @Nested
+    @DisplayName("getMyRecentArticleHistory()")
+    class GetMyRecentArticleHistory {
+
+        @Test
+        @DisplayName("Returns recent history list")
+        void getMyRecentArticleHistory_success() {
+            MyArticleHistoryDto history = new MyArticleHistoryDto();
+            history.setId(1L);
+            history.setTitle("최근 수정 문서");
+            history.setArticleStatus(ArticleStatus.PENDING);
+            history.setUpdatedAt(LocalDateTime.now());
+
+            given(knowledgeArticleMapper.findMyRecentArticleHistory(10L)).willReturn(List.of(history));
+
+            List<MyArticleHistoryDto> result = knowledgeArticleMyQueryService.getMyRecentArticleHistory(10L);
+
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals("최근 수정 문서", result.get(0).getTitle());
         }
     }
 }
