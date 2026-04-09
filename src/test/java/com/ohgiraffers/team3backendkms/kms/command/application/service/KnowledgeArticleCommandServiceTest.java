@@ -7,6 +7,7 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ApprovalStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeEditHistoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -526,7 +527,7 @@ class KnowledgeArticleCommandServiceTest {
                     .willReturn(Optional.of(pendingArticle));
 
             // when
-            knowledgeArticleCommandService.approve(1L, 20L, "승인합니다.");
+            knowledgeArticleCommandService.processApproval(1L, 20L, ApprovalStatus.APPROVE, "승인합니다.");
 
             // then
             assertEquals(ArticleStatus.APPROVED, pendingArticle.getArticleStatus());
@@ -570,7 +571,7 @@ class KnowledgeArticleCommandServiceTest {
                     .willReturn(false);
 
             // when
-            knowledgeArticleCommandService.approve(6L, 20L, "재승인합니다.");
+            knowledgeArticleCommandService.processApproval(6L, 20L, ApprovalStatus.APPROVE, "재승인합니다.");
 
             // then
             verify(knowledgeEditHistoryRepository).save(any());
@@ -632,7 +633,7 @@ class KnowledgeArticleCommandServiceTest {
                     "재승인 요청 본문입니다. 수정 후 승인 대기 상태로 보내는 단계입니다. 충분한 길이를 확보했습니다.",
                     1L
             );
-            knowledgeArticleCommandService.reject(revisionId, "반려 사유를 충분한 길이로 남깁니다.");
+            knowledgeArticleCommandService.processApproval(revisionId, 20L, ApprovalStatus.REJECT, "반려 사유를 충분한 길이로 남깁니다.");
             knowledgeArticleCommandService.updateDraft(
                     revisionId,
                     "반려 후 수정 제목입니다",

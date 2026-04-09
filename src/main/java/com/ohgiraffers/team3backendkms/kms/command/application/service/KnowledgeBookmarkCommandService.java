@@ -9,6 +9,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 북마크 Command 서비스 — 북마크 추가 / 취소
+ * 쓰기 작업만 담당 (읽기는 KnowledgeBookmarkQueryService)
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -16,16 +20,26 @@ public class KnowledgeBookmarkCommandService {
 
     private final KnowledgeBookmarkRepository bookmarkRepository;
 
+    /**
+     * 북마크 추가
+     * - 이미 북마크한 게시글이면 BOOKMARK_001 예외
+     */
     public void addBookmark(Long articleId, Long employeeId) {
         KnowledgeBookmarkId id = new KnowledgeBookmarkId(articleId, employeeId);
+        // 중복 북마크 방지
         if (bookmarkRepository.existsById(id)) {
             throw new BusinessException(ArticleErrorCode.BOOKMARK_001);
         }
         bookmarkRepository.save(KnowledgeBookmark.builder().id(id).build());
     }
 
+    /**
+     * 북마크 취소
+     * - 존재하지 않는 북마크면 BOOKMARK_002 예외
+     */
     public void removeBookmark(Long articleId, Long employeeId) {
         KnowledgeBookmarkId id = new KnowledgeBookmarkId(articleId, employeeId);
+        // 북마크 존재 여부 확인
         if (!bookmarkRepository.existsById(id)) {
             throw new BusinessException(ArticleErrorCode.BOOKMARK_002);
         }

@@ -14,6 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * 북마크 Query 컨트롤러
+ * - GET /api/kms/my/bookmarks : 내 북마크 목록 조회
+ */
 @RestController
 @Validated
 @RequiredArgsConstructor
@@ -22,6 +26,7 @@ public class KnowledgeBookmarkQueryController {
 
     private final KnowledgeBookmarkQueryService bookmarkQueryService;
 
+    // 내 북마크 목록 조회 — param: employeeId (양수 검증)
     @GetMapping("/bookmarks")
     public ResponseEntity<ApiResponse<List<ArticleReadDto>>> getMyBookmarks(
             @RequestParam @Positive(message = "employeeId는 양수여야 합니다.") Long employeeId) {
