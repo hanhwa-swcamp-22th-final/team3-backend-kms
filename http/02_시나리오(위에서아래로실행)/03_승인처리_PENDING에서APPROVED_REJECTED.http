@@ -1,0 +1,80 @@
+@kmsHost = http://localhost:8083
+@authHost = http://localhost:8080
+@teamLeaderId = 1775611674533123
+@departmentLeaderId = 1775611849849457
+@validPendingArticleId = 1775784139661161
+
+### 테스트명: 승인 처리 -> PENDING 문서를 APPROVED 또는 REJECTED 로 변경
+### 실행 순서: 한 번에 하나만 실행
+### 주의: 같은 문서를 승인하고 다시 반려하면 안 되므로 필요한 요청만 선택 실행
+
+### [0-1] 팀장 로그인 | 결과: teamLeaderAccessToken 저장
+POST {{authHost}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "employeeEmail": "minjeong.choi@seto.com",
+  "password": "password123"
+}
+
+> {%
+    client.global.set("teamLeaderAccessToken", response.body.data.accessToken);
+%}
+
+### [0-2] 부서장 로그인 | 결과: departmentLeaderAccessToken 저장
+POST {{authHost}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "employeeEmail": "seungho.lee@seto.com",
+  "password": "password123"
+}
+
+> {%
+    client.global.set("departmentLeaderAccessToken", response.body.data.accessToken);
+%}
+
+### [선택 1] 팀장 승인 | 상태 변화: PENDING -> APPROVED | 기대: 200
+#POST {{kmsHost}}/api/kms/tl/articles/{{validPendingArticleId}}/approval
+POST {{kmsHost}}/api/kms/tl/articles/{{articleId}}/approval
+Content-Type: application/json
+Authorization: Bearer {{teamLeaderAccessToken}}
+X-Employee-Id: {{teamLeaderId}}
+
+{
+  "status": "APPROVE",
+  "reviewComment": "1차 승인 기준을 충족하여 승인합니다."
+}
+
+### [선택 2] 팀장 반려 | 상태 변화: PENDING -> REJECTED | 기대: 200
+POST {{kmsHost}}/api/kms/tl/articles/{{articleId}}/approval
+Content-Type: application/json
+Authorization: Bearer {{teamLeaderAccessToken}}
+X-Employee-Id: {{teamLeaderId}}
+
+{
+  "status": "REJECT",
+  "reviewComment": "원인 분석과 재발 방지 대책이 부족하여 반려합니다."
+}
+
+### [선택 3] 부서장 승인 | 상태 변화: PENDING -> APPROVED | 기대: 200
+POST {{kmsHost}}/api/kms/dl/articles/{{articleId}}/approval
+Content-Type: application/json
+Authorization: Bearer {{departmentLeaderAccessToken}}
+X-Employee-Id: {{departmentLeaderId}}
+
+{
+  "status": "APPROVE",
+  "reviewComment": "최종 승인 기준을 충족하여 승인합니다."
+}
+
+### [선택 4] 부서장 반려 | 상태 변화: PENDING -> REJECTED | 기대: 200
+POST {{kmsHost}}/api/kms/dl/articles/{{articleId}}/approval
+Content-Type: application/json
+Authorization: Bearer {{departmentLeaderAccessToken}}
+X-Employee-Id: {{departmentLeaderId}}
+
+{
+  "status": "REJECT",
+  "reviewComment": "최종 승인 기준에 부족한 부분이 있어 반려합니다."
+}

@@ -6,7 +6,7 @@
 @hrmId = 1775611890201688
 @articleId = 1775784139661161
 
-### 부서장 승인
+### [상태 변경: PENDING -> APPROVED] 부서장 승인 | 기대: 200
 POST {{kmsHost}}/api/kms/dl/articles/{{articleId}}/approval
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
@@ -17,7 +17,7 @@ X-Employee-Id: {{departmentLeaderId}}
   "reviewComment": "최종 검토 완료. 배포 가능한 문서로 승인합니다."
 }
 
-### 부서장 반려
+### [상태 변경: PENDING -> REJECTED] 부서장 반려 | 기대: 200
 POST {{kmsHost}}/api/kms/dl/articles/{{articleId}}/approval
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
@@ -28,7 +28,7 @@ X-Employee-Id: {{departmentLeaderId}}
   "reviewComment": "최종 승인 기준에 부족한 부분이 있습니다. 상세 내용을 보강한 뒤 다시 제출해주세요."
 }
 
-### 부서장 보류
+### [상태 유지: PENDING -> PENDING] 부서장 보류 | 기대: 200
 POST {{kmsHost}}/api/kms/dl/articles/{{articleId}}/approval
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}

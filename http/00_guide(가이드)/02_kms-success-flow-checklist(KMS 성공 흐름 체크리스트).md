@@ -1,79 +1,85 @@
-# KMS API 성공 흐름 체크리스트
+# KMS 성공 흐름 체크리스트
 
-이 문서는 `team3-backend-kms/http` 기준으로, 현재 구현된 API를 실제 검증할 때 필요한 핵심 흐름을 순서대로 정리한 체크리스트입니다.
+이 문서는 실제 HTTP 테스트를 할 때 "어떤 요청이 성공해야 하는지"만 빠르게 보는 체크리스트입니다.
 
 ## 1. 사전 준비
 
-1. `01_인증/01_로그인_토큰.http`로 토큰을 발급합니다.
-2. `workerId`, `teamLeaderId`, `departmentLeaderId`, `equipmentId`, `employeeId`를 준비합니다.
-3. 아래 흐름에서 생성된 `articleId`, `draftArticleId`, `tagId`는 전역 변수로 저장해 재사용합니다.
+1. 로그인으로 `accessToken`, `refreshToken` 발급
+2. `workerId`, `teamLeaderId`, `departmentLeaderId`, `adminId` 확인
+3. `equipmentId`, `tagId`, `articleId`, `draftArticleId` 등 상단 변수 확인
 
-## 2. 기본 정상 흐름
+## 2. 성공 흐름 한눈에 보기
 
-### 2.1 태그 생성/수정/삭제
+### 태그 준비
 
-1. `POST /api/kms/admin/articles/tags`
-2. `PUT /api/kms/admin/articles/tags`
-3. `DELETE /api/kms/admin/articles/tags`
+- `GET /api/kms/tags`
+- `POST /api/kms/admin/articles/tags`
+- `PUT /api/kms/admin/articles/tags`
+- `DELETE /api/kms/admin/articles/tags`
 
-### 2.2 작업자 문서 작성 흐름
+### 작업자 작성 흐름
 
-1. `POST /api/kms/articles`
-2. `POST /api/kms/articles/drafts`
-3. `PUT /api/kms/articles/{draftArticleId}`
-4. `PUT /api/kms/articles/{draftArticleId}/submit`
-5. `PUT /api/kms/articles/{articleId}/tags`
-6. `PUT /api/kms/articles/{articleId}/revision`
-7. 작성 중 취소 시 `DELETE /api/kms/articles/{draftArticleId}`
-8. 임시저장을 반복할 때는 새 초안을 만들지 않고 같은 `draftArticleId`에 `PUT`을 여러 번 호출
+- `POST /api/kms/articles`
+  기대: `201`, 승인 대기 상태로 등록
+- `POST /api/kms/articles/drafts`
+  기대: `201`, 초안 ID 생성
+- `PUT /api/kms/articles/{draftArticleId}`
+  기대: `200`, 초안 수정
+- `PUT /api/kms/articles/{draftArticleId}/submit`
+  기대: `200`, 초안 제출 후 승인 대기
+- `PUT /api/kms/articles/{articleId}/tags`
+  기대: `200`, 태그 연결
 
-### 2.3 반려 후 재작업 흐름
+### 수정본 시작
 
-1. 승인자가 문서를 `REJECT` 처리
-2. 작성자가 같은 `articleId`를 `PUT /api/kms/articles/{articleId}`로 수정
-3. 작성자가 같은 `articleId`를 `PUT /api/kms/articles/{articleId}/submit`으로 재제출
-4. 반려 문서는 현재 구현상 작업자가 직접 삭제할 수 없음
+- `PUT /api/kms/articles/{articleId}/revision`
+  기대: `200`, 수정본용 새 draft ID 생성
 
-### 2.4 승인 처리 흐름
+### 반려 후 재작업
 
-1. `POST /api/kms/tl/articles/{articleId}/approval`
-2. `POST /api/kms/dl/articles/{articleId}/approval`
-3. 요청 바디 `status`는 `APPROVE`, `REJECT`, `PENDING` 중 하나를 사용합니다.
-4. 요청 헤더 `X-Employee-Id`를 함께 전달합니다.
+- `PUT /api/kms/articles/{articleId}`
+  기대: `200`, 반려 문서 수정
+- `PUT /api/kms/articles/{articleId}/submit`
+  기대: `200`, 같은 문서 재제출
 
-### 2.5 조회 흐름
+### 승인 처리
 
-1. `GET /api/kms/articles`
-2. `GET /api/kms/articles/{articleId}`
-3. `GET /api/kms/articles/contributors`
-4. `GET /api/kms/articles/recommendations`
-5. `GET /api/kms/tags`
-6. `GET /api/kms/articles?stat=approval`
-7. `GET /api/kms/articles/{articleId}?stat=approval`
-8. `GET /api/kms/stats?stat=approval`
-9. `GET /api/kms/my/articles`
-10. `GET /api/kms/my/articles/stats`
-11. `GET /api/kms/my/articles/history`
-12. `GET /api/kms/my/bookmarks`
+- `POST /api/kms/tl/articles/{articleId}/approval`
+  기대: `200`, 팀장 승인/반려/보류
+- `POST /api/kms/dl/articles/{articleId}/approval`
+  기대: `200`, 부서장 승인/반려/보류
 
-### 2.6 북마크 흐름
+### 조회 확인
 
-1. `POST /api/kms/bookmarks`
-2. `DELETE /api/kms/bookmarks`
+- `GET /api/kms/articles`
+- `GET /api/kms/articles/{articleId}`
+- `GET /api/kms/articles/contributors`
+- `GET /api/kms/articles/recommendations`
+- `GET /api/kms/tags`
+- `GET /api/kms/articles?stat=approval`
+- `GET /api/kms/articles/{articleId}?stat=approval`
+- `GET /api/kms/stats?stat=approval`
+- `GET /api/kms/my/articles`
+- `GET /api/kms/my/articles/stats`
+- `GET /api/kms/my/articles/history`
+- `GET /api/kms/my/bookmarks`
 
-### 2.7 관리자 문서 관리 흐름
+### 북마크
 
-1. `PUT /api/kms/admin/articles/{articleId}`
-2. `DELETE /api/kms/admin/articles/{articleId}`
+- `POST /api/kms/bookmarks`
+  기대: `201`
+- `DELETE /api/kms/bookmarks`
+  기대: `200`
 
-## 3. 반드시 확인할 실패 케이스
+### 관리자 문서 관리
 
-1. DRAFT가 아닌 문서 제출 시도
-2. PENDING, APPROVED, REJECTED 문서 삭제 시도
-3. 작성자 불일치 수정/삭제 시도
-4. 제목, 본문, 설비 ID 검증 실패
-5. 승인/반려 중복 처리 시도
-6. 반려 사유 길이 부족, 관리자 삭제 사유 길이 부족
-7. 중복 북마크 추가, 없는 북마크 삭제
-8. 반려된 문서 삭제 시도
-9. 작성 중 취소 후 삭제된 초안 재수정 시도
+- `PUT /api/kms/admin/articles/{articleId}`
+  기대: `200`
+- `DELETE /api/kms/admin/articles/{articleId}`
+  기대: `200`
+
+## 3. 실패 케이스는 여기서 확인
+
+실패해야 정상인 요청은 아래 파일에서 확인합니다.
+
+- `05_negative(실패 케이스)/01_critical-negative-flow(핵심 실패 케이스).http`

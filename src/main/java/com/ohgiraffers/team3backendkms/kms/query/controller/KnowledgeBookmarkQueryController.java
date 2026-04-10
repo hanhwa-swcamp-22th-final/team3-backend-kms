@@ -31,6 +31,6 @@ public class KnowledgeBookmarkQueryController {
     public ResponseEntity<ApiResponse<List<ArticleReadDto>>> getMyBookmarks(
             @RequestParam @Positive(message = "employeeId는 양수여야 합니다.") Long employeeId) {
         List<ArticleReadDto> bookmarks = bookmarkQueryService.getMyBookmarks(employeeId);
-        return ResponseEntity.ok(ApiResponse.success(bookmarks));
+        return ResponseEntity.ok(ApiResponse.success("내 북마크 목록을 조회했습니다.", bookmarks));
     }
 }

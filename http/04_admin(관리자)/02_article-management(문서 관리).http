@@ -6,7 +6,7 @@
 @hrmId = 1775611890201688
 @articleId = 1775784139661161
 
-### 관리자 문서 수정
+### [상태 유지] 관리자 문서 수정 | 기대: 200 | 핵심 확인: 상태는 유지되고 내용만 수정
 PUT {{kmsHost}}/api/kms/admin/articles/{{articleId}}
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
@@ -17,7 +17,7 @@ Authorization: Bearer {{accessToken}}
   "content": "관리자가 문서를 직접 수정하는 흐름입니다. 제목과 카테고리, 본문 모두 검증 조건을 만족해야 하며 충분한 길이의 본문을 사용합니다."
 }
 
-### 관리자 문서 삭제
+### [상태 조건 무관] 관리자 문서 삭제 | 기대: 200
 DELETE {{kmsHost}}/api/kms/admin/articles/{{articleId}}
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}

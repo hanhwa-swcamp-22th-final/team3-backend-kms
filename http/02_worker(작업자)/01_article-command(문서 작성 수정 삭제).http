@@ -7,7 +7,7 @@
 @equipmentId = 1774836457838985
 @articleId = 1775021444000913
 
-### 문서 등록
+### [상태: 생성 즉시 PENDING] 문서 등록 | 기대: 201 | 핵심 확인: articleId 저장
 POST {{kmsHost}}/api/kms/articles
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
@@ -21,10 +21,10 @@ Authorization: Bearer {{accessToken}}
 }
 
 > {%
-    client.global.set("articleId", response.body.data);
+    client.global.set("articleId", String(response.body.data));
 %}
 
-### 초안 저장
+### [상태: 생성 즉시 DRAFT] 초안 저장 | 기대: 201 | 핵심 확인: draftArticleId 저장
 POST {{kmsHost}}/api/kms/articles/drafts
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
@@ -38,10 +38,10 @@ Authorization: Bearer {{accessToken}}
 }
 
 > {%
-    client.global.set("draftArticleId", response.body.data);
+    client.global.set("draftArticleId", String(response.body.data));
 %}
 
-### 초안 수정
+### [상태 유지: DRAFT -> DRAFT] 초안 수정 | 기대: 200
 PUT {{kmsHost}}/api/kms/articles/{{draftArticleId}}
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
@@ -54,7 +54,7 @@ Authorization: Bearer {{accessToken}}
   "content": "메모 수준의 내용을 조금 더 보강한 초안입니다."
 }
 
-### 초안 다시 임시저장
+### [상태 유지: DRAFT -> DRAFT] 같은 초안 다시 임시저장 | 기대: 200 | 핵심 확인: 기존 draftArticleId 사용
 PUT {{kmsHost}}/api/kms/articles/{{draftArticleId}}
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
@@ -67,7 +67,7 @@ Authorization: Bearer {{accessToken}}
   "content": "같은 초안 문서에 대해 임시저장을 반복하는 흐름입니다. 새 초안을 만들지 않고 기존 draftArticleId를 계속 사용합니다."
 }
 
-### 초안 제출
+### [상태 변경: DRAFT -> PENDING] 초안 제출 | 기대: 200
 PUT {{kmsHost}}/api/kms/articles/{{draftArticleId}}/submit
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
@@ -80,7 +80,7 @@ Authorization: Bearer {{accessToken}}
   "content": "제출 시에는 본문이 최소 길이를 만족해야 합니다. 그래서 이 예시는 검증을 통과할 수 있도록 충분한 길이의 설명 문장을 포함합니다."
 }
 
-### 문서 삭제
+### [상태 조건: 작성자 본인 + 삭제 가능 상태] 문서 삭제 | 기대: 200
 DELETE {{kmsHost}}/api/kms/articles/{{articleId}}
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
@@ -89,7 +89,7 @@ Authorization: Bearer {{accessToken}}
   "requesterId": {{workerId}}
 }
 
-### 작성 중 취소 - 초안 삭제
+### [상태 조건: DRAFT 삭제] 작성 중 취소용 초안 삭제 | 기대: 200
 DELETE {{kmsHost}}/api/kms/articles/{{draftArticleId}}
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
@@ -98,7 +98,7 @@ Authorization: Bearer {{accessToken}}
   "requesterId": {{workerId}}
 }
 
-### 문서 태그 연결
+### [상태 무관] 문서 태그 연결 | 기대: 200
 PUT {{kmsHost}}/api/kms/articles/{{articleId}}/tags
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}

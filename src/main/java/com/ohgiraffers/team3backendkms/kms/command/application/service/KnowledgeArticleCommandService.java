@@ -64,7 +64,6 @@ public class KnowledgeArticleCommandService {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
         if (article.getArticleStatus() != ArticleStatus.DRAFT
-                && article.getArticleStatus() != ArticleStatus.PENDING
                 && article.getArticleStatus() != ArticleStatus.REJECTED) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_SUBMIT_INVALID);
         }

@@ -1,49 +1,47 @@
-# KMS HTTP 테스트 폴더 안내
+# KMS HTTP 테스트 안내
 
-이 폴더는 KMS 프로젝트 기준으로 HTTP 테스트 파일을 역할과 순서에 맞게 정리한 구조입니다.
+지금부터는 역할별 폴더보다 `시나리오별 한 파일 완결` 구조를 기준으로 테스트하면 됩니다.
 
-## 권장 실행 순서
+## 새 구조
 
-1. `00_guide(가이드)/01_http-test-start(HTTP 테스트 시작).md`
-2. `01_auth(인증)/01_login-token(로그인 토큰).http`
-3. `04_admin(관리자)/01_tag-management(태그 관리).http`
-4. `02_worker(작업자)/01_article-command(문서 작성 수정 삭제).http`
-5. `02_worker(작업자)/02_article-revision-start(문서 수정본 시작).http`
-6. `02_worker(작업자)/06_rejected-article-flow(반려 문서 흐름).http`
-7. `03_approver(승인자)/01_teamleader-approval(팀장 승인 처리).http`
-8. `03_approver(승인자)/02_departmentleader-approval(부서장 승인 처리).http`
-9. `02_worker(작업자)/03_article-query(문서 조회).http`
-10. `02_worker(작업자)/04_my-articles-query(내 문서 조회).http`
-11. `02_worker(작업자)/05_bookmark(북마크).http`
-12. `03_approver(승인자)/03_approval-query(승인 조회).http`
-13. `04_admin(관리자)/02_article-management(문서 관리).http`
-14. `05_negative(실패 케이스)/01_critical-negative-flow(핵심 실패 케이스).http`
+- `01_준비(여기부터시작)`
+  로그인과 토큰 준비
+- `02_시나리오(위에서아래로실행)`
+  한 파일 안에서 위에서 아래로 순서대로 실행하는 성공 시나리오
+- `03_실패시나리오(필요할때만)`
+  상태 검증 실패 케이스 모음
 
-## 폴더 설명
+## 실제 추천 순서
 
-- `00_guide(가이드)`: 테스트 순서와 체크리스트
-- `01_auth(인증)`: 로그인, 토큰 갱신, 로그아웃
-- `02_worker(작업자)`: 작업자 문서 작성/조회 흐름
-- `03_approver(승인자)`: 팀장/부서장 승인 및 승인용 조회
-- `04_admin(관리자)`: 태그 관리, 관리자 문서 수정/삭제
-- `05_negative(실패 케이스)`: 실패해야 정상인 시나리오
+1. `02_시나리오(위에서아래로실행)/01_작업자_바로등록_즉시PENDING.http`
+2. `02_시나리오(위에서아래로실행)/02_작업자_초안작성_DRAFT에서PENDING제출.http`
+3. `02_시나리오(위에서아래로실행)/03_승인처리_PENDING에서APPROVED_REJECTED.http`
+4. `02_시나리오(위에서아래로실행)/04_반려후재작업_REJECTED에서PENDING.http`
+5. `02_시나리오(위에서아래로실행)/05_수정본시작_APPROVED원본에서새DRAFT.http`
+6. `02_시나리오(위에서아래로실행)/06_조회_상태별목록확인.http`
+7. `02_시나리오(위에서아래로실행)/07_북마크_한파일완결.http`
+8. `02_시나리오(위에서아래로실행)/08_관리자_태그와문서관리_한파일완결.http`
+9. `03_실패시나리오(필요할때만)/01_상태검증_실패한파일완결.http`
 
-## 필수 변수
+## 실행 방식
 
-아래 전역 변수는 실행 전에 준비해야 합니다.
+- 새 시나리오 파일은 각 파일 안에 필요한 로그인 요청이 포함되어 있습니다.
+- 따라서 준비 파일 없이도 파일 하나만 열고 위에서 아래로 실행하면 됩니다.
+- `01_준비(여기부터시작)` 폴더는 참고용입니다.
 
-- `accessToken`
-- `accessToken`
-- `workerId`
-- `teamLeaderId`
-- `departmentLeaderId`
-- `equipmentId`
-- `tagId`
-- `articleId`
-- `draftArticleId`
-- `employeeId`
-- `validPendingArticleId`
-- `validApprovedArticleId`
-- `validRejectedArticleId`
-- `validDraftArticleId`
-- `otherWorkerId`
+## 파일 제목 읽는 법
+
+- `테스트명:` 그 파일 전체 시나리오 이름
+- `[1] [2] [3] ...` 위에서 아래로 실행 순서
+- `상태 결과` 또는 `상태 변화`
+  DRAFT / PENDING / APPROVED / REJECTED 기준으로 바로 보이게 표시
+
+## 기존 역할별 폴더
+
+아래 폴더는 당장 삭제하지 않았지만, 이제는 새 시나리오 폴더 기준으로 테스트하는 것을 권장합니다.
+
+- `01_auth(인증)`
+- `02_worker(작업자)`
+- `03_approver(승인자)`
+- `04_admin(관리자)`
+- `05_negative(실패 케이스)`

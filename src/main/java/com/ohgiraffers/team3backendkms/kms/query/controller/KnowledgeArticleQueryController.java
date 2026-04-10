@@ -34,7 +34,7 @@ public class KnowledgeArticleQueryController {
             @ModelAttribute ArticleQueryRequest request
     ) {
         List<ArticleReadDto> articles = knowledgeArticleQueryService.getArticles(request);
-        return ResponseEntity.ok(ApiResponse.success(articles));
+        return ResponseEntity.ok(ApiResponse.success("지식 문서 목록을 조회했습니다.", articles));
     }
 
     /* 승인 대기 목록 조회 - 공통 articles 경로에서 stat=approval 로 분기 */
@@ -43,7 +43,7 @@ public class KnowledgeArticleQueryController {
             @ModelAttribute ApprovalQueryRequest request
     ) {
         List<ApprovalArticleDto> articles = knowledgeArticleApprovalQueryService.getApprovalArticles(request);
-        return ResponseEntity.ok(ApiResponse.success(articles));
+        return ResponseEntity.ok(ApiResponse.success("승인 대기 문서 목록을 조회했습니다.", articles));
     }
 
     /* 지식 상세 조회 — 조회 후 조회수 증가 (Command는 Controller에서 조율) */
@@ -53,7 +53,7 @@ public class KnowledgeArticleQueryController {
     ) {
         ArticleDetailDto detail = knowledgeArticleQueryService.getArticleDetail(articleId);
         knowledgeArticleCommandService.incrementViewCount(articleId);
-        return ResponseEntity.ok(ApiResponse.success(detail));
+        return ResponseEntity.ok(ApiResponse.success("지식 문서 상세를 조회했습니다.", detail));
     }
 
     /* 승인 상세 조회 - 공통 articles 경로에서 stat=approval 로 분기 */
@@ -62,14 +62,14 @@ public class KnowledgeArticleQueryController {
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId
     ) {
         ApprovalArticleDetailDto detail = knowledgeArticleApprovalQueryService.getApprovalArticleById(articleId);
-        return ResponseEntity.ok(ApiResponse.success(detail));
+        return ResponseEntity.ok(ApiResponse.success("승인 대상 문서 상세를 조회했습니다.", detail));
     }
 
     /* 승인 통계 조회 - 공통 stats 경로에서 stat=approval 로 분기 */
     @GetMapping(value = "/stats", params = "stat=approval")
     public ResponseEntity<ApiResponse<ApprovalStatsDto>> getApprovalStats() {
         ApprovalStatsDto stats = knowledgeArticleApprovalQueryService.getApprovalStats();
-        return ResponseEntity.ok(ApiResponse.success(stats));
+        return ResponseEntity.ok(ApiResponse.success("승인 통계를 조회했습니다.", stats));
     }
 
     /* 월간 기여자 랭킹 조회 */
@@ -78,13 +78,13 @@ public class KnowledgeArticleQueryController {
             @RequestParam(value = "limit", defaultValue = "3") Integer limit
     ) {
         List<ContributorRankDto> contributors = knowledgeArticleQueryService.getTopContributors(limit);
-        return ResponseEntity.ok(ApiResponse.success(contributors));
+        return ResponseEntity.ok(ApiResponse.success("기여자 랭킹을 조회했습니다.", contributors));
     }
 
     /* AI 지식 추천 조회 (APPROVED 문서 중 조회수 높은 순 TOP 5) */
     @GetMapping("/articles/recommendations")
     public ResponseEntity<ApiResponse<List<ArticleReadDto>>> getRecommendations() {
         List<ArticleReadDto> recommendations = knowledgeArticleQueryService.getRecommendations();
-        return ResponseEntity.ok(ApiResponse.success(recommendations));
+        return ResponseEntity.ok(ApiResponse.success("추천 문서를 조회했습니다.", recommendations));
     }
 }
