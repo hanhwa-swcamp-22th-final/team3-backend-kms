@@ -1,0 +1,20 @@
+@kmsHost = http://localhost:8083
+@workerId = 1775612047560224
+@teamLeaderId = 1775611674533123
+@departmentLeaderId = 1775611849849457
+@adminId = 1774850514911459
+@hrmId = 1775611890201688
+@articleId = 1775784139661161
+
+### 승인 완료 문서 수정 시작
+PUT {{kmsHost}}/api/kms/articles/{{articleId}}/revision
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "requesterId": {{workerId}}
+}
+
+> {%
+    client.global.set("draftArticleId", response.body.data);
+%}

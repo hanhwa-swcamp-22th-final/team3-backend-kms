@@ -1,4 +1,0 @@
-### 범위 안내
-# 이 저장소는 현재 직원 관리 API를 구현하지 않습니다.
-# /api/v1/employees 예시는 현재 리포지토리 범위 밖 문서입니다.
-# KMS 관련 실제 예시는 worker.http, teamleader.http, departmentleader.http를 사용하세요.

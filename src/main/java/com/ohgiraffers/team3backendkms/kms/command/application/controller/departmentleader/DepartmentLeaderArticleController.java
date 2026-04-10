@@ -28,6 +28,14 @@ public class DepartmentLeaderArticleController {
                 request.getStatus(),
                 request.getReviewComment()
         );
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success(buildApprovalMessage(request), null));
+    }
+
+    private String buildApprovalMessage(ArticleApprovalProcessRequest request) {
+        return switch (request.getStatus()) {
+            case APPROVE -> "부서장 승인 처리가 완료되었습니다.";
+            case REJECT -> "부서장 반려 처리가 완료되었습니다.";
+            case PENDING -> "부서장 보류 처리가 완료되었습니다.";
+        };
     }
 }

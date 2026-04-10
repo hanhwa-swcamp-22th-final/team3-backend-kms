@@ -1,0 +1,39 @@
+@kmsHost = http://localhost:8083
+@workerId = 1775612047560224
+@teamLeaderId = 1775611674533123
+@departmentLeaderId = 1775611849849457
+@adminId = 1774850514911459
+@hrmId = 1775611890201688
+@articleId = 1775784139661161
+
+### 문서 목록 조회 - 기본
+GET {{kmsHost}}/api/kms/articles?requesterId={{workerId}}&requesterRole=WORKER&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### 문서 목록 조회 - 카테고리
+GET {{kmsHost}}/api/kms/articles?requesterId={{workerId}}&requesterRole=WORKER&category=TROUBLESHOOTING&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### 문서 목록 조회 - 인기순
+GET {{kmsHost}}/api/kms/articles?requesterId={{workerId}}&requesterRole=WORKER&sort=popular&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### 문서 목록 조회 - 제목 검색
+GET {{kmsHost}}/api/kms/articles?requesterId={{workerId}}&requesterRole=WORKER&searchType=articleTitle&keyword=test&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### 문서 상세 조회
+GET {{kmsHost}}/api/kms/articles/{{articleId}}
+Authorization: Bearer {{accessToken}}
+
+### 상위 기여자 조회
+GET {{kmsHost}}/api/kms/articles/contributors?limit=3
+Authorization: Bearer {{accessToken}}
+
+### 추천 문서 조회
+GET {{kmsHost}}/api/kms/articles/recommendations
+Authorization: Bearer {{accessToken}}
+
+### 전체 태그 목록 조회
+GET {{kmsHost}}/api/kms/tags
+Authorization: Bearer {{accessToken}}

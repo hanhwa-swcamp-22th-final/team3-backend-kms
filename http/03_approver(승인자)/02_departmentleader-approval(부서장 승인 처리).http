@@ -1,0 +1,40 @@
+@kmsHost = http://localhost:8083
+@workerId = 1775612047560224
+@teamLeaderId = 1775611674533123
+@departmentLeaderId = 1775611849849457
+@adminId = 1774850514911459
+@hrmId = 1775611890201688
+@articleId = 1775784139661161
+
+### 부서장 승인
+POST {{kmsHost}}/api/kms/dl/articles/{{articleId}}/approval
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+X-Employee-Id: {{departmentLeaderId}}
+
+{
+  "status": "APPROVE",
+  "reviewComment": "최종 검토 완료. 배포 가능한 문서로 승인합니다."
+}
+
+### 부서장 반려
+POST {{kmsHost}}/api/kms/dl/articles/{{articleId}}/approval
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+X-Employee-Id: {{departmentLeaderId}}
+
+{
+  "status": "REJECT",
+  "reviewComment": "최종 승인 기준에 부족한 부분이 있습니다. 상세 내용을 보강한 뒤 다시 제출해주세요."
+}
+
+### 부서장 보류
+POST {{kmsHost}}/api/kms/dl/articles/{{articleId}}/approval
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+X-Employee-Id: {{departmentLeaderId}}
+
+{
+  "status": "PENDING",
+  "reviewComment": "최종 승인 전에 추가 검토가 필요하여 보류 처리합니다."
+}

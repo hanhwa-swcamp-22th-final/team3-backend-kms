@@ -1,0 +1,34 @@
+@kmsHost = http://localhost:8083
+@workerId = 1775612047560224
+@teamLeaderId = 1775611674533123
+@departmentLeaderId = 1775611849849457
+@adminId = 1774850514911459
+@hrmId = 1775611890201688
+
+### 내 문서 목록 - 전체
+GET {{kmsHost}}/api/kms/articles?requesterId={{workerId}}&requesterRole=WORKER&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### 내 문서 목록 - 승인 완료
+GET {{kmsHost}}/api/kms/articles?requesterId={{workerId}}&requesterRole=WORKER&status=APPROVED&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### 내 문서 목록 - 승인 대기
+GET {{kmsHost}}/api/kms/articles?requesterId={{workerId}}&requesterRole=WORKER&status=PENDING&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### 내 문서 목록 - 최신순
+GET {{kmsHost}}/api/kms/articles?requesterId={{workerId}}&requesterRole=WORKER&sort=latest&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### 내 문서 전용 목록 조회
+GET {{kmsHost}}/api/kms/my/articles?authorId={{workerId}}&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### 내 문서 통계 조회
+GET {{kmsHost}}/api/kms/my/articles/stats?authorId={{workerId}}
+Authorization: Bearer {{accessToken}}
+
+### 내 최근 문서 이력 조회
+GET {{kmsHost}}/api/kms/my/articles/history?authorId={{workerId}}
+Authorization: Bearer {{accessToken}}
