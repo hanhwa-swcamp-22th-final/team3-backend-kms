@@ -14,7 +14,7 @@ import org.springframework.http.HttpStatus;
  * → GlobalExceptionHandler가 캐치하여 ApiResponse.failure("BAD_REQUEST", message) 반환
  */
 @Getter
-public enum ArticleErrorCode {
+public enum ArticleErrorCode implements ErrorCode {
 
     // =====================================================
     // 📋 문서 입력값 검증 (register, update, draft)
