@@ -94,7 +94,7 @@ public enum ArticleErrorCode {
      *   - errorCode: "BAD_REQUEST"
      *   - message: "[ARTICLE] DRAFT 상태에서만 제출할 수 있습니다."
      */
-    ARTICLE_SUBMIT_INVALID(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE] DRAFT 상태에서만 제출할 수 있습니다."),
+    ARTICLE_SUBMIT_INVALID(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE_SUBMIT_INVALID] 문서 제출은 DRAFT 상태에서만 가능합니다."),
 
     /**
      * DRAFT 상태가 아닌 문서 수정 시도
@@ -106,7 +106,7 @@ public enum ArticleErrorCode {
      *   - errorCode: "BAD_REQUEST"
      *   - message: "[ARTICLE_006] DRAFT 상태에서만 수정할 수 있습니다."
      */
-    ARTICLE_006(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE_006] DRAFT 상태에서만 수정할 수 있습니다."),
+    ARTICLE_006(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE_006] 임시저장(DRAFT) 상태의 문서만 수정할 수 있습니다."),
 
     /**
      * 본인이 아닌 문서 삭제 시도 (권한 검증)
@@ -130,7 +130,7 @@ public enum ArticleErrorCode {
      *   - errorCode: "BAD_REQUEST" 또는 "NOT_FOUND"
      *   - message: "[ARTICLE_008] 이미 삭제된 문서입니다."
      */
-    ARTICLE_008(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE_008] 이미 삭제된 문서입니다."),
+    ARTICLE_008(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE_008] 이미 삭제된 문서이므로 수정, 제출, 승인 처리할 수 없습니다."),
 
     /**
      * 승인 완료 문서의 직접 삭제 시도
@@ -157,12 +157,12 @@ public enum ArticleErrorCode {
      * 📌 PENDING: 첫 제출 후 승인 대기 중
      * 📌 REJECTED: 반려된 상태
      */
-    ARTICLE_010(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE_010] 평가 진행 중인 문서는 삭제할 수 없습니다."),
+    ARTICLE_010(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE_010] PENDING 또는 REJECTED 상태 문서는 작업자가 삭제할 수 없습니다."),
 
     /**
      * 승인 완료 문서가 아닌 문서에서 수정 시작 시도
      */
-    ARTICLE_011(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE_011] 승인 완료된 문서에서만 수정 시작할 수 있습니다."),
+    ARTICLE_011(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE_011] 수정본 시작은 APPROVED 상태 문서에서만 가능합니다."),
 
     /**
      * 삭제 사유 길이 검증 (관리자 삭제 전용)
@@ -187,7 +187,7 @@ public enum ArticleErrorCode {
      *   - errorCode: "NOT_FOUND"
      *   - message: "[ARTICLE] 문서를 찾을 수 없습니다."
      */
-    ARTICLE_NOT_FOUND(HttpStatus.NOT_FOUND, "NOT_FOUND", "[ARTICLE] 문서를 찾을 수 없습니다."),
+    ARTICLE_NOT_FOUND(HttpStatus.NOT_FOUND, "NOT_FOUND", "[ARTICLE_NOT_FOUND] 요청한 문서를 찾을 수 없습니다."),
 
     // ==========================================================
     // 📋 승인/반려 검증 (approve, reject)
@@ -243,7 +243,7 @@ public enum ArticleErrorCode {
      *   - errorCode: "BAD_REQUEST"
      *   - message: "[APPROVAL_003] PENDING 상태에서만 처리할 수 있습니다."
      */
-    APPROVAL_003(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_003] PENDING 상태에서만 처리할 수 있습니다."),
+    APPROVAL_003(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_003] 승인/반려/보류 처리는 PENDING 상태 문서에서만 가능합니다."),
 
     /**
      * 이미 승인된 문서의 재승인 시도
@@ -256,7 +256,7 @@ public enum ArticleErrorCode {
      *   - errorCode: "BAD_REQUEST"
      *   - message: "[APPROVAL_005] 이미 승인된 문서입니다."
      */
-    APPROVAL_005(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_005] 이미 승인된 문서입니다."),
+    APPROVAL_005(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_005] 이미 승인된 문서이므로 다시 승인할 수 없습니다."),
 
     /**
      * 반려된 문서의 승인 시도
@@ -269,7 +269,7 @@ public enum ArticleErrorCode {
      *   - errorCode: "BAD_REQUEST"
      *   - message: "[APPROVAL_006] 반려된 문서는 승인할 수 없습니다."
      */
-    APPROVAL_006(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_006] 반려된 문서는 승인할 수 없습니다."),
+    APPROVAL_006(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_006] 반려된 문서는 다시 승인할 수 없습니다."),
 
     /**
      * 이미 반려된 문서의 재반려 시도
@@ -282,7 +282,7 @@ public enum ArticleErrorCode {
      *   - errorCode: "BAD_REQUEST"
      *   - message: "[APPROVAL_007] 이미 반려된 문서입니다."
      */
-    APPROVAL_007(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_007] 이미 반려된 문서입니다."),
+    APPROVAL_007(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_007] 이미 반려된 문서이므로 다시 반려할 수 없습니다."),
 
     /**
      * 승인 완료 문서의 반려 시도
@@ -295,14 +295,14 @@ public enum ArticleErrorCode {
      *   - errorCode: "BAD_REQUEST"
      *   - message: "[APPROVAL_008] 승인 완료된 문서는 반려할 수 없습니다."
      */
-    APPROVAL_008(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_008] 승인 완료된 문서는 반려할 수 없습니다."),
+    APPROVAL_008(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_008] 이미 승인 완료된 문서는 반려할 수 없습니다."),
 
     // ==========================================================
     // 태그 검증 (tag create, update, delete)
     // ==========================================================
 
-    TAG_001(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[TAG_001] 이미 존재하는 태그 이름입니다."),
-    TAG_NOT_FOUND(HttpStatus.NOT_FOUND, "NOT_FOUND", "[TAG] 태그를 찾을 수 없습니다."),
+    TAG_001(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[TAG_001] 동일한 이름의 태그가 이미 존재합니다."),
+    TAG_NOT_FOUND(HttpStatus.NOT_FOUND, "NOT_FOUND", "[TAG_NOT_FOUND] 요청한 태그를 찾을 수 없습니다."),
 
     // ==========================================================
     // 북마크 검증 (bookmark add, remove)
@@ -317,7 +317,7 @@ public enum ArticleErrorCode {
      *   - errorCode: "CONFLICT"
      *   - message: "[BOOKMARK_001] 이미 북마크한 게시글입니다."
      */
-    BOOKMARK_001(HttpStatus.CONFLICT, "CONFLICT", "[BOOKMARK_001] 이미 북마크한 게시글입니다."),
+    BOOKMARK_001(HttpStatus.CONFLICT, "CONFLICT", "[BOOKMARK_001] 이미 북마크에 추가된 문서입니다."),
 
     /**
      * 존재하지 않는 북마크 취소 시도
@@ -328,7 +328,7 @@ public enum ArticleErrorCode {
      *   - errorCode: "NOT_FOUND"
      *   - message: "[BOOKMARK_002] 북마크를 찾을 수 없습니다."
      */
-    BOOKMARK_002(HttpStatus.NOT_FOUND, "NOT_FOUND", "[BOOKMARK_002] 북마크를 찾을 수 없습니다.");
+    BOOKMARK_002(HttpStatus.NOT_FOUND, "NOT_FOUND", "[BOOKMARK_002] 해제할 북마크를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;

@@ -1,0 +1,74 @@
+@authHost = http://localhost:8080
+@workerId = 1775612047560224
+@teamLeaderId = 1775611674533123
+@departmentLeaderId = 1775611849849457
+@adminId = 1774850514911459
+@hrmId = 1775611890201688
+### [성공] 작업자 로그인 | 기대: 200 | 핵심 확인: accessToken, refreshToken 저장
+POST {{authHost}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "employeeEmail": "woojin.jung@seto.com",
+  "password": "password123"
+}
+
+> {%
+    client.global.set("accessToken", response.body.data.accessToken);
+    client.global.set("refreshToken", response.body.data.refreshToken);
+%}
+
+### [성공] 팀장 로그인 | 기대: 200 | 핵심 확인: accessToken, refreshToken 갱신
+POST {{authHost}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "employeeEmail": "minjeong.choi@seto.com",
+  "password": "password123"
+}
+
+> {%
+    client.global.set("accessToken", response.body.data.accessToken);
+    client.global.set("refreshToken", response.body.data.refreshToken);
+%}
+
+### [성공] 부서장 로그인 | 기대: 200 | 핵심 확인: accessToken, refreshToken 갱신
+POST {{authHost}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "employeeEmail": "seungho.lee@seto.com",
+  "password": "password123"
+}
+
+> {%
+    client.global.set("accessToken", response.body.data.accessToken);
+    client.global.set("refreshToken", response.body.data.refreshToken);
+%}
+
+### [성공] 관리자 로그인 | 기대: 200 | 핵심 확인: accessToken, refreshToken 갱신
+POST {{authHost}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "employeeEmail": "hyunsu.kim@seto.com",
+  "password": "password123"
+}
+
+> {%
+    client.global.set("accessToken", response.body.data.accessToken);
+    client.global.set("refreshToken", response.body.data.refreshToken);
+%}
+
+### [성공] 토큰 갱신 | 기대: 200 | 핵심 확인: accessToken 재발급
+POST {{authHost}}/api/v1/auth/refresh
+Cookie: refreshToken={{refreshToken}}
+
+> {%
+    client.global.set("accessToken", response.body.data.accessToken);
+    client.global.set("refreshToken", response.body.data.refreshToken);
+%}
+
+### [성공] 로그아웃 | 기대: 200
+POST {{authHost}}/api/v1/auth/logout
+Cookie: refreshToken={{refreshToken}}

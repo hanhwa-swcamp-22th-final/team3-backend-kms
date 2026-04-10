@@ -3,6 +3,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.controller.admin
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.common.exception.GlobalExceptionHandler;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
+import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeTagCommandService;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -41,6 +42,9 @@ class AdminArticleControllerTest {
 
     @MockitoBean
     private KnowledgeArticleCommandService knowledgeArticleCommandService;
+
+    @MockitoBean
+    private KnowledgeTagCommandService knowledgeTagCommandService;
 
     @Nested
     @DisplayName("DELETE /api/kms/admin/articles/{articleId}")

@@ -25,7 +25,7 @@ public class KnowledgeArticleApprovalQueryController {
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId
     ) {
         ApprovalArticleDetailDto detail = knowledgeArticleApprovalQueryService.getApprovalArticleById(articleId);
-        return ResponseEntity.ok(ApiResponse.success(detail));
+        return ResponseEntity.ok(ApiResponse.success("승인 대상 문서 상세를 조회했습니다.", detail));
     }
 
     @GetMapping
@@ -33,12 +33,12 @@ public class KnowledgeArticleApprovalQueryController {
             @ModelAttribute ApprovalQueryRequest request
     ) {
         List<ApprovalArticleDto> articles = knowledgeArticleApprovalQueryService.getApprovalArticles(request);
-        return ResponseEntity.ok(ApiResponse.success(articles));
+        return ResponseEntity.ok(ApiResponse.success("승인 대기 문서 목록을 조회했습니다.", articles));
     }
 
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse<ApprovalStatsDto>> getApprovalStats() {
         ApprovalStatsDto stats = knowledgeArticleApprovalQueryService.getApprovalStats();
-        return ResponseEntity.ok(ApiResponse.success(stats));
+        return ResponseEntity.ok(ApiResponse.success("승인 통계를 조회했습니다.", stats));
     }
 }

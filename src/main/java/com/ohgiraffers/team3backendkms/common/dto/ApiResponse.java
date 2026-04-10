@@ -27,6 +27,16 @@ public class ApiResponse<T> {
 			.build();
 	}
 
+	/* 성공 응답 생성 정적 메서드 - 메시지 포함 */
+	public static <T> ApiResponse<T> success(String message, T data) {
+		return ApiResponse.<T>builder()
+			.success(true)
+			.data(data)
+			.message(message)
+			.timestamp(LocalDateTime.now())
+			.build();
+	}
+
 	/* 실패 응답 생성 정적 메서드 */
 	public static <T> ApiResponse<T> failure(String errorCode, String message) {
 		return ApiResponse.<T>builder()

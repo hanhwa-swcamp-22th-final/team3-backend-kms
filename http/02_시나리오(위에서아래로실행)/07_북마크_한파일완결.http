@@ -1,0 +1,38 @@
+@kmsHost = http://localhost:8083
+@authHost = http://localhost:8080
+@employeeId = 1775612047560224
+@articleId = 1775784139661161
+
+### 테스트명: 북마크 추가 -> 목록 조회 -> 북마크 해제
+### 실행 순서: 위에서 아래로 1개만 실행
+
+### [0] 작업자 로그인 | 결과: workerAccessToken 저장
+POST {{authHost}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "employeeEmail": "woojin.jung@seto.com",
+  "password": "password123"
+}
+
+> {%
+    client.global.set("workerAccessToken", response.body.data.accessToken);
+%}
+
+### [1] 북마크 추가 | 기대: 201
+POST {{kmsHost}}/api/kms/bookmarks
+Content-Type: application/json
+Authorization: Bearer {{workerAccessToken}}
+
+{
+  "articleId": {{articleId}},
+  "employeeId": {{employeeId}}
+}
+
+### [2] 내 북마크 목록 조회 | 기대: 200
+GET {{kmsHost}}/api/kms/my/bookmarks?employeeId={{employeeId}}
+Authorization: Bearer {{workerAccessToken}}
+
+### [3] 북마크 해제 | 기대: 200
+DELETE {{kmsHost}}/api/kms/bookmarks?articleId={{articleId}}&employeeId={{employeeId}}
+Authorization: Bearer {{workerAccessToken}}

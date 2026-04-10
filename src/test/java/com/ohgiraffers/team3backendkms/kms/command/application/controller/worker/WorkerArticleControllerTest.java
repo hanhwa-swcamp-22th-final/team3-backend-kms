@@ -63,7 +63,8 @@ class WorkerArticleControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("문서 등록이 완료되었고 승인 대기 상태로 접수되었습니다."));
         }
 
         @Test

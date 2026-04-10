@@ -26,7 +26,8 @@ public class WorkerBookmarkController {
     public ResponseEntity<ApiResponse<Void>> addBookmark(
             @Valid @RequestBody BookmarkCreateRequest request) {
         bookmarkCommandService.addBookmark(request.getArticleId(), request.getEmployeeId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("북마크가 추가되었습니다.", null));
     }
 
     // 북마크 취소 — param: articleId, employeeId
@@ -35,6 +36,6 @@ public class WorkerBookmarkController {
             @RequestParam Long articleId,
             @RequestParam Long employeeId) {
         bookmarkCommandService.removeBookmark(articleId, employeeId);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success("북마크가 해제되었습니다.", null));
     }
 }

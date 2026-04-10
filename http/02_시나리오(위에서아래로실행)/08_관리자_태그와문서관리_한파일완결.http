@@ -1,0 +1,76 @@
+@kmsHost = http://localhost:8083
+@authHost = http://localhost:8080
+@tagId = 1775544386810690
+@articleId = 1775784139661161
+
+### 테스트명: 관리자 태그 관리 + 관리자 문서 관리
+### 실행 순서: 위에서 아래로 1개만 실행
+
+### [0] 관리자 로그인 | 결과: adminAccessToken 저장
+POST {{authHost}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "employeeEmail": "hyunsu.kim@seto.com",
+  "password": "password123"
+}
+
+> {%
+    client.global.set("adminAccessToken", response.body.data.accessToken);
+%}
+
+### [1] 태그 목록 조회 | 기대: 200
+GET {{kmsHost}}/api/kms/tags
+Authorization: Bearer {{adminAccessToken}}
+
+### [2] 태그 생성 | 기대: 201
+POST {{kmsHost}}/api/kms/admin/articles/tags
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "tagName": "HTTP시나리오태그"
+}
+
+> {%
+    client.global.set("tagId", String(response.body.data));
+%}
+
+### [3] 태그 수정 | 기대: 200
+PUT {{kmsHost}}/api/kms/admin/articles/tags
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "tagId": {{tagId}},
+  "tagName": "HTTP시나리오태그수정"
+}
+
+### [4] 관리자 문서 수정 | 기대: 200
+PUT {{kmsHost}}/api/kms/admin/articles/{{articleId}}
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "title": "관리자 단일 시나리오 수정 문서 제목",
+  "category": "TROUBLESHOOTING",
+  "content": "관리자 문서 수정 시나리오입니다. 상태는 유지된 채 제목과 본문이 수정되는지 확인하기 위한 충분한 길이의 본문을 넣습니다."
+}
+
+### [5] 관리자 문서 삭제 | 기대: 200
+DELETE {{kmsHost}}/api/kms/admin/articles/{{articleId}}
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "deletionReason": "HTTP 단일 시나리오에서 관리자 삭제 동작을 확인하기 위한 사유입니다."
+}
+
+### [6] 태그 삭제 | 기대: 200
+DELETE {{kmsHost}}/api/kms/admin/articles/tags
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "tagId": {{tagId}}
+}

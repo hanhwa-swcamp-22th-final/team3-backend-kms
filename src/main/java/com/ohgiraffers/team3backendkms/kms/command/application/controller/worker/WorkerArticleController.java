@@ -27,7 +27,8 @@ public class WorkerArticleController {
 
     /* 지식 문서 등록 (PENDING) */
     @PostMapping
-    public ResponseEntity<ApiResponse<Long>> register(@Valid @RequestBody ArticleRegisterRequest request) {
+    public ResponseEntity<ApiResponse<Long>> register(
+            @Valid @RequestBody ArticleRegisterRequest request) {
         Long articleId = knowledgeArticleCommandService.register(
                 request.getAuthorId(),
                 request.getEquipmentId(),
@@ -35,7 +36,8 @@ public class WorkerArticleController {
                 request.getCategory(),
                 request.getContent()
         );
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(articleId));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("문서 등록이 완료되었고 승인 대기 상태로 접수되었습니다.", articleId));
     }
 
     /* 지식 문서 임시저장 (DRAFT) */
@@ -48,7 +50,8 @@ public class WorkerArticleController {
                 request.getCategory(),
                 request.getContent()
         );
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(articleId));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("문서가 임시저장되었습니다.", articleId));
     }
 
     /* 지식 문서 수정 (Worker) */
@@ -65,7 +68,7 @@ public class WorkerArticleController {
                 request.getContent(),
                 request.getAuthorId()
         );
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success("임시저장 문서가 수정되었습니다.", null));
     }
 
     /* 승인된 지식 문서 수정 시작 (복사본 생성/조회) */
@@ -75,7 +78,7 @@ public class WorkerArticleController {
             @Valid @RequestBody ArticleRevisionStartRequest request
     ) {
         Long revisionArticleId = knowledgeArticleCommandService.startRevision(articleId, request.getRequesterId());
-        return ResponseEntity.ok(ApiResponse.success(revisionArticleId));
+        return ResponseEntity.ok(ApiResponse.success("수정본 작업을 위한 초안이 생성되었습니다.", revisionArticleId));
     }
 
     /* 임시저장 문서 제출 (DRAFT -> PENDING) */
@@ -92,7 +95,7 @@ public class WorkerArticleController {
                 request.getContent(),
                 request.getAuthorId()
         );
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success("임시저장 문서가 제출되었고 승인 대기 상태로 변경되었습니다.", null));
     }
 
     /* 지식 문서 삭제 (Worker) */
@@ -102,7 +105,7 @@ public class WorkerArticleController {
             @Valid @RequestBody ArticleDeleteRequest request
     ) {
         knowledgeArticleCommandService.delete(articleId, request.getRequesterId());
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success("문서가 삭제되었습니다.", null));
     }
 
     /* 게시글 태그 연결 (전체 교체) */
@@ -112,6 +115,6 @@ public class WorkerArticleController {
             @Valid @RequestBody KnowledgeArticleTagUpdateRequest request
     ) {
         knowledgeArticleTagCommandService.updateArticleTags(articleId, request.getTagIds());
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success("문서 태그가 수정되었습니다.", null));
     }
 }

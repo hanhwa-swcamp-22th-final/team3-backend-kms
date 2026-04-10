@@ -1,0 +1,20 @@
+@kmsHost = http://localhost:8083
+@workerId = 1775612047560224
+@teamLeaderId = 1775611674533123
+@departmentLeaderId = 1775611849849457
+@adminId = 1774850514911459
+@hrmId = 1775611890201688
+@articleId = 1775784139661161
+
+### [상태 변경: APPROVED 원본 기준 수정본 생성 -> 새 DRAFT] 승인 완료 문서 수정 시작 | 기대: 200 | 핵심 확인: 새 draftArticleId 생성
+PUT {{kmsHost}}/api/kms/articles/{{articleId}}/revision
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "requesterId": {{workerId}}
+}
+
+> {%
+    client.global.set("draftArticleId", String(response.body.data));
+%}

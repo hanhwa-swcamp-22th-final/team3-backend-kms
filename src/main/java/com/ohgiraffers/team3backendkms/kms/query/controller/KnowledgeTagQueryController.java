@@ -22,6 +22,6 @@ public class KnowledgeTagQueryController {
     @GetMapping("/tags")
     public ResponseEntity<ApiResponse<List<KnowledgeTagReadDto>>> getAllTags() {
         List<KnowledgeTagReadDto> tags = knowledgeTagQueryService.getAllTags();
-        return ResponseEntity.ok(ApiResponse.success(tags));
+        return ResponseEntity.ok(ApiResponse.success("전체 태그 목록을 조회했습니다.", tags));
     }
 }

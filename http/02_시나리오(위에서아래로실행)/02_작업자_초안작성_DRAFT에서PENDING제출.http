@@ -1,0 +1,65 @@
+@kmsHost = http://localhost:8083
+@authHost = http://localhost:8080
+@workerId = 1775612047560224
+@equipmentId = 1774836457838985
+
+### 테스트명: 작업자 초안 작성 -> DRAFT 유지 수정 -> PENDING 제출
+### 실행 순서: 위에서 아래로 1개만 실행
+
+### [0] 작업자 로그인 | 결과: workerAccessToken 저장
+POST {{authHost}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "employeeEmail": "woojin.jung@seto.com",
+  "password": "password123"
+}
+
+> {%
+    client.global.set("workerAccessToken", response.body.data.accessToken);
+%}
+
+### [1] 초안 저장 | 상태 결과: 생성 즉시 DRAFT | 기대: 201
+POST {{kmsHost}}/api/kms/articles/drafts
+Content-Type: application/json
+Authorization: Bearer {{workerAccessToken}}
+
+{
+  "authorId": {{workerId}},
+  "title": "HTTP 단일 시나리오 테스트 - 초안 문서",
+  "category": "ETC",
+  "equipmentId": {{equipmentId}},
+  "content": "초안 생성 단계입니다. 이 시점의 문서 상태는 DRAFT 여야 하고 이후 같은 draftArticleId로 수정과 제출을 연속으로 확인합니다."
+}
+
+> {%
+    client.global.set("draftArticleId", String(response.body.data));
+%}
+
+### [2] 같은 초안 수정 | 상태 변화: DRAFT -> DRAFT | 기대: 200
+PUT {{kmsHost}}/api/kms/articles/{{draftArticleId}}
+Content-Type: application/json
+Authorization: Bearer {{workerAccessToken}}
+
+{
+  "authorId": {{workerId}},
+  "title": "HTTP 단일 시나리오 테스트 - 수정된 초안 제목",
+  "category": "ETC",
+  "equipmentId": {{equipmentId}},
+  "content": "같은 draftArticleId를 다시 수정하는 단계입니다. 상태는 그대로 DRAFT 이어야 하고 새 문서를 만들면 안 됩니다. 그래서 한 파일 안에서 연속으로 확인합니다."
+}
+
+### [3] 같은 초안 제출 | 상태 변화: DRAFT -> PENDING | 기대: 200
+PUT {{kmsHost}}/api/kms/articles/{{draftArticleId}}/submit
+Content-Type: application/json
+Authorization: Bearer {{workerAccessToken}}
+
+{
+  "authorId": {{workerId}},
+  "title": "HTTP 단일 시나리오 테스트 - 제출할 초안 제목",
+  "category": "ETC",
+  "equipmentId": {{equipmentId}},
+  "content": "초안 제출 단계입니다. 제출이 성공하면 문서 상태는 DRAFT 에서 PENDING 으로 변경되어야 합니다. 본문 길이와 장비 ID 조건도 함께 만족합니다."
+}
+
+
