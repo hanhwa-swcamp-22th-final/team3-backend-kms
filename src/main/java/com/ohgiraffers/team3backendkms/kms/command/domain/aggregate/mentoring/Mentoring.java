@@ -1,4 +1,4 @@
-package com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringrequest;
+package com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoring;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,35 +21,22 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "mentoring_request")
+@Table(name = "mentoring")
 @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-public class MentoringRequest {
+public class Mentoring {
 
     @Id
+    private Long mentoringId;
     private Long requestId;
-    private Long menteeId;
     private Long mentorId;
-    private Long articleId;
-    private String mentoringField;
-    private String requestTitle;
-    private String requestContent;
-    private Integer mentoringDurationWeeks;
-    private String mentoringFrequency;
+    private Long menteeId;
 
     @Enumerated(EnumType.STRING)
-    private RequestPriority requestPriority;
-
-    @Enumerated(EnumType.STRING)
-    private MentoringRequestStatus requestStatus;
-
-    private String rejectReason;
-
-    @Column(columnDefinition = "json")
-    private String rejectedMentorIds;
+    private MentoringStatus mentoringStatus;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
@@ -66,10 +53,4 @@ public class MentoringRequest {
     @LastModifiedBy
     @Column(name = "updated_by")
     private Long updatedBy;
-
-    public void accept(Long mentorId) {
-        this.mentorId = mentorId;
-        this.requestStatus = MentoringRequestStatus.ACCEPTED;
-        this.rejectReason = null;
-    }
 }

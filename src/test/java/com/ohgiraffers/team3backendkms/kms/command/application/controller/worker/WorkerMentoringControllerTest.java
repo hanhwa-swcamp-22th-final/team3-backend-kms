@@ -78,6 +78,26 @@ class WorkerMentoringControllerTest {
         }
     }
 
+    @Nested
+    @DisplayName("POST /api/kms/mentoring/requests/{requestId}/accept")
+    class AcceptRequest {
+
+        @Test
+        @DisplayName("Accept mentoring request API success: return successful response")
+        void acceptRequest_success() throws Exception {
+            given(mentoringCommandService.acceptRequest(anyLong(), anyLong()))
+                    .willReturn(300L);
+
+            mockMvc.perform(post(BASE_URL + "/100/accept")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(Map.of("mentorId", 20))))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("멘토링 요청이 수락되었고 진행 중 상태가 시작되었습니다."))
+                    .andExpect(jsonPath("$.data").value(300));
+        }
+    }
+
     private Map<String, Object> createRequestBody() {
         return new java.util.HashMap<>(Map.of(
                 "menteeId", 10,

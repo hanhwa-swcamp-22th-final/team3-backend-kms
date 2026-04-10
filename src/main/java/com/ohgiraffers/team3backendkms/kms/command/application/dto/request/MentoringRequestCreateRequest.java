@@ -1,6 +1,7 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.dto.request;
 
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringrequest.RequestPriority;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -14,6 +15,7 @@ public class MentoringRequestCreateRequest {
     @Positive(message = "신청자 ID는 양수여야 합니다.")
     private Long menteeId;
 
+    @NotNull(message = "문서 ID는 필수입니다.")
     @Positive(message = "문서 ID는 양수여야 합니다.")
     private Long articleId;
 

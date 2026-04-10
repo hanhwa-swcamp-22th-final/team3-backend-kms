@@ -4,6 +4,8 @@ import com.ohgiraffers.team3backendkms.common.exception.BusinessException;
 import com.ohgiraffers.team3backendkms.common.exception.MentoringErrorCode;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.common.idgenerator.IdGenerator;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoring.Mentoring;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoring.MentoringStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringemployee.EmployeeStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringemployee.EmployeeTier;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringemployee.MentoringEmployee;
@@ -11,8 +13,10 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringemp
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringrequest.MentoringRequest;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringrequest.MentoringRequestStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringrequest.RequestPriority;
+import com.ohgiraffers.team3backendkms.kms.command.domain.repository.EmployeeMentoringFieldRepository;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.MentoringEmployeeRepository;
+import com.ohgiraffers.team3backendkms.kms.command.domain.repository.MentoringRepository;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.MentoringRequestRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -45,6 +49,12 @@ class MentoringCommandServiceTest {
 
     @Mock
     private MentoringEmployeeRepository mentoringEmployeeRepository;
+
+    @Mock
+    private EmployeeMentoringFieldRepository employeeMentoringFieldRepository;
+
+    @Mock
+    private MentoringRepository mentoringRepository;
 
     @Mock
     private KnowledgeArticleRepository knowledgeArticleRepository;
@@ -123,6 +133,75 @@ class MentoringCommandServiceTest {
             );
 
             assertEquals(MentoringErrorCode.MENTORING_REQUEST_001, exception.getErrorCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("acceptRequest()")
+    class AcceptRequest {
+
+        @Test
+        @DisplayName("Accepts request and creates mentoring with IN_PROGRESS status")
+        void acceptRequest_success() {
+            MentoringRequest mentoringRequest = MentoringRequest.builder()
+                    .requestId(10L)
+                    .menteeId(1L)
+                    .articleId(11L)
+                    .mentoringField("설비보전")
+                    .requestTitle("설비보전 멘토링 요청")
+                    .requestContent("설비보전 기준과 고장 대응 순서에 대한 멘토링을 받고 싶습니다.")
+                    .requestStatus(MentoringRequestStatus.PENDING)
+                    .build();
+            MentoringEmployee mentor = MentoringEmployee.builder()
+                    .employeeId(2L)
+                    .employeeRole(MentoringEmployeeRole.WORKER)
+                    .employeeTier(EmployeeTier.A)
+                    .employeeStatus(EmployeeStatus.ACTIVE)
+                    .build();
+
+            given(mentoringRequestRepository.findById(10L)).willReturn(Optional.of(mentoringRequest));
+            given(mentoringEmployeeRepository.findById(2L)).willReturn(Optional.of(mentor));
+            given(employeeMentoringFieldRepository.existsByEmployeeIdAndMentoringField(2L, "설비보전")).willReturn(true);
+            given(mentoringRepository.existsByRequestId(10L)).willReturn(false);
+            given(idGenerator.generate()).willReturn(200L);
+            given(mentoringRepository.save(any(Mentoring.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+            Long mentoringId = mentoringCommandService.acceptRequest(10L, 2L);
+
+            ArgumentCaptor<Mentoring> captor = ArgumentCaptor.forClass(Mentoring.class);
+            verify(mentoringRepository).save(captor.capture());
+            assertEquals(200L, mentoringId);
+            assertEquals(MentoringStatus.IN_PROGRESS, captor.getValue().getMentoringStatus());
+            assertEquals(MentoringRequestStatus.ACCEPTED, mentoringRequest.getRequestStatus());
+        }
+
+        @Test
+        @DisplayName("Throws exception when mentor is not eligible for field")
+        void acceptRequest_whenMentorIsNotEligible_thenThrowException() {
+            MentoringRequest mentoringRequest = MentoringRequest.builder()
+                    .requestId(10L)
+                    .menteeId(1L)
+                    .articleId(11L)
+                    .mentoringField("설비보전")
+                    .requestTitle("설비보전 멘토링 요청")
+                    .requestContent("설비보전 기준과 고장 대응 순서에 대한 멘토링을 받고 싶습니다.")
+                    .requestStatus(MentoringRequestStatus.PENDING)
+                    .build();
+            MentoringEmployee mentor = MentoringEmployee.builder()
+                    .employeeId(2L)
+                    .employeeRole(MentoringEmployeeRole.WORKER)
+                    .employeeTier(EmployeeTier.B)
+                    .employeeStatus(EmployeeStatus.ACTIVE)
+                    .build();
+
+            given(mentoringRequestRepository.findById(10L)).willReturn(Optional.of(mentoringRequest));
+            given(mentoringEmployeeRepository.findById(2L)).willReturn(Optional.of(mentor));
+
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    mentoringCommandService.acceptRequest(10L, 2L)
+            );
+
+            assertEquals(MentoringErrorCode.MENTORING_REQUEST_008, exception.getErrorCode());
         }
     }
 }
