@@ -98,6 +98,22 @@ class WorkerMentoringControllerTest {
         }
     }
 
+    @Nested
+    @DisplayName("POST /api/kms/mentoring/requests/{requestId}/reject")
+    class RejectRequest {
+
+        @Test
+        @DisplayName("Reject mentoring request API success: return successful response")
+        void rejectRequest_success() throws Exception {
+            mockMvc.perform(post(BASE_URL + "/100/reject")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(Map.of("mentorId", 20))))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("멘토 개인 거절이 처리되어 해당 요청이 내 목록에서 제외되었습니다."));
+        }
+    }
+
     private Map<String, Object> createRequestBody() {
         return new java.util.HashMap<>(Map.of(
                 "menteeId", 10,

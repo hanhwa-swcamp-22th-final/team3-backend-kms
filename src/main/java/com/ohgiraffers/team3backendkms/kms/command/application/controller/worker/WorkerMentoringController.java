@@ -49,4 +49,13 @@ public class WorkerMentoringController {
         Long mentoringId = mentoringCommandService.acceptRequest(requestId, request.getMentorId());
         return ResponseEntity.ok(ApiResponse.success("멘토링 요청이 수락되었고 진행 중 상태가 시작되었습니다.", mentoringId));
     }
+
+    @PostMapping("/{requestId}/reject")
+    public ResponseEntity<ApiResponse<Void>> rejectRequest(
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long requestId,
+            @Valid @RequestBody MentoringRequestAcceptRequest request
+    ) {
+        mentoringCommandService.rejectRequest(requestId, request.getMentorId());
+        return ResponseEntity.ok(ApiResponse.success("멘토 개인 거절이 처리되어 해당 요청이 내 목록에서 제외되었습니다.", null));
+    }
 }

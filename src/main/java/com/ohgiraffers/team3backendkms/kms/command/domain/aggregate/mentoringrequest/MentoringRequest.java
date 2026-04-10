@@ -19,6 +19,10 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "mentoring_request")
@@ -71,5 +75,36 @@ public class MentoringRequest {
         this.mentorId = mentorId;
         this.requestStatus = MentoringRequestStatus.ACCEPTED;
         this.rejectReason = null;
+    }
+
+    public void rejectByMentor(Long mentorId) {
+        Set<String> rejectedIds = parseRejectedMentorIds();
+        rejectedIds.add(String.valueOf(mentorId));
+        this.rejectedMentorIds = rejectedIds.stream()
+                .collect(Collectors.joining(",", "[", "]"));
+    }
+
+    public boolean hasRejectedMentor(Long mentorId) {
+        return parseRejectedMentorIds().contains(String.valueOf(mentorId));
+    }
+
+    private Set<String> parseRejectedMentorIds() {
+        if (rejectedMentorIds == null || rejectedMentorIds.isBlank()) {
+            return new LinkedHashSet<>();
+        }
+
+        String normalized = rejectedMentorIds
+                .replace("[", "")
+                .replace("]", "")
+                .trim();
+
+        if (normalized.isBlank()) {
+            return new LinkedHashSet<>();
+        }
+
+        return Arrays.stream(normalized.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 }

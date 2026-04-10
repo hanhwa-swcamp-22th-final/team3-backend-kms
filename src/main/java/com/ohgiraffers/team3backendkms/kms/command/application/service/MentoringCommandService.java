@@ -102,6 +102,22 @@ public class MentoringCommandService {
         return mentoringRepository.save(mentoring).getMentoringId();
     }
 
+    public void rejectRequest(Long requestId, Long mentorId) {
+        MentoringRequest mentoringRequest = mentoringRequestRepository.findById(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException(MentoringErrorCode.MENTORING_REQUEST_006));
+
+        MentoringEmployee mentor = mentoringEmployeeRepository.findById(mentorId)
+                .orElseThrow(() -> new ResourceNotFoundException(MentoringErrorCode.MENTORING_REQUEST_004));
+
+        validateMentorEligibility(mentoringRequest, mentor);
+
+        if (mentoringRequest.hasRejectedMentor(mentorId)) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_REQUEST_012);
+        }
+
+        mentoringRequest.rejectByMentor(mentorId);
+    }
+
     private void validateMenteeEligibility(MentoringEmployee mentee) {
         if (mentee.getEmployeeStatus() != EmployeeStatus.ACTIVE) {
             throw new BusinessException(MentoringErrorCode.MENTORING_REQUEST_002);

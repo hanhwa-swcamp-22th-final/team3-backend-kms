@@ -36,6 +36,7 @@ import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -202,6 +203,72 @@ class MentoringCommandServiceTest {
             );
 
             assertEquals(MentoringErrorCode.MENTORING_REQUEST_008, exception.getErrorCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("rejectRequest()")
+    class RejectRequest {
+
+        @Test
+        @DisplayName("Adds mentor to rejected mentor ids and keeps request PENDING")
+        void rejectRequest_success() {
+            MentoringRequest mentoringRequest = MentoringRequest.builder()
+                    .requestId(10L)
+                    .menteeId(1L)
+                    .articleId(11L)
+                    .mentoringField("설비보전")
+                    .requestTitle("설비보전 멘토링 요청")
+                    .requestContent("설비보전 기준과 고장 대응 순서에 대한 멘토링을 받고 싶습니다.")
+                    .requestStatus(MentoringRequestStatus.PENDING)
+                    .rejectedMentorIds(null)
+                    .build();
+            MentoringEmployee mentor = MentoringEmployee.builder()
+                    .employeeId(2L)
+                    .employeeRole(MentoringEmployeeRole.TL)
+                    .employeeTier(EmployeeTier.A)
+                    .employeeStatus(EmployeeStatus.ACTIVE)
+                    .build();
+
+            given(mentoringRequestRepository.findById(10L)).willReturn(Optional.of(mentoringRequest));
+            given(mentoringEmployeeRepository.findById(2L)).willReturn(Optional.of(mentor));
+            given(employeeMentoringFieldRepository.existsByEmployeeIdAndMentoringField(2L, "설비보전")).willReturn(true);
+
+            mentoringCommandService.rejectRequest(10L, 2L);
+
+            assertEquals(MentoringRequestStatus.PENDING, mentoringRequest.getRequestStatus());
+            assertEquals("[2]", mentoringRequest.getRejectedMentorIds());
+        }
+
+        @Test
+        @DisplayName("Throws exception when same mentor rejects twice")
+        void rejectRequest_whenMentorAlreadyRejected_thenThrowException() {
+            MentoringRequest mentoringRequest = MentoringRequest.builder()
+                    .requestId(10L)
+                    .menteeId(1L)
+                    .articleId(11L)
+                    .mentoringField("설비보전")
+                    .requestTitle("설비보전 멘토링 요청")
+                    .requestContent("설비보전 기준과 고장 대응 순서에 대한 멘토링을 받고 싶습니다.")
+                    .requestStatus(MentoringRequestStatus.PENDING)
+                    .rejectedMentorIds("[2]")
+                    .build();
+            MentoringEmployee mentor = MentoringEmployee.builder()
+                    .employeeId(2L)
+                    .employeeRole(MentoringEmployeeRole.DL)
+                    .employeeTier(EmployeeTier.S)
+                    .employeeStatus(EmployeeStatus.ACTIVE)
+                    .build();
+
+            given(mentoringRequestRepository.findById(10L)).willReturn(Optional.of(mentoringRequest));
+            given(mentoringEmployeeRepository.findById(2L)).willReturn(Optional.of(mentor));
+            given(employeeMentoringFieldRepository.existsByEmployeeIdAndMentoringField(2L, "설비보전")).willReturn(true);
+
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    mentoringCommandService.rejectRequest(10L, 2L)
+            );
+
+            assertEquals(MentoringErrorCode.MENTORING_REQUEST_012, exception.getErrorCode());
         }
     }
 }

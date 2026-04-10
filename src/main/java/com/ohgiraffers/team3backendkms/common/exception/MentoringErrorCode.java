@@ -16,7 +16,8 @@ public enum MentoringErrorCode implements ErrorCode {
     MENTORING_REQUEST_008(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[MENTORING_REQUEST_008] 해당 요청을 수락할 수 있는 멘토 권한이 없습니다."),
     MENTORING_REQUEST_009(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[MENTORING_REQUEST_009] 본인이 등록한 멘토링 요청은 직접 수락할 수 없습니다."),
     MENTORING_REQUEST_010(HttpStatus.CONFLICT, "CONFLICT", "[MENTORING_REQUEST_010] 이미 수락되어 진행 중인 멘토링 요청입니다."),
-    MENTORING_REQUEST_011(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[MENTORING_REQUEST_011] 멘토링 요청에는 연결 문서가 필수입니다.");
+    MENTORING_REQUEST_011(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[MENTORING_REQUEST_011] 멘토링 요청에는 연결 문서가 필수입니다."),
+    MENTORING_REQUEST_012(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[MENTORING_REQUEST_012] 이미 이 요청을 거절한 멘토입니다.");
 
     private final HttpStatus status;
     private final String code;
