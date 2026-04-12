@@ -62,7 +62,7 @@
             </otherwise>
         </choose>
         <if test="page != null and size != null">
-            LIMIT #{size} OFFSET #{page} * #{size}
+            LIMIT #{size} OFFSET #{offset}
         </if>
     </select>
 
@@ -176,7 +176,7 @@
             </otherwise>
         </choose>
         <if test="page != null and size != null">
-            LIMIT #{size} OFFSET #{page} * #{size}
+            LIMIT #{size} OFFSET #{offset}
         </if>
     </select>
 
