@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeEquipmentMapper">
+
+    <select id="findAllEquipments"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.EquipmentReadDto">
+        SELECT
+            equipment_id   AS equipmentId,
+            equipment_name AS equipmentName
+        FROM equipment
+        ORDER BY equipment_name ASC, equipment_id ASC
+    </select>
+
+</mapper>
