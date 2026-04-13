@@ -16,11 +16,13 @@
             ka.article_id       AS articleId,
             ka.author_id        AS authorId,
             e.employee_name     AS authorName,
+            e.employee_tier     AS authorTier,
             ka.article_title    AS articleTitle,
             ka.article_category AS articleCategory,
             ka.article_status   AS articleStatus,
             ka.view_count       AS viewCount,
             ka.created_at       AS createdAt,
+            ka.is_deleted       AS deleted,
             EXISTS(
                 SELECT 1
                 FROM knowledge_bookmark kb
@@ -85,6 +87,7 @@
             ka.article_id               AS articleId,
             ka.author_id                AS authorId,
             e.employee_name             AS authorName,
+            e.employee_tier             AS authorTier,
             ka.article_title            AS articleTitle,
             ka.article_category         AS articleCategory,
             ka.equipment_id             AS equipmentId,
@@ -93,6 +96,7 @@
             ka.article_status           AS articleStatus,
             ka.article_approval_opinion AS articleApprovalOpinion,
             ka.article_rejection_reason AS articleRejectionReason,
+            ka.article_deletion_reason  AS articleDeletionReason,
             ka.view_count               AS viewCount,
             0                           AS commentCount,
             (
@@ -100,6 +104,7 @@
                 FROM knowledge_edit_history keh
                 WHERE keh.article_id = ka.article_id
             )                           AS reuseCount,
+            ka.is_deleted               AS deleted,
             EXISTS(
                 SELECT 1
                 FROM knowledge_bookmark kb
@@ -112,7 +117,6 @@
         LEFT JOIN employee e ON ka.author_id = e.employee_id
         LEFT JOIN equipment eq ON ka.equipment_id = eq.equipment_id
         WHERE ka.article_id = #{articleId}
-          AND ka.is_deleted = false
     </select>
 
     <!-- KMS 허브 통계 조회 -->
@@ -199,6 +203,7 @@
         SELECT
             ka.author_id     AS employeeId,
             e.employee_name  AS employeeName,
+            e.employee_tier  AS employeeTier,
             COUNT(*)         AS articleCount,
             COALESCE(SUM(ka.view_count), 0) AS totalViewCount,
             ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC, COALESCE(SUM(ka.view_count), 0) DESC, ka.author_id) AS rank
@@ -363,6 +368,7 @@
             eq.equipment_name   AS equipmentName,
             ka.article_content          AS articleContent,
             ka.article_rejection_reason AS articleRejectionReason,
+            ka.article_deletion_reason  AS articleDeletionReason,
             ka.view_count               AS viewCount,
             0                   AS commentCount,
             (
@@ -370,12 +376,12 @@
                 FROM knowledge_edit_history keh
                 WHERE keh.article_id = ka.article_id
             )                   AS reuseCount,
+            ka.is_deleted       AS deleted,
             ka.created_at       AS createdAt,
             ka.updated_at       AS updatedAt
         FROM knowledge_article ka
         LEFT JOIN equipment eq ON ka.equipment_id = eq.equipment_id
         WHERE ka.author_id = #{authorId}
-          AND ka.is_deleted = false
         <if test="status != null">
             AND ka.article_status = #{status}
         </if>

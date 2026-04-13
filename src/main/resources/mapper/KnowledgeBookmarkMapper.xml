@@ -12,6 +12,7 @@
             ka.article_id       AS articleId,
             ka.author_id        AS authorId,
             e.employee_name     AS authorName,
+            e.employee_tier     AS authorTier,
             ka.article_title    AS articleTitle,
             ka.article_category AS articleCategory,
             ka.article_status   AS articleStatus,

@@ -125,6 +125,12 @@ public class KnowledgeArticle {
         this.articleDeletionReason = reason;
     }
 
+    public void restore() {
+        this.isDeleted = false;
+        this.deletedAt = null;
+        this.articleDeletionReason = null;
+    }
+
     /* PENDING 유지 — articleApprovalOpinion 저장 (보류) */
     public void hold(Long approverId, String reviewComment) {
         this.approvedBy = approverId;

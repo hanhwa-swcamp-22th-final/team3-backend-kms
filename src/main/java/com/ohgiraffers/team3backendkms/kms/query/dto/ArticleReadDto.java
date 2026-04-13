@@ -16,10 +16,12 @@ public class ArticleReadDto {
     private Long articleId;
     private Long authorId;
     private String authorName;
+    private String authorTier;
     private String articleTitle;
     private ArticleCategory articleCategory;
     private ArticleStatus articleStatus;
     private Integer viewCount;
     private LocalDateTime createdAt;
     private Boolean bookmarked;
+    private Boolean deleted;
 }

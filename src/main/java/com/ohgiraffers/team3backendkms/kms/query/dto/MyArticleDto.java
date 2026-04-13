@@ -24,9 +24,11 @@ public class MyArticleDto {
     private String equipmentName;
     private String articleContent;
     private String articleRejectionReason;
+    private String articleDeletionReason;
     private Integer viewCount;
     private Integer commentCount;
     private Integer reuseCount;
+    private Boolean deleted;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<KnowledgeTagReadDto> tags;
