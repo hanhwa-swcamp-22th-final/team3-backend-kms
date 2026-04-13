@@ -45,6 +45,9 @@ class KnowledgeArticleCommandServiceTest {
     @Mock
     private IdGenerator idGenerator;
 
+    @Mock
+    private KnowledgeArticleViewGuardService knowledgeArticleViewGuardService;
+
     private KnowledgeArticle pendingArticle;
     private KnowledgeArticle draftArticle;
     private KnowledgeArticle approvedArticle;
@@ -150,9 +153,11 @@ class KnowledgeArticleCommandServiceTest {
             // given
             given(knowledgeArticleRepository.findById(3L))
                     .willReturn(Optional.of(approvedArticle));
+            given(knowledgeArticleViewGuardService.shouldIncrease(3L, 1L))
+                    .willReturn(true);
 
             // when
-            knowledgeArticleCommandService.incrementViewCount(3L);
+            knowledgeArticleCommandService.incrementViewCount(3L, 1L);
 
             // then
             assertEquals(1, approvedArticle.getViewCount());
@@ -166,7 +171,7 @@ class KnowledgeArticleCommandServiceTest {
                     .willReturn(Optional.of(draftArticle));
 
             // when
-            knowledgeArticleCommandService.incrementViewCount(2L);
+            knowledgeArticleCommandService.incrementViewCount(2L, 1L);
 
             // then
             assertEquals(0, draftArticle.getViewCount());
@@ -230,18 +235,17 @@ class KnowledgeArticleCommandServiceTest {
         }
 
         @Test
-        @DisplayName("Throws exception when status is PENDING (ARTICLE_010)")
-        void delete_PendingArticle_ThrowsException() {
+        @DisplayName("Allows deleting PENDING article when requester is the author")
+        void delete_PendingArticle_Success() {
             // given
             given(knowledgeArticleRepository.findById(1L))
                     .willReturn(Optional.of(pendingArticle));
 
-            // when & then
-            BusinessException exception = assertThrows(BusinessException.class, () ->
-                    knowledgeArticleCommandService.delete(1L, 1L)
-            );
+            // when
+            knowledgeArticleCommandService.delete(1L, 1L);
 
-            assertEquals(ArticleErrorCode.ARTICLE_010, exception.getErrorCode());
+            // then
+            assertTrue(pendingArticle.getIsDeleted());
         }
     }
 
@@ -346,8 +350,8 @@ class KnowledgeArticleCommandServiceTest {
         }
 
         @Test
-        @DisplayName("Updates article and keeps status as PENDING when PENDING")
-        void submitDraft_PendingArticle_Success() {
+        @DisplayName("Throws exception when article status is already PENDING")
+        void submitDraft_PendingArticle_ThrowsException() {
             // given
             String newTitle = "승인대기 중 다시 수정한 제목입니다";
             ArticleCategory newCategory = ArticleCategory.PROCESS_IMPROVEMENT;
@@ -357,15 +361,12 @@ class KnowledgeArticleCommandServiceTest {
             given(knowledgeArticleRepository.findById(1L))
                     .willReturn(Optional.of(pendingArticle));
 
-            // when
-            knowledgeArticleCommandService.submitDraft(1L, newTitle, newCategory, newEquipmentId, newContent, 1L);
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleCommandService.submitDraft(1L, newTitle, newCategory, newEquipmentId, newContent, 1L)
+            );
 
-            // then
-            assertEquals(newTitle, pendingArticle.getArticleTitle());
-            assertEquals(newCategory, pendingArticle.getArticleCategory());
-            assertEquals(newEquipmentId, pendingArticle.getEquipmentId());
-            assertEquals(newContent, pendingArticle.getArticleContent());
-            assertEquals(ArticleStatus.PENDING, pendingArticle.getArticleStatus());
+            assertEquals(ArticleErrorCode.ARTICLE_SUBMIT_INVALID, exception.getErrorCode());
         }
 
         @Test

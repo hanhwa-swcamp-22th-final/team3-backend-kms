@@ -402,6 +402,7 @@
         FROM knowledge_article ka
         LEFT JOIN equipment eq ON ka.equipment_id = eq.equipment_id
         WHERE ka.author_id = #{authorId}
+          AND ka.is_deleted = false
         <if test="status != null">
             AND ka.article_status = #{status}
         </if>

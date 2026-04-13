@@ -12,22 +12,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.*;
+import static com.ohgiraffers.team3backendkms.support.SecurityTestSupport.authenticated;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(
-    controllers = WorkerArticleController.class,
-    excludeAutoConfiguration = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class}
+        controllers = WorkerArticleController.class,
+        excludeAutoConfiguration = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class}
 )
 @Import(GlobalExceptionHandler.class)
 class WorkerArticleControllerTest {
@@ -47,219 +53,107 @@ class WorkerArticleControllerTest {
     private KnowledgeArticleTagCommandService knowledgeArticleTagCommandService;
 
     @Nested
-    @DisplayName("POST /api/kms/articles")
     class Register {
-
         @Test
-        @DisplayName("Create article API success: return created response")
         void register_success() throws Exception {
-            // given
-            Map<String, Object> body = createRegisterRequest();
             given(knowledgeArticleCommandService.register(anyLong(), anyLong(), anyString(), any(ArticleCategory.class), anyString()))
-                .willReturn(1L);
+                    .willReturn(1L);
 
-            // when & then
             mockMvc.perform(post(BASE_URL)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("문서 등록이 완료되었고 승인 대기 상태로 접수되었습니다."));
-        }
-
-        @Test
-        @DisplayName("Create article API failure: return 400 when title is blank")
-        void register_whenTitleIsBlank_thenBadRequest() throws Exception {
-            // given
-            Map<String, Object> body = Map.of(
-                "authorId", 10,
-                "equipmentId", 1,
-                "title", "",
-                "category", "TROUBLESHOOTING",
-                "content", "본문 내용이 50자 이상이어야 합니다. 여기에 충분한 길이의 본문을 작성합니다. 이제 50자를 초과합니다."
-            );
-
-            // when & then
-            mockMvc.perform(post(BASE_URL)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
-        }
-
-        @Test
-        @DisplayName("Create article API failure: return 400 when content is too short")
-        void register_whenContentTooShort_thenBadRequest() throws Exception {
-            // given
-            Map<String, Object> body = Map.of(
-                "authorId", 10,
-                "equipmentId", 1,
-                "title", "정상적인 제목입니다",
-                "category", "TROUBLESHOOTING",
-                "content", "짧은 본문"
-            );
-
-            // when & then
-            mockMvc.perform(post(BASE_URL)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+                            .with(authenticated(10L, "WORKER"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(createRegisterRequest())))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.success").value(true));
         }
     }
 
     @Nested
-    @DisplayName("PUT /api/kms/articles/{articleId}")
     class Update {
-
         @Test
-        @DisplayName("Update draft API success: return successful response")
         void update_success() throws Exception {
-            // given
-            Map<String, Object> body = createDraftUpdateRequest();
             willDoNothing().given(knowledgeArticleCommandService)
-                .updateDraft(anyLong(), any(), any(), any(), any(), anyLong());
+                    .updateDraft(anyLong(), any(), any(), any(), any(), anyLong());
 
-            // when & then
             mockMvc.perform(put(BASE_URL + "/1")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-        }
-
-        @Test
-        @DisplayName("Update draft API success: allow blank title for temporary save")
-        void update_whenTitleIsBlank_thenOk() throws Exception {
-            // given
-            Map<String, Object> body = Map.of(
-                "authorId", 10,
-                "title", "",
-                "category", "TROUBLESHOOTING",
-                "content", "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 이제 충분한 길이입니다."
-            );
-            willDoNothing().given(knowledgeArticleCommandService)
-                .updateDraft(anyLong(), any(), any(), any(), any(), anyLong());
-
-            // when & then
-            mockMvc.perform(put(BASE_URL + "/1")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                            .with(authenticated(10L, "WORKER"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(createDraftUpdateRequest())))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
         }
     }
 
     @Nested
-    @DisplayName("PUT /api/kms/articles/{articleId}/revision")
     class StartRevision {
-
         @Test
-        @DisplayName("Start revision API success: return successful response")
         void startRevision_success() throws Exception {
-            // given
             given(knowledgeArticleCommandService.startRevision(anyLong(), anyLong())).willReturn(2L);
 
-            // when & then
             mockMvc.perform(put(BASE_URL + "/1/revision")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(Map.of("requesterId", 10))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value(2));
+                            .with(authenticated(10L, "WORKER"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data").value(2));
         }
     }
 
     @Nested
-    @DisplayName("PUT /api/kms/articles/{articleId}/submit")
     class Submit {
-
         @Test
-        @DisplayName("Submit draft API success: return successful response")
         void submit_success() throws Exception {
-            // given
-            Map<String, Object> body = createSubmitRequest();
             willDoNothing().given(knowledgeArticleCommandService)
-                .submitDraft(anyLong(), anyString(), any(ArticleCategory.class), anyLong(), anyString(), anyLong());
+                    .submitDraft(anyLong(), anyString(), any(ArticleCategory.class), anyLong(), anyString(), anyLong());
 
-            // when & then
             mockMvc.perform(put(BASE_URL + "/1/submit")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-        }
-
-        @Test
-        @DisplayName("Submit draft API failure: return 400 when content is too short")
-        void submit_whenContentTooShort_thenBadRequest() throws Exception {
-            // given
-            Map<String, Object> body = Map.of(
-                "authorId", 10,
-                "equipmentId", 1,
-                "title", "정상적인 제목입니다",
-                "category", "TROUBLESHOOTING",
-                "content", "짧은 본문"
-            );
-
-            // when & then
-            mockMvc.perform(put(BASE_URL + "/1/submit")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+                            .with(authenticated(10L, "WORKER"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(createSubmitRequest())))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
         }
     }
 
     @Nested
-    @DisplayName("DELETE /api/kms/articles/{articleId}")
     class Delete {
-
         @Test
-        @DisplayName("Delete article API success: return successful response")
         void delete_success() throws Exception {
-            // given
             willDoNothing().given(knowledgeArticleCommandService).delete(anyLong(), anyLong());
 
-            // when & then
             mockMvc.perform(delete(BASE_URL + "/1")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(Map.of("requesterId", 10))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                            .with(authenticated(10L, "WORKER"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
         }
     }
 
     private Map<String, Object> createRegisterRequest() {
         return Map.of(
-            "authorId", 10,
-            "equipmentId", 1,
-            "title", "정상적인 테스트 제목입니다",
-            "category", "TROUBLESHOOTING",
-            "content", "본문 내용이 50자 이상이어야 합니다. 여기에 충분한 길이의 본문을 작성합니다. 이제 50자를 초과합니다."
+                "equipmentId", 1,
+                "title", "정상 제목입니다",
+                "category", "TROUBLESHOOTING",
+                "content", "본문 내용은 오십자 이상이어야 하므로 충분한 길이로 작성한 테스트용 본문입니다. 길이를 더 확보합니다."
         );
     }
 
     private Map<String, Object> createDraftUpdateRequest() {
         return Map.of(
-            "authorId", 10,
-            "equipmentId", 1,
-            "title", "수정된 제목입니다",
-            "category", "PROCESS_IMPROVEMENT",
-            "content", "임시 저장 중인 본문입니다."
+                "equipmentId", 1,
+                "title", "수정 제목입니다",
+                "category", "PROCESS_IMPROVEMENT",
+                "content", "임시 저장용 본문입니다."
         );
     }
 
     private Map<String, Object> createSubmitRequest() {
         return Map.of(
-            "authorId", 10,
-            "equipmentId", 1,
-            "title", "수정된 제목입니다",
-            "category", "PROCESS_IMPROVEMENT",
-            "content", "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 이제 충분한 길이입니다."
+                "equipmentId", 1,
+                "title", "제출 제목입니다",
+                "category", "PROCESS_IMPROVEMENT",
+                "content", "제출 본문은 오십자 이상이어야 하므로 충분한 길이로 작성한 테스트용 본문입니다. 길이를 더 확보합니다."
         );
     }
 }

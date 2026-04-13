@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
+import static com.ohgiraffers.team3backendkms.support.SecurityTestSupport.authenticated;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -96,6 +97,7 @@ class WorkerArticleControllerIntegrationTest {
         // when
         // 등록 API를 실제로 호출하고 응답 결과를 받아 둔다.
         MvcResult result = mockMvc.perform(post(BASE_URL)
+                .with(authenticated(AUTHOR_ID, "WORKER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
@@ -133,6 +135,7 @@ class WorkerArticleControllerIntegrationTest {
         // when
         // 임시저장 수정 API를 호출한다.
         mockMvc.perform(put(BASE_URL + "/{articleId}", draftArticle.getArticleId())
+                .with(authenticated(AUTHOR_ID, "WORKER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -167,6 +170,7 @@ class WorkerArticleControllerIntegrationTest {
         // when
         // 제출 API를 호출해 상태 전이를 유도한다.
         mockMvc.perform(put(BASE_URL + "/{articleId}/submit", draftArticle.getArticleId())
+                .with(authenticated(AUTHOR_ID, "WORKER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -194,6 +198,7 @@ class WorkerArticleControllerIntegrationTest {
 
         // when
         MvcResult result = mockMvc.perform(put(BASE_URL + "/{articleId}/revision", approvedArticle.getArticleId())
+                .with(authenticated(AUTHOR_ID, "WORKER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -228,6 +233,7 @@ class WorkerArticleControllerIntegrationTest {
 
         // when 1. 수정 시작
         MvcResult revisionResult = mockMvc.perform(put(BASE_URL + "/{articleId}/revision", approvedArticle.getArticleId())
+                .with(authenticated(AUTHOR_ID, "WORKER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of("requesterId", AUTHOR_ID))))
             .andExpect(status().isOk())
@@ -238,6 +244,7 @@ class WorkerArticleControllerIntegrationTest {
 
         // when 2. 재제출
         mockMvc.perform(put(BASE_URL + "/{articleId}/submit", revisionArticleId)
+                .with(authenticated(AUTHOR_ID, "WORKER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of(
                     "authorId", AUTHOR_ID,
@@ -251,7 +258,7 @@ class WorkerArticleControllerIntegrationTest {
 
         // when 3. 반려
         mockMvc.perform(post("/api/kms/tl/articles/{articleId}/approval", revisionArticleId)
-                .header("X-Employee-Id", AUTHOR_ID)
+                .with(authenticated(AUTHOR_ID, "TEAMLEADER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of(
                     "status", "REJECT",
@@ -262,6 +269,7 @@ class WorkerArticleControllerIntegrationTest {
 
         // when 4. 반려 후 수정
         mockMvc.perform(put(BASE_URL + "/{articleId}", revisionArticleId)
+                .with(authenticated(AUTHOR_ID, "WORKER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of(
                     "authorId", AUTHOR_ID,
@@ -275,6 +283,7 @@ class WorkerArticleControllerIntegrationTest {
 
         // when 5. 반려 후 재제출
         mockMvc.perform(put(BASE_URL + "/{articleId}/submit", revisionArticleId)
+                .with(authenticated(AUTHOR_ID, "WORKER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of(
                     "authorId", AUTHOR_ID,

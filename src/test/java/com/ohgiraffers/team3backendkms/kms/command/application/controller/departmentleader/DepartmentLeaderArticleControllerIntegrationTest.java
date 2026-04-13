@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
+import static com.ohgiraffers.team3backendkms.support.SecurityTestSupport.authenticated;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -73,7 +74,7 @@ class DepartmentLeaderArticleControllerIntegrationTest {
 
         // when
         mockMvc.perform(post("/api/kms/dl/articles/{articleId}/approval", pendingArticle.getArticleId())
-                .header("X-Employee-Id", approverId)
+                .with(authenticated(approverId, "DEPARTMENTLEADER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -98,7 +99,7 @@ class DepartmentLeaderArticleControllerIntegrationTest {
 
         // when
         mockMvc.perform(post("/api/kms/dl/articles/{articleId}/approval", pendingArticle.getArticleId())
-                .header("X-Employee-Id", approverId)
+                .with(authenticated(approverId, "DEPARTMENTLEADER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())

@@ -10,6 +10,7 @@ import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ApprovalQueryRequest;
 import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import org.mybatis.spring.boot.test.autoconfigure.AutoConfigureMybatis;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,8 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class KnowledgeArticleApprovalQueryMapperTest {
 
-    private static final Long AUTHOR_ID = 1774942559890303L;
-    private static final Long EQUIPMENT_ID = 1774836457838985L;
+    private Long authorId;
+    private Long equipmentId;
 
     @Autowired
     private KnowledgeArticleMapper knowledgeArticleMapper;
@@ -41,6 +43,23 @@ class KnowledgeArticleApprovalQueryMapperTest {
 
     @Autowired
     private EntityManager entityManager;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    void setUp() {
+        authorId = jdbcTemplate.queryForObject(
+            "SELECT employee_id FROM employee " +
+                "WHERE employee_name NOT IN ('Batch-Test-Worker', '최상위관리자') " +
+                "LIMIT 1",
+            Long.class
+        );
+        equipmentId = jdbcTemplate.queryForObject(
+            "SELECT equipment_id FROM equipment LIMIT 1",
+            Long.class
+        );
+    }
 
     @Nested
     @DisplayName("findApprovalStats()")
@@ -128,13 +147,14 @@ class KnowledgeArticleApprovalQueryMapperTest {
     private KnowledgeArticle buildArticle(ArticleStatus status) {
         return KnowledgeArticle.builder()
             .articleId(new TimeBasedIdGenerator().generate())
-            .authorId(AUTHOR_ID)
-            .equipmentId(EQUIPMENT_ID)
+            .authorId(authorId)
+            .equipmentId(equipmentId)
             .fileGroupId(0L)
             .articleTitle("매퍼 테스트용 제목입니다")
             .articleCategory(ArticleCategory.TROUBLESHOOTING)
             .articleContent("매퍼 테스트용 본문입니다. 최소 50자 이상이어야 합니다. 충분한 길이를 확보했습니다.")
             .articleStatus(status)
+            .approvalVersion(status == ArticleStatus.APPROVED ? 1 : 0)
             .isDeleted(false)
             .viewCount(0)
             .build();

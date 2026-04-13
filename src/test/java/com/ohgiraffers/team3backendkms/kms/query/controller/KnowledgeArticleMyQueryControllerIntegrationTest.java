@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.ohgiraffers.team3backendkms.support.SecurityTestSupport.authenticated;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -106,7 +107,7 @@ class KnowledgeArticleMyQueryControllerIntegrationTest {
         flushAndClear();
 
         mockMvc.perform(get("/api/kms/my/articles/stats")
-                        .param("authorId", String.valueOf(AUTHOR_ID))
+                        .with(authenticated(AUTHOR_ID, "WORKER"))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -141,7 +142,7 @@ class KnowledgeArticleMyQueryControllerIntegrationTest {
         flushAndClear();
 
         mockMvc.perform(get("/api/kms/my/articles")
-                        .param("authorId", String.valueOf(AUTHOR_ID))
+                        .with(authenticated(AUTHOR_ID, "WORKER"))
                         .param("page", "0")
                         .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -175,7 +176,7 @@ class KnowledgeArticleMyQueryControllerIntegrationTest {
         entityManager.clear();
 
         mockMvc.perform(get("/api/kms/my/articles/history")
-                        .param("authorId", String.valueOf(AUTHOR_ID))
+                        .with(authenticated(AUTHOR_ID, "WORKER"))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))

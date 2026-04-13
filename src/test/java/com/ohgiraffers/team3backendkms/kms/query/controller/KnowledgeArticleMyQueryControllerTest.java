@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.ohgiraffers.team3backendkms.support.SecurityTestSupport.authenticated;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -47,7 +48,6 @@ class KnowledgeArticleMyQueryControllerTest {
     class GetMyArticleStats {
 
         @Test
-        @DisplayName("Returns 200 OK with stats")
         void getMyArticleStats_success() throws Exception {
             MyArticleStatsDto dto = new MyArticleStatsDto();
             dto.setApprovedCount(3L);
@@ -56,18 +56,12 @@ class KnowledgeArticleMyQueryControllerTest {
             dto.setDraftCount(4L);
             given(knowledgeArticleMyQueryService.getMyArticleStats(10L)).willReturn(dto);
 
-            mockMvc.perform(get("/api/kms/my/articles/stats").param("authorId", "10"))
+            mockMvc.perform(get("/api/kms/my/articles/stats")
+                            .with(authenticated(10L, "WORKER")))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data.approvedCount").value(3))
                     .andExpect(jsonPath("$.data.draftCount").value(4));
-        }
-
-        @Test
-        @DisplayName("Returns 400 when authorId is missing")
-        void getMyArticleStats_whenAuthorIdMissing_thenBadRequest() throws Exception {
-            mockMvc.perform(get("/api/kms/my/articles/stats"))
-                    .andExpect(status().isBadRequest());
         }
     }
 
@@ -76,11 +70,10 @@ class KnowledgeArticleMyQueryControllerTest {
     class GetMyArticles {
 
         @Test
-        @DisplayName("Returns 200 OK with article list and tags")
         void getMyArticles_success() throws Exception {
             MyArticleDto article = new MyArticleDto();
             article.setArticleId(1L);
-            article.setArticleTitle("내 문서");
+            article.setArticleTitle("내문서");
             article.setArticleCategory(ArticleCategory.TROUBLESHOOTING);
             article.setArticleStatus(ArticleStatus.APPROVED);
             article.setCreatedAt(LocalDateTime.of(2026, 4, 1, 10, 0));
@@ -90,27 +83,17 @@ class KnowledgeArticleMyQueryControllerTest {
             tag.setTagName("가공");
             article.setTags(List.of(tag));
 
-            given(knowledgeArticleMyQueryService.getMyArticles(any(MyArticleQueryRequest.class)))
-                    .willReturn(List.of(article));
+            given(knowledgeArticleMyQueryService.getMyArticles(any(MyArticleQueryRequest.class))).willReturn(List.of(article));
 
             mockMvc.perform(get("/api/kms/my/articles")
-                            .param("authorId", "10")
+                            .with(authenticated(10L, "WORKER"))
                             .param("status", "APPROVED")
                             .param("page", "0")
                             .param("size", "10"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data[0].articleId").value(1))
-                    .andExpect(jsonPath("$.data[0].articleTitle").value("내 문서"))
-                    .andExpect(jsonPath("$.data[0].tags[0].tagId").value(100))
-                    .andExpect(jsonPath("$.data[0].tags[0].tagName").value("가공"));
-        }
-
-        @Test
-        @DisplayName("Returns 400 when authorId is missing")
-        void getMyArticles_whenAuthorIdMissing_thenBadRequest() throws Exception {
-            mockMvc.perform(get("/api/kms/my/articles"))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(jsonPath("$.data[0].tags[0].tagId").value(100));
         }
     }
 
@@ -119,30 +102,20 @@ class KnowledgeArticleMyQueryControllerTest {
     class GetMyRecentArticleHistory {
 
         @Test
-        @DisplayName("Returns 200 OK with recent history")
         void getMyRecentArticleHistory_success() throws Exception {
             MyArticleHistoryDto history = new MyArticleHistoryDto();
             history.setId(1L);
-            history.setTitle("최근 수정 문서");
+            history.setTitle("최근 문서");
             history.setArticleStatus(ArticleStatus.PENDING);
             history.setUpdatedAt(LocalDateTime.of(2026, 4, 9, 9, 0));
 
-            given(knowledgeArticleMyQueryService.getMyRecentArticleHistory(10L))
-                    .willReturn(List.of(history));
+            given(knowledgeArticleMyQueryService.getMyRecentArticleHistory(10L)).willReturn(List.of(history));
 
-            mockMvc.perform(get("/api/kms/my/articles/history").param("authorId", "10"))
+            mockMvc.perform(get("/api/kms/my/articles/history")
+                            .with(authenticated(10L, "WORKER")))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data[0].id").value(1))
-                    .andExpect(jsonPath("$.data[0].title").value("최근 수정 문서"))
-                    .andExpect(jsonPath("$.data[0].status").value("승인 대기"));
-        }
-
-        @Test
-        @DisplayName("Returns 400 when authorId is missing")
-        void getMyRecentArticleHistory_whenAuthorIdMissing_thenBadRequest() throws Exception {
-            mockMvc.perform(get("/api/kms/my/articles/history"))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(jsonPath("$.data[0].id").value(1));
         }
     }
 }

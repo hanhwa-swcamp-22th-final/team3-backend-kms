@@ -1,13 +1,20 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.controller.teamleader;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
+import com.ohgiraffers.team3backendkms.config.security.SecurityContextUtils;
+import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleApprovalProcessRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,13 +25,14 @@ public class TeamLeaderArticleController {
 
     @PostMapping("/{articleId}/approval")
     public ResponseEntity<ApiResponse<Void>> processApproval(
+            Authentication authentication,
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
-            @RequestHeader("X-Employee-Id") Long approverId,
             @Valid @RequestBody ArticleApprovalProcessRequest request
     ) {
+        EmployeeUserDetails userDetails = currentUser(authentication);
         knowledgeArticleCommandService.processApproval(
                 articleId,
-                approverId,
+                userDetails.getEmployeeId(),
                 request.getStatus(),
                 request.getReviewComment()
         );
@@ -37,5 +45,9 @@ public class TeamLeaderArticleController {
             case REJECT -> "팀장 반려 처리가 완료되었습니다.";
             case PENDING -> "팀장 보류 처리가 완료되었습니다.";
         };
+    }
+
+    private EmployeeUserDetails currentUser(Authentication authentication) {
+        return SecurityContextUtils.currentUser(authentication);
     }
 }

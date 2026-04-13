@@ -83,6 +83,7 @@ class AdminArticleControllerIntegrationTest {
             .articleCategory(ArticleCategory.TROUBLESHOOTING)
             .articleContent(content)
             .articleStatus(status)
+            .approvalVersion(status == ArticleStatus.APPROVED ? 1 : 0)
             .isDeleted(false)
             .viewCount(0)
             .build());

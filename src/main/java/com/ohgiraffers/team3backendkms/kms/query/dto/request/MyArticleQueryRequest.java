@@ -1,23 +1,20 @@
 package com.ohgiraffers.team3backendkms.kms.query.dto.request;
 
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
-@Setter // @ModelAttribute 쿼리 파라미터 바인딩에 필요 (예외적 Setter 허용)
+@Setter
 @NoArgsConstructor
 public class MyArticleQueryRequest {
 
-    @NotNull(message = "authorId는 필수입니다.")
     private Long authorId;
-    private ArticleStatus status;   // 상태 필터 (없으면 전체)
+    private ArticleStatus status;
     private Integer page;
     private Integer size;
 
-    // MariaDB LIMIT/OFFSET은 산술식 불가 → offset을 미리 계산해서 전달
     public int getOffset() {
         return (page != null && size != null) ? page * size : 0;
     }
