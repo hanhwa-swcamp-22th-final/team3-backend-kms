@@ -10,11 +10,16 @@
             resultType="com.ohgiraffers.team3backendkms.kms.query.dto.mentoring.MentoringRequestListDto">
         SELECT
             mr.request_id       AS requestId,
+            mr.article_id       AS articleId,
+            mr.mentor_id        AS mentorId,
             mr.mentee_id        AS menteeId,
             e.employee_name     AS menteeName,
             mr.mentoring_field  AS mentoringField,
             mr.request_title    AS requestTitle,
             mr.request_content  AS requestContent,
+            mr.mentoring_duration_weeks AS mentoringDurationWeeks,
+            mr.mentoring_frequency      AS mentoringFrequency,
+            mr.request_priority         AS requestPriority,
             mr.request_status   AS requestStatus,
             mr.created_at       AS requestedAt
         FROM mentoring_request mr
@@ -40,11 +45,16 @@
             resultType="com.ohgiraffers.team3backendkms.kms.query.dto.mentoring.MentoringRequestListDto">
         SELECT
             mr.request_id       AS requestId,
+            mr.article_id       AS articleId,
+            mr.mentor_id        AS mentorId,
             mr.mentee_id        AS menteeId,
             e.employee_name     AS menteeName,
             mr.mentoring_field  AS mentoringField,
             mr.request_title    AS requestTitle,
             mr.request_content  AS requestContent,
+            mr.mentoring_duration_weeks AS mentoringDurationWeeks,
+            mr.mentoring_frequency      AS mentoringFrequency,
+            mr.request_priority         AS requestPriority,
             mr.request_status   AS requestStatus,
             mr.created_at       AS requestedAt
         FROM mentoring_request mr
@@ -125,11 +135,16 @@
             resultType="com.ohgiraffers.team3backendkms.kms.query.dto.mentoring.MentoringRequestListDto">
         SELECT
             mr.request_id       AS requestId,
+            mr.article_id       AS articleId,
+            mr.mentor_id        AS mentorId,
             mr.mentee_id        AS menteeId,
             e.employee_name     AS menteeName,
             mr.mentoring_field  AS mentoringField,
             mr.request_title    AS requestTitle,
             mr.request_content  AS requestContent,
+            mr.mentoring_duration_weeks AS mentoringDurationWeeks,
+            mr.mentoring_frequency      AS mentoringFrequency,
+            mr.request_priority         AS requestPriority,
             mr.request_status   AS requestStatus,
             mr.created_at       AS requestedAt
         FROM mentoring_request mr

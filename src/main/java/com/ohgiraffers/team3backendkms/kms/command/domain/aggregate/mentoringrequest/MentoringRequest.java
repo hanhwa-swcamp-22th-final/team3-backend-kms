@@ -76,14 +76,19 @@ public class MentoringRequest {
     @LastModifiedBy
     private Long updatedBy;
 
+    private LocalDateTime processedAt;
+
     // ── 비즈니스 메서드 ────────────────────────────────────────────
 
-    public void update(String title, String content) {
+    public void update(String title, String content, Integer durationWeeks, String frequency, RequestPriority priority) {
         if (this.requestStatus != MentoringRequestStatus.PENDING) {
             throw new BusinessException(MentoringErrorCode.MENTORING_013);
         }
         this.requestTitle = title;
         this.requestContent = content;
+        this.mentoringDurationWeeks = durationWeeks;
+        this.mentoringFrequency = frequency;
+        this.requestPriority = priority;
     }
 
     public void accept(Long mentorId) {
@@ -92,6 +97,7 @@ public class MentoringRequest {
         }
         this.mentorId = mentorId;
         this.requestStatus = MentoringRequestStatus.ACCEPTED;
+        this.processedAt = LocalDateTime.now();
     }
 
     public void addRejectedMentor(Long mentorId) {
@@ -109,5 +115,6 @@ public class MentoringRequest {
 
     public void expireReject() {
         this.requestStatus = MentoringRequestStatus.REJECTED;
+        this.processedAt = LocalDateTime.now();
     }
 }

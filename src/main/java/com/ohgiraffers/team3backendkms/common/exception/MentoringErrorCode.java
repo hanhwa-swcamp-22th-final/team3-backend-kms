@@ -30,6 +30,7 @@ public enum MentoringErrorCode implements KmsErrorCode {
 
     // ── 리소스 없음 ───────────────────────────────────────────────
     MENTORING_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "NOT_FOUND", "[MENTORING_REQUEST_NOT_FOUND] 멘토링 신청을 찾을 수 없습니다."),
+    MENTORING_EMPLOYEE_NOT_FOUND(HttpStatus.NOT_FOUND, "NOT_FOUND", "[MENTORING_EMPLOYEE_NOT_FOUND] 멘토링 대상 직원을 찾을 수 없습니다."),
     MENTORING_NOT_FOUND(HttpStatus.NOT_FOUND, "NOT_FOUND", "[MENTORING_NOT_FOUND] 진행 중인 멘토링을 찾을 수 없습니다.");
 
     private final HttpStatus status;

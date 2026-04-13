@@ -5,9 +5,12 @@ import com.ohgiraffers.team3backendkms.common.exception.MentoringErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoring.Mentoring;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoring.MentoringStatus;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringemployee.MentoringEmployee;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringrequest.MentoringRequest;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringrequest.RequestPriority;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringrequest.MentoringRequestStatus;
 import com.ohgiraffers.team3backendkms.kms.command.infrastructure.repository.JpaEmployeeMentoringFieldRepository;
+import com.ohgiraffers.team3backendkms.kms.command.infrastructure.repository.JpaMentoringEmployeeRepository;
 import com.ohgiraffers.team3backendkms.kms.command.infrastructure.repository.JpaMentoringRepository;
 import com.ohgiraffers.team3backendkms.kms.command.infrastructure.repository.JpaMentoringRequestRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +27,14 @@ public class MentoringCommandService {
     private final JpaMentoringRequestRepository mentoringRequestRepository;
     private final JpaMentoringRepository mentoringRepository;
     private final JpaEmployeeMentoringFieldRepository employeeMentoringFieldRepository;
+    private final JpaMentoringEmployeeRepository mentoringEmployeeRepository;
 
     // ── 멘토링 신청 등록 (mentee: B/C 등급 worker) ─────────────────
     public Long createRequest(Long menteeId, Long articleId, String field,
-                              String title, String content, String menteeRole, String menteeTier) {
-        validateMenteeEligibility(menteeRole, menteeTier);
+                              String title, String content, Integer durationWeeks,
+                              String frequency, String requestPriority) {
+        MentoringEmployee mentee = getEmployee(menteeId);
+        validateMenteeEligibility(mentee);
 
         boolean duplicate = mentoringRequestRepository
                 .existsByMenteeIdAndMentoringFieldAndRequestStatusIn(
@@ -43,6 +49,9 @@ public class MentoringCommandService {
                 .mentoringField(field)
                 .requestTitle(title)
                 .requestContent(content)
+                .mentoringDurationWeeks(durationWeeks)
+                .mentoringFrequency(frequency)
+                .requestPriority(parseRequestPriority(requestPriority))
                 .requestStatus(MentoringRequestStatus.PENDING)
                 .build();
 
@@ -50,19 +59,21 @@ public class MentoringCommandService {
     }
 
     // ── 멘토링 신청 수정 (PENDING 상태, 본인만) ────────────────────
-    public void updateRequest(Long requestId, Long menteeId, String title, String content) {
+    public void updateRequest(Long requestId, Long menteeId, String title, String content,
+                              Integer durationWeeks, String frequency, String requestPriority) {
         MentoringRequest request = findRequestById(requestId);
 
         if (!request.getMenteeId().equals(menteeId)) {
             throw new BusinessException(MentoringErrorCode.MENTORING_012);
         }
 
-        request.update(title, content);
+        request.update(title, content, durationWeeks, frequency, parseRequestPriority(requestPriority));
     }
 
     // ── 멘토링 수락 (해당 분야 멘토, Pessimistic Lock) ─────────────
-    public Long acceptRequest(Long requestId, Long mentorId, String mentorRole, String mentorTier) {
-        validateMentorEligibility(mentorRole, mentorTier);
+    public Long acceptRequest(Long requestId, Long mentorId) {
+        MentoringEmployee mentor = getEmployee(mentorId);
+        validateMentorEligibility(mentor);
 
         MentoringRequest request = mentoringRequestRepository.findByIdWithLock(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException(MentoringErrorCode.MENTORING_REQUEST_NOT_FOUND));
@@ -135,22 +146,39 @@ public class MentoringCommandService {
                 .orElseThrow(() -> new ResourceNotFoundException(MentoringErrorCode.MENTORING_REQUEST_NOT_FOUND));
     }
 
-    private void validateMenteeEligibility(String role, String tier) {
-        boolean isWorker = "WORKER".equalsIgnoreCase(role);
-        boolean isLowTier = "B".equalsIgnoreCase(tier) || "C".equalsIgnoreCase(tier);
+    private MentoringEmployee getEmployee(Long employeeId) {
+        return mentoringEmployeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException(MentoringErrorCode.MENTORING_EMPLOYEE_NOT_FOUND));
+    }
+
+    private void validateMenteeEligibility(MentoringEmployee employee) {
+        boolean isWorker = employee.getEmployeeRole() != null && employee.getEmployeeRole().name().equalsIgnoreCase("WORKER");
+        boolean isLowTier = employee.getEmployeeTier() != null
+                && ("B".equalsIgnoreCase(employee.getEmployeeTier().name()) || "C".equalsIgnoreCase(employee.getEmployeeTier().name()));
         if (!isWorker || !isLowTier) {
             throw new BusinessException(MentoringErrorCode.MENTORING_010);
         }
     }
 
-    private void validateMentorEligibility(String role, String tier) {
-        // TL, DL은 등급 무관하게 멘토 가능
-        if ("TL".equalsIgnoreCase(role) || "DL".equalsIgnoreCase(role)) return;
-        // WORKER는 S/A 등급만 가능
-        boolean isWorker = "WORKER".equalsIgnoreCase(role);
-        boolean isHighTier = "S".equalsIgnoreCase(tier) || "A".equalsIgnoreCase(tier);
+    private void validateMentorEligibility(MentoringEmployee employee) {
+        if (employee.getEmployeeRole() == null) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_021);
+        }
+
+        if ("TL".equalsIgnoreCase(employee.getEmployeeRole().name()) || "DL".equalsIgnoreCase(employee.getEmployeeRole().name())) return;
+
+        boolean isWorker = "WORKER".equalsIgnoreCase(employee.getEmployeeRole().name());
+        boolean isHighTier = employee.getEmployeeTier() != null
+                && ("S".equalsIgnoreCase(employee.getEmployeeTier().name()) || "A".equalsIgnoreCase(employee.getEmployeeTier().name()));
         if (!isWorker || !isHighTier) {
             throw new BusinessException(MentoringErrorCode.MENTORING_021);
         }
+    }
+
+    private RequestPriority parseRequestPriority(String requestPriority) {
+        if (requestPriority == null || requestPriority.isBlank()) {
+            return null;
+        }
+        return RequestPriority.valueOf(requestPriority.trim().toUpperCase());
     }
 }

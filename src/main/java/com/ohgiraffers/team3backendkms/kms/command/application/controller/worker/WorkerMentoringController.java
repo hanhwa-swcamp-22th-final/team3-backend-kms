@@ -21,9 +21,7 @@ public class WorkerMentoringController {
     /* 멘토링 신청 등록 (B/C 등급 Worker만) */
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> createRequest(
-            @Valid @RequestBody MentoringRequestCreateRequest request,
-            @RequestHeader(value = "X-Member-Role", required = false) String role,
-            @RequestHeader(value = "X-Member-Tier", required = false) String tier
+            @Valid @RequestBody MentoringRequestCreateRequest request
     ) {
         Long requestId = mentoringCommandService.createRequest(
                 request.getMenteeId(),
@@ -31,8 +29,9 @@ public class WorkerMentoringController {
                 request.getMentoringField(),
                 request.getRequestTitle(),
                 request.getRequestContent(),
-                role,
-                tier
+                request.getMentoringDurationWeeks(),
+                request.getMentoringFrequency(),
+                request.getRequestPriority()
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("멘토링 신청이 등록되었습니다.", requestId));
@@ -48,7 +47,10 @@ public class WorkerMentoringController {
                 requestId,
                 request.getMenteeId(),
                 request.getRequestTitle(),
-                request.getRequestContent()
+                request.getRequestContent(),
+                request.getMentoringDurationWeeks(),
+                request.getMentoringFrequency(),
+                request.getRequestPriority()
         );
         return ResponseEntity.ok(ApiResponse.success("멘토링 신청이 수정되었습니다.", null));
     }

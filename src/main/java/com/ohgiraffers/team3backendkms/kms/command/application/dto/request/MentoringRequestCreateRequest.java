@@ -28,4 +28,13 @@ public class MentoringRequestCreateRequest {
     @NotBlank(message = "신청 내용은 필수입니다")
     @Length(min = 10, max = 1000, message = "신청 내용은 10자 이상 1000자 이하여야 합니다")
     private String requestContent;
+
+    @Positive(message = "희망 기간은 양수여야 합니다")
+    private Integer mentoringDurationWeeks;
+
+    @Length(max = 50, message = "멘토링 빈도는 50자 이하여야 합니다")
+    private String mentoringFrequency;
+
+    @NotNull(message = "우선순위는 필수입니다")
+    private String requestPriority;
 }

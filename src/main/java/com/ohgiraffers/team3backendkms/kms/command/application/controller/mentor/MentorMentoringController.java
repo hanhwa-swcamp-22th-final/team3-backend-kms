@@ -26,9 +26,7 @@ public class MentorMentoringController {
     ) {
         Long mentoringId = mentoringCommandService.acceptRequest(
                 requestId,
-                request.getMentorId(),
-                request.getMentorRole(),
-                request.getMentorTier()
+                request.getMentorId()
         );
         return ResponseEntity.ok(ApiResponse.success("멘토링 신청을 수락했습니다.", mentoringId));
     }
