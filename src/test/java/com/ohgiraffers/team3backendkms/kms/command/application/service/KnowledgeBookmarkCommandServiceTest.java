@@ -2,8 +2,11 @@ package com.ohgiraffers.team3backendkms.kms.command.application.service;
 
 import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.BusinessException;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgebookmark.KnowledgeBookmark;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgebookmark.KnowledgeBookmarkId;
+import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeBookmarkRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,6 +37,9 @@ class KnowledgeBookmarkCommandServiceTest {
 
     // 실제 repository 대신 Mock 사용
     @Mock
+    private KnowledgeArticleRepository knowledgeArticleRepository;
+
+    @Mock
     private KnowledgeBookmarkRepository bookmarkRepository;
 
     // =====================================================
@@ -50,6 +56,9 @@ class KnowledgeBookmarkCommandServiceTest {
             // given
             Long articleId = 1L;
             Long employeeId = 5L;
+            given(knowledgeArticleRepository.findById(articleId)).willReturn(java.util.Optional.of(
+                    KnowledgeArticle.builder().articleId(articleId).articleStatus(ArticleStatus.APPROVED).isDeleted(false).build()
+            ));
             // 아직 북마크하지 않은 상태
             given(bookmarkRepository.existsById(new KnowledgeBookmarkId(articleId, employeeId))).willReturn(false);
 
@@ -70,6 +79,9 @@ class KnowledgeBookmarkCommandServiceTest {
             // given
             Long articleId = 1L;
             Long employeeId = 5L;
+            given(knowledgeArticleRepository.findById(articleId)).willReturn(java.util.Optional.of(
+                    KnowledgeArticle.builder().articleId(articleId).articleStatus(ArticleStatus.APPROVED).isDeleted(false).build()
+            ));
             // 이미 북마크한 상태
             given(bookmarkRepository.existsById(new KnowledgeBookmarkId(articleId, employeeId))).willReturn(true);
 

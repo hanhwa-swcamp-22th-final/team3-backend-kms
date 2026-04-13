@@ -20,7 +20,13 @@
             ka.article_category AS articleCategory,
             ka.article_status   AS articleStatus,
             ka.view_count       AS viewCount,
-            ka.created_at       AS createdAt
+            ka.created_at       AS createdAt,
+            EXISTS(
+                SELECT 1
+                FROM knowledge_bookmark kb
+                WHERE kb.article_id = ka.article_id
+                  AND kb.employee_id = #{requesterId}
+            )                   AS bookmarked
         FROM knowledge_article ka
         LEFT JOIN employee e ON ka.author_id = e.employee_id
         WHERE 1 = 1
@@ -73,7 +79,7 @@
 
     <!-- 지식 상세 조회 -->
     <select id="findArticleById"
-            parameterType="long"
+            parameterType="map"
             resultType="com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto">
         SELECT
             ka.article_id               AS articleId,
@@ -89,7 +95,17 @@
             ka.article_rejection_reason AS articleRejectionReason,
             ka.view_count               AS viewCount,
             0                           AS commentCount,
-            0                           AS reuseCount,
+            (
+                SELECT COUNT(*)
+                FROM knowledge_edit_history keh
+                WHERE keh.article_id = ka.article_id
+            )                           AS reuseCount,
+            EXISTS(
+                SELECT 1
+                FROM knowledge_bookmark kb
+                WHERE kb.article_id = ka.article_id
+                  AND kb.employee_id = #{requesterId}
+            )                           AS bookmarked,
             ka.created_at               AS createdAt,
             ka.updated_at               AS updatedAt
         FROM knowledge_article ka
@@ -349,7 +365,11 @@
             ka.article_rejection_reason AS articleRejectionReason,
             ka.view_count               AS viewCount,
             0                   AS commentCount,
-            0                   AS reuseCount,
+            (
+                SELECT COUNT(*)
+                FROM knowledge_edit_history keh
+                WHERE keh.article_id = ka.article_id
+            )                   AS reuseCount,
             ka.created_at       AS createdAt,
             ka.updated_at       AS updatedAt
         FROM knowledge_article ka

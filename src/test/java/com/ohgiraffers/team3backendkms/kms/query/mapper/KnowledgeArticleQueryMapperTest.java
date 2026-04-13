@@ -296,7 +296,7 @@ class KnowledgeArticleQueryMapperTest {
         @DisplayName("Returns article detail by ID")
         void findArticleById_success() {
             // when
-            Optional<ArticleDetailDto> result = knowledgeArticleMapper.findArticleById(TEST_ARTICLE_ID_1);
+            Optional<ArticleDetailDto> result = knowledgeArticleMapper.findArticleById(TEST_ARTICLE_ID_1, null);
 
             // then
             assertTrue(result.isPresent());
@@ -309,7 +309,7 @@ class KnowledgeArticleQueryMapperTest {
         @DisplayName("Returns empty when ID does not exist")
         void findArticleById_whenUnknownId_thenEmpty() {
             // when
-            Optional<ArticleDetailDto> result = knowledgeArticleMapper.findArticleById(9999999999999L);
+            Optional<ArticleDetailDto> result = knowledgeArticleMapper.findArticleById(9999999999999L, null);
 
             // then
             assertTrue(result.isEmpty());

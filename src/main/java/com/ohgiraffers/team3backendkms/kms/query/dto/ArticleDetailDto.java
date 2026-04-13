@@ -30,6 +30,7 @@ public class ArticleDetailDto {
     private Integer viewCount;
     private Integer commentCount;
     private Integer reuseCount;
+    private Boolean bookmarked;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<KnowledgeTagReadDto> tags;
@@ -80,5 +81,9 @@ public class ArticleDetailDto {
 
     public Integer getReuses() {
         return reuseCount == null ? 0 : reuseCount;
+    }
+
+    public Boolean getBookmarked() {
+        return bookmarked != null && bookmarked;
     }
 }

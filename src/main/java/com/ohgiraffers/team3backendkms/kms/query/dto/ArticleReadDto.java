@@ -21,4 +21,5 @@ public class ArticleReadDto {
     private ArticleStatus articleStatus;
     private Integer viewCount;
     private LocalDateTime createdAt;
+    private Boolean bookmarked;
 }

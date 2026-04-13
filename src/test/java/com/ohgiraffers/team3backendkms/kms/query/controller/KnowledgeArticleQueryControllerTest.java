@@ -145,7 +145,7 @@ class KnowledgeArticleQueryControllerTest {
             dto.setViewCount(5);
             dto.setCreatedAt(LocalDateTime.of(2026, 3, 1, 12, 0));
             dto.setUpdatedAt(LocalDateTime.of(2026, 3, 2, 9, 0));
-            given(knowledgeArticleQueryService.getArticleDetail(1L)).willReturn(dto);
+            given(knowledgeArticleQueryService.getArticleDetail(1L, null)).willReturn(dto);
 
             // when & then
             mockMvc.perform(get("/api/kms/articles/1"))
@@ -160,7 +160,7 @@ class KnowledgeArticleQueryControllerTest {
         @DisplayName("Returns 404 when article not found")
         void getArticleDetail_whenNotFound_thenNotFound() throws Exception {
             // given
-            given(knowledgeArticleQueryService.getArticleDetail(999L))
+            given(knowledgeArticleQueryService.getArticleDetail(999L, null))
                     .willThrow(new ResourceNotFoundException("문서를 찾을 수 없습니다. id=999"));
 
             // when & then
