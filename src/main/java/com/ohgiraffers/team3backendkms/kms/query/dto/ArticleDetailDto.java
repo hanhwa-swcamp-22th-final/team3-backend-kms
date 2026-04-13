@@ -19,6 +19,7 @@ public class ArticleDetailDto {
     private Long articleId;
     private Long authorId;
     private String authorName;
+    private String authorTier;
     private String articleTitle;
     private ArticleCategory articleCategory;
     private Long equipmentId;
@@ -27,10 +28,12 @@ public class ArticleDetailDto {
     private ArticleStatus articleStatus;
     private String articleApprovalOpinion;
     private String articleRejectionReason;
+    private String articleDeletionReason;
     private Integer viewCount;
     private Integer commentCount;
     private Integer reuseCount;
     private Boolean bookmarked;
+    private Boolean deleted;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<KnowledgeTagReadDto> tags;

@@ -33,6 +33,14 @@ public class AdminArticleController {
         return ResponseEntity.ok(ApiResponse.success("관리자 권한으로 문서를 삭제했습니다.", null));
     }
 
+    @PutMapping("/{articleId}/restore")
+    public ResponseEntity<ApiResponse<Void>> adminRestore(
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId
+    ) {
+        knowledgeArticleCommandService.adminRestore(articleId);
+        return ResponseEntity.ok(ApiResponse.success("관리자 권한으로 문서를 복원했습니다.", null));
+    }
+
     /* 지식 문서 수정 (Admin) */
     @PutMapping("/{articleId}")
     public ResponseEntity<ApiResponse<Void>> adminUpdate(

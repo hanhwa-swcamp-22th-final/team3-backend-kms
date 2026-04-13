@@ -125,6 +125,15 @@ public class WorkerArticleController {
         return ResponseEntity.ok(ApiResponse.success("문서가 삭제되었습니다.", null));
     }
 
+    @PutMapping("/{articleId}/restore")
+    public ResponseEntity<ApiResponse<Void>> restore(
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
+            @Valid @RequestBody ArticleDeleteRequest request
+    ) {
+        knowledgeArticleCommandService.restore(articleId, request.getRequesterId());
+        return ResponseEntity.ok(ApiResponse.success("문서가 복원되었습니다.", null));
+    }
+
     /* 게시글 태그 연결 (전체 교체) */
     @PutMapping("/{articleId}/tags")
     public ResponseEntity<ApiResponse<Void>> updateArticleTags(
