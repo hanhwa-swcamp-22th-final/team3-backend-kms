@@ -4,6 +4,7 @@ import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.KnowledgeHubStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeArticleMapper;
@@ -33,6 +34,10 @@ public class KnowledgeArticleQueryService {
                 .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND));
         detail.setTags(knowledgeTagMapper.findTagsByArticleId(articleId));
         return detail;
+    }
+
+    public KnowledgeHubStatsDto getKnowledgeHubStats() {
+        return knowledgeArticleMapper.findKnowledgeHubStats();
     }
 
     public List<ContributorRankDto> getTopContributors(Integer limit) {
