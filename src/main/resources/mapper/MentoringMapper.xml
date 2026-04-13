@@ -32,7 +32,7 @@
           AND (
               mr.rejected_mentor_ids IS NULL
               OR mr.rejected_mentor_ids = '[]'
-              OR JSON_CONTAINS(mr.rejected_mentor_ids, CAST(#{mentorId} AS JSON)) = 0
+              OR CAST(mr.rejected_mentor_ids AS CHAR) NOT REGEXP CONCAT('(^|\\[|,)', #{mentorId}, '(,|\\]|$)')
           )
         <if test="mentoringField != null and mentoringField != ''">
             AND mr.mentoring_field = #{mentoringField}
