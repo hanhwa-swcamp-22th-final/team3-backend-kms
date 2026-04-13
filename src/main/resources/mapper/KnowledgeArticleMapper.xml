@@ -184,14 +184,15 @@
             ka.author_id     AS employeeId,
             e.employee_name  AS employeeName,
             COUNT(*)         AS articleCount,
-            ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC) AS rank
+            COALESCE(SUM(ka.view_count), 0) AS totalViewCount,
+            ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC, COALESCE(SUM(ka.view_count), 0) DESC, ka.author_id) AS rank
         FROM knowledge_article ka
         LEFT JOIN employee e ON ka.author_id = e.employee_id
         WHERE ka.article_status = 'APPROVED'
           AND ka.is_deleted = false
           <include refid="excludeHiddenKmsAuthors"/>
         GROUP BY ka.author_id, e.employee_name
-        ORDER BY articleCount DESC, ka.author_id
+        ORDER BY articleCount DESC, totalViewCount DESC, ka.author_id
         LIMIT #{limit}
     </select>
 

@@ -78,6 +78,11 @@ public class KnowledgeArticle {
         this.articleStatus = ArticleStatus.PENDING;
     }
 
+    /* PENDING/REJECTED/DRAFT → DRAFT */
+    public void saveAsDraft() {
+        this.articleStatus = ArticleStatus.DRAFT;
+    }
+
     /* PENDING → APPROVED */
     public void approve(Long approverId, String reviewComment) {
         this.articleStatus = ArticleStatus.APPROVED;
