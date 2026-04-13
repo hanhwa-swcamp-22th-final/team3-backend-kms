@@ -15,7 +15,7 @@ public class ArticleRegisterRequest {
     private Long authorId;          // 임시: JWT 연결 시 제거 예정
 
     @NotBlank(message = "제목은 필수입니다")
-    @Length(min = 5, max = 200, message = "제목은 5자 이상 200자 이하여야 합니다")
+    @Length(min = 1, max = 50, message = "제목은 1자 이상 50자 이하여야 합니다")
     private String title;
 
     @NotNull(message = "카테고리는 필수입니다")

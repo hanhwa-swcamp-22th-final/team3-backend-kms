@@ -30,7 +30,7 @@ public enum ArticleErrorCode {
      *   - errorCode: "BAD_REQUEST"
      *   - message: "[ARTICLE_001] 제목은 5자 이상 200자 이하여야 합니다."
      */
-    ARTICLE_001(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE_001] 제목은 5자 이상 200자 이하여야 합니다."),
+    ARTICLE_001(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE_001] 제목은 1자 이상 50자 이하여야 합니다."),
 
     /**
      * 본문 최소 길이 검증
