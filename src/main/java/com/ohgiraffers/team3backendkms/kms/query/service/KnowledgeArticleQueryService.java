@@ -26,7 +26,9 @@ public class KnowledgeArticleQueryService {
 
     public List<ArticleReadDto> getArticles(ArticleQueryRequest request) {
         normalizeQueryRequest(request);
-        return knowledgeArticleMapper.findArticles(request);
+        List<ArticleReadDto> articles = knowledgeArticleMapper.findArticles(request);
+        articles.forEach(article -> article.setTags(knowledgeTagMapper.findTagsByArticleId(article.getArticleId())));
+        return articles;
     }
 
     public ArticleDetailDto getArticleDetail(Long articleId, Long requesterId) {
@@ -45,7 +47,9 @@ public class KnowledgeArticleQueryService {
     }
 
     public List<ArticleReadDto> getRecommendations() {
-        return knowledgeArticleMapper.findRecommendations();
+        List<ArticleReadDto> recommendations = knowledgeArticleMapper.findRecommendations();
+        recommendations.forEach(article -> article.setTags(knowledgeTagMapper.findTagsByArticleId(article.getArticleId())));
+        return recommendations;
     }
 
     private void normalizeQueryRequest(ArticleQueryRequest request) {

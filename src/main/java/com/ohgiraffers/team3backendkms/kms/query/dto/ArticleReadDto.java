@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -24,4 +25,5 @@ public class ArticleReadDto {
     private LocalDateTime createdAt;
     private Boolean bookmarked;
     private Boolean deleted;
+    private List<KnowledgeTagReadDto> tags;
 }

@@ -16,10 +16,13 @@ public class ApprovalArticleDetailDto {
     private Long articleId;
     private Long authorId;
     private String authorName;
+    private String authorTier;
     private String articleTitle;
     private ArticleCategory articleCategory;
     private String articleContent;
     private ArticleStatus articleStatus;
+    private Long approverId;
+    private String approverName;
     private String articleApprovalOpinion;
     private String articleRejectionReason;
     private LocalDateTime createdAt;

@@ -246,15 +246,22 @@
             ka.article_id       AS articleId,
             ka.author_id        AS authorId,
             e.employee_name     AS authorName,
+            e.employee_tier     AS authorTier,
             ka.article_title    AS articleTitle,
             ka.article_category AS articleCategory,
             ka.article_status   AS articleStatus,
             ka.view_count       AS viewCount,
-            ka.created_at       AS createdAt
+            ka.approved_by      AS approverId,
+            approver.employee_name AS approverName,
+            ka.article_approval_opinion AS articleApprovalOpinion,
+            ka.created_at       AS createdAt,
+            ka.updated_at       AS updatedAt
         FROM knowledge_article ka
         LEFT JOIN employee e ON ka.author_id = e.employee_id
+        LEFT JOIN employee approver ON ka.approved_by = approver.employee_id
         WHERE ka.is_deleted = false
           AND ka.article_status = 'PENDING'
+          <include refid="excludeHiddenKmsAuthors"/>
         <if test="category != null">
             AND ka.article_category = #{category}
         </if>
@@ -292,19 +299,24 @@
             ka.article_id               AS articleId,
             ka.author_id                AS authorId,
             e.employee_name             AS authorName,
+            e.employee_tier             AS authorTier,
             ka.article_title            AS articleTitle,
             ka.article_category         AS articleCategory,
             ka.article_content          AS articleContent,
             ka.article_status           AS articleStatus,
+            ka.approved_by              AS approverId,
+            approver.employee_name      AS approverName,
             ka.article_approval_opinion AS articleApprovalOpinion,
             ka.article_rejection_reason AS articleRejectionReason,
             ka.created_at               AS createdAt,
             ka.updated_at               AS updatedAt
         FROM knowledge_article ka
         LEFT JOIN employee e ON ka.author_id = e.employee_id
+        LEFT JOIN employee approver ON ka.approved_by = approver.employee_id
         WHERE ka.article_id = #{articleId}
           AND ka.is_deleted = false
           AND ka.article_status = 'PENDING'
+          <include refid="excludeHiddenKmsAuthors"/>
     </select>
 
     <!-- 승인 통계 조회 -->
@@ -312,28 +324,36 @@
             resultType="com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto">
         SELECT
             (SELECT COUNT(*)
-             FROM knowledge_article
-             WHERE article_status = 'PENDING'
-               AND is_deleted = false)                                          AS pendingCount,
+             FROM knowledge_article ka
+             LEFT JOIN employee e ON ka.author_id = e.employee_id
+             WHERE ka.article_status = 'PENDING'
+               AND ka.is_deleted = false
+               AND (e.employee_name IS NULL OR e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))) AS pendingCount,
 
             (SELECT COUNT(*)
-             FROM knowledge_article
-             WHERE article_status = 'APPROVED'
-               AND is_deleted = false
-               AND YEAR(approved_at) = YEAR(CURDATE())
-               AND MONTH(approved_at) = MONTH(CURDATE()))                      AS approvedThisMonth,
+             FROM knowledge_article ka
+             LEFT JOIN employee e ON ka.author_id = e.employee_id
+             WHERE ka.article_status = 'APPROVED'
+               AND ka.is_deleted = false
+               AND YEAR(ka.approved_at) = YEAR(CURDATE())
+               AND MONTH(ka.approved_at) = MONTH(CURDATE())
+               AND (e.employee_name IS NULL OR e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))) AS approvedThisMonth,
 
             ROUND(
                 IFNULL(
                     (SELECT COUNT(*)
-                     FROM knowledge_article
-                     WHERE article_status = 'REJECTED'
-                       AND is_deleted = false) * 100.0 /
+                     FROM knowledge_article ka
+                     LEFT JOIN employee e ON ka.author_id = e.employee_id
+                     WHERE ka.article_status = 'REJECTED'
+                       AND ka.is_deleted = false
+                       AND (e.employee_name IS NULL OR e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))) * 100.0 /
                     NULLIF(
                         (SELECT COUNT(*)
-                         FROM knowledge_article
-                         WHERE article_status IN ('APPROVED', 'REJECTED')
-                           AND is_deleted = false),
+                         FROM knowledge_article ka
+                         LEFT JOIN employee e ON ka.author_id = e.employee_id
+                         WHERE ka.article_status IN ('APPROVED', 'REJECTED')
+                           AND ka.is_deleted = false
+                           AND (e.employee_name IS NULL OR e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))),
                         0
                     ),
                     0.0
