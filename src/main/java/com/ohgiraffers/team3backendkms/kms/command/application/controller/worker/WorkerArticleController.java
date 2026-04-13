@@ -68,7 +68,24 @@ public class WorkerArticleController {
                 request.getContent(),
                 request.getAuthorId()
         );
-        return ResponseEntity.ok(ApiResponse.success("임시저장 문서가 수정되었습니다.", null));
+        return ResponseEntity.ok(ApiResponse.success("문서가 수정되었습니다.", null));
+    }
+
+    /* 지식 문서 임시저장 전환 (DRAFT/PENDING/REJECTED -> DRAFT) */
+    @PutMapping("/{articleId}/draft")
+    public ResponseEntity<ApiResponse<Void>> saveAsDraft(
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
+            @Valid @RequestBody ArticleDraftUpdateRequest request
+    ) {
+        knowledgeArticleCommandService.saveAsDraft(
+                articleId,
+                request.getTitle(),
+                request.getCategory(),
+                request.getEquipmentId(),
+                request.getContent(),
+                request.getAuthorId()
+        );
+        return ResponseEntity.ok(ApiResponse.success("문서가 임시저장 상태로 변경되었습니다.", null));
     }
 
     /* 승인된 지식 문서 수정 시작 (복사본 생성/조회) */

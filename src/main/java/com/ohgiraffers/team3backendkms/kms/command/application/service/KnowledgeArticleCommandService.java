@@ -74,6 +74,24 @@ public class KnowledgeArticleCommandService {
         article.updateDraft(title, category, equipmentId, content);
         article.submit();
     }
+
+    public void saveAsDraft(Long articleId, String title, ArticleCategory category, Long equipmentId, String content, Long requesterId) {
+        KnowledgeArticle article = findArticleById(articleId);
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
+        }
+        if (article.getArticleStatus() != ArticleStatus.DRAFT
+                && article.getArticleStatus() != ArticleStatus.PENDING
+                && article.getArticleStatus() != ArticleStatus.REJECTED) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_006);
+        }
+        if (!article.getAuthorId().equals(requesterId)) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_007);
+        }
+        validateEquipmentIdIfPresent(equipmentId);
+        article.updateDraft(title, category, equipmentId, content);
+        article.saveAsDraft();
+    }
 // 원본이 APPROVED인지 확인
     public Long startRevision(Long articleId, Long requesterId) {
         KnowledgeArticle originalArticle = findArticleById(articleId);
