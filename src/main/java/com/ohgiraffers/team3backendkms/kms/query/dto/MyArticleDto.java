@@ -23,6 +23,7 @@ public class MyArticleDto {
     private Long equipmentId;
     private String equipmentName;
     private String articleContent;
+    private String articleRejectionReason;
     private Integer viewCount;
     private Integer commentCount;
     private Integer reuseCount;
