@@ -78,6 +78,11 @@ public class KnowledgeArticle {
         this.articleStatus = ArticleStatus.PENDING;
     }
 
+    /* PENDING/REJECTED/DRAFT → DRAFT */
+    public void saveAsDraft() {
+        this.articleStatus = ArticleStatus.DRAFT;
+    }
+
     /* PENDING → APPROVED */
     public void approve(Long approverId, String reviewComment) {
         this.articleStatus = ArticleStatus.APPROVED;
@@ -118,6 +123,12 @@ public class KnowledgeArticle {
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
         this.articleDeletionReason = reason;
+    }
+
+    public void restore() {
+        this.isDeleted = false;
+        this.deletedAt = null;
+        this.articleDeletionReason = null;
     }
 
     /* PENDING 유지 — articleApprovalOpinion 저장 (보류) */

@@ -9,6 +9,8 @@ public class ContributorRankDto {
 
     private Long employeeId;
     private String employeeName;
+    private String employeeTier;
     private Long articleCount;
+    private Long totalViewCount;
     private Integer rank;
 }

@@ -7,6 +7,7 @@ import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.KnowledgeHubStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ApprovalQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
@@ -49,10 +50,11 @@ public class KnowledgeArticleQueryController {
     /* 지식 상세 조회 — 조회 후 조회수 증가 (Command는 Controller에서 조율) */
     @GetMapping(value = "/articles/{articleId}", params = "!stat")
     public ResponseEntity<ApiResponse<ArticleDetailDto>> getArticleDetail(
-            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
+            @RequestParam(required = false) Long requesterId
     ) {
-        ArticleDetailDto detail = knowledgeArticleQueryService.getArticleDetail(articleId);
-        knowledgeArticleCommandService.incrementViewCount(articleId);
+        knowledgeArticleCommandService.incrementViewCount(articleId, requesterId);
+        ArticleDetailDto detail = knowledgeArticleQueryService.getArticleDetail(articleId, requesterId);
         return ResponseEntity.ok(ApiResponse.success("지식 문서 상세를 조회했습니다.", detail));
     }
 
@@ -72,7 +74,14 @@ public class KnowledgeArticleQueryController {
         return ResponseEntity.ok(ApiResponse.success("승인 통계를 조회했습니다.", stats));
     }
 
-    /* 월간 기여자 랭킹 조회 */
+    /* KMS 허브 통계 조회 */
+    @GetMapping(value = "/stats", params = "stat=hub")
+    public ResponseEntity<ApiResponse<KnowledgeHubStatsDto>> getKnowledgeHubStats() {
+        KnowledgeHubStatsDto stats = knowledgeArticleQueryService.getKnowledgeHubStats();
+        return ResponseEntity.ok(ApiResponse.success("KMS 허브 통계를 조회했습니다.", stats));
+    }
+
+    /* KMS 허브 기여자 랭킹 조회 */
     @GetMapping("/articles/contributors")
     public ResponseEntity<ApiResponse<List<ContributorRankDto>>> getTopContributors(
             @RequestParam(value = "limit", defaultValue = "3") Integer limit
@@ -81,7 +90,7 @@ public class KnowledgeArticleQueryController {
         return ResponseEntity.ok(ApiResponse.success("기여자 랭킹을 조회했습니다.", contributors));
     }
 
-    /* AI 지식 추천 조회 (APPROVED 문서 중 조회수 높은 순 TOP 5) */
+    /* AI 지식 추천 조회 (APPROVED 문서 중 조회수 높은 순 TOP 3) */
     @GetMapping("/articles/recommendations")
     public ResponseEntity<ApiResponse<List<ArticleReadDto>>> getRecommendations() {
         List<ArticleReadDto> recommendations = knowledgeArticleQueryService.getRecommendations();

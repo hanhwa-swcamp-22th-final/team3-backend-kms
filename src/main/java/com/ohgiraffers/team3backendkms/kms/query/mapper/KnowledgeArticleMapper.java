@@ -5,6 +5,7 @@ import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.KnowledgeHubStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleHistoryDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleStatsDto;
@@ -13,6 +14,7 @@ import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.MyArticleQueryRequest;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.Map;
@@ -23,7 +25,9 @@ public interface KnowledgeArticleMapper {
 
     List<ArticleReadDto> findArticles(ArticleQueryRequest request);
 
-    Optional<ArticleDetailDto> findArticleById(Long articleId);
+    Optional<ArticleDetailDto> findArticleById(@Param("articleId") Long articleId, @Param("requesterId") Long requesterId);
+
+    KnowledgeHubStatsDto findKnowledgeHubStats();
 
     List<ContributorRankDto> findTopContributors(Map<String, Object> params);
 

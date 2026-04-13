@@ -21,4 +21,9 @@ public class ArticleQueryRequest {
     private String requesterRole;       // 임시: JWT 연결 전 조회 요청자 역할
     private Integer page;
     private Integer size;
+
+    // MariaDB LIMIT/OFFSET은 바인딩 파라미터 간 산술식을 허용하지 않아 미리 계산해서 전달한다.
+    public int getOffset() {
+        return (page != null && size != null) ? page * size : 0;
+    }
 }

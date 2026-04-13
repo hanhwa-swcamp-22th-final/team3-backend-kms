@@ -2,8 +2,12 @@ package com.ohgiraffers.team3backendkms.kms.command.application.service;
 
 import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.BusinessException;
+import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
+import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgebookmark.KnowledgeBookmark;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgebookmark.KnowledgeBookmarkId;
+import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeBookmarkRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class KnowledgeBookmarkCommandService {
 
+    private final KnowledgeArticleRepository knowledgeArticleRepository;
     private final KnowledgeBookmarkRepository bookmarkRepository;
 
     /**
@@ -25,6 +30,12 @@ public class KnowledgeBookmarkCommandService {
      * - 이미 북마크한 게시글이면 BOOKMARK_001 예외
      */
     public void addBookmark(Long articleId, Long employeeId) {
+        KnowledgeArticle article = knowledgeArticleRepository.findById(articleId)
+                .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND));
+        if (Boolean.TRUE.equals(article.getIsDeleted()) || article.getArticleStatus() != ArticleStatus.APPROVED) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_NOT_FOUND);
+        }
+
         KnowledgeBookmarkId id = new KnowledgeBookmarkId(articleId, employeeId);
         // 중복 북마크 방지
         if (bookmarkRepository.existsById(id)) {

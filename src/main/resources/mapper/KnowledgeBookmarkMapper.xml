@@ -12,11 +12,13 @@
             ka.article_id       AS articleId,
             ka.author_id        AS authorId,
             e.employee_name     AS authorName,
+            e.employee_tier     AS authorTier,
             ka.article_title    AS articleTitle,
             ka.article_category AS articleCategory,
             ka.article_status   AS articleStatus,
             ka.view_count       AS viewCount,
-            ka.created_at       AS createdAt
+            ka.created_at       AS createdAt,
+            true                AS bookmarked
         FROM knowledge_bookmark kb
         JOIN knowledge_article ka ON kb.article_id = ka.article_id
         JOIN employee e ON ka.author_id = e.employee_id

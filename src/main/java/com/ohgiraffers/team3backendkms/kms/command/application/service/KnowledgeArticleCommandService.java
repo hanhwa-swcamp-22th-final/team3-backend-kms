@@ -22,6 +22,7 @@ public class KnowledgeArticleCommandService {
 
     private final KnowledgeArticleRepository knowledgeArticleRepository;
     private final KnowledgeEditHistoryRepository knowledgeEditHistoryRepository;
+    private final KnowledgeArticleViewGuardService knowledgeArticleViewGuardService;
     private final IdGenerator idGenerator;
 
     public Long register(Long authorId, Long equipmentId,
@@ -74,6 +75,24 @@ public class KnowledgeArticleCommandService {
         article.updateDraft(title, category, equipmentId, content);
         article.submit();
     }
+
+    public void saveAsDraft(Long articleId, String title, ArticleCategory category, Long equipmentId, String content, Long requesterId) {
+        KnowledgeArticle article = findArticleById(articleId);
+        if (Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_008);
+        }
+        if (article.getArticleStatus() != ArticleStatus.DRAFT
+                && article.getArticleStatus() != ArticleStatus.PENDING
+                && article.getArticleStatus() != ArticleStatus.REJECTED) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_006);
+        }
+        if (!article.getAuthorId().equals(requesterId)) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_007);
+        }
+        validateEquipmentIdIfPresent(equipmentId);
+        article.updateDraft(title, category, equipmentId, content);
+        article.saveAsDraft();
+    }
 // 원본이 APPROVED인지 확인
     public Long startRevision(Long articleId, Long requesterId) {
         KnowledgeArticle originalArticle = findArticleById(articleId);
@@ -119,9 +138,12 @@ public class KnowledgeArticleCommandService {
         article.adminUpdate(title, category, content);
     }
 
-    public void incrementViewCount(Long articleId) {
+    public void incrementViewCount(Long articleId, Long requesterId) {
         KnowledgeArticle article = findArticleById(articleId);
         if (article.getArticleStatus() != ArticleStatus.APPROVED) {
+            return;
+        }
+        if (!knowledgeArticleViewGuardService.shouldIncrease(articleId, requesterId)) {
             return;
         }
         article.incrementViewCount();
@@ -131,12 +153,6 @@ public class KnowledgeArticleCommandService {
         KnowledgeArticle article = findArticleById(articleId);
         if (Boolean.TRUE.equals(article.getIsDeleted())) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
-        }
-        if (article.getArticleStatus() == ArticleStatus.PENDING) {
-            throw new BusinessException(ArticleErrorCode.ARTICLE_010);
-        }
-        if (article.getArticleStatus() == ArticleStatus.REJECTED) {
-            throw new BusinessException(ArticleErrorCode.ARTICLE_010);
         }
         if (article.getArticleStatus() == ArticleStatus.APPROVED) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_009);
@@ -153,6 +169,25 @@ public class KnowledgeArticleCommandService {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
         article.adminDelete(reason);
+    }
+
+    public void restore(Long articleId, Long requesterId) {
+        KnowledgeArticle article = findArticleById(articleId);
+        if (!Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_NOT_FOUND);
+        }
+        if (!article.getAuthorId().equals(requesterId)) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_007);
+        }
+        article.restore();
+    }
+
+    public void adminRestore(Long articleId) {
+        KnowledgeArticle article = findArticleById(articleId);
+        if (!Boolean.TRUE.equals(article.getIsDeleted())) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_NOT_FOUND);
+        }
+        article.restore();
     }
 
     public void approve(Long articleId, Long approverId, String reviewComment) {

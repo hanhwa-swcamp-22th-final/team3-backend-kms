@@ -4,6 +4,7 @@ import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.KnowledgeHubStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeArticleMapper;
@@ -25,14 +26,20 @@ public class KnowledgeArticleQueryService {
 
     public List<ArticleReadDto> getArticles(ArticleQueryRequest request) {
         normalizeQueryRequest(request);
-        return knowledgeArticleMapper.findArticles(request);
+        List<ArticleReadDto> articles = knowledgeArticleMapper.findArticles(request);
+        articles.forEach(article -> article.setTags(knowledgeTagMapper.findTagsByArticleId(article.getArticleId())));
+        return articles;
     }
 
-    public ArticleDetailDto getArticleDetail(Long articleId) {
-        ArticleDetailDto detail = knowledgeArticleMapper.findArticleById(articleId)
+    public ArticleDetailDto getArticleDetail(Long articleId, Long requesterId) {
+        ArticleDetailDto detail = knowledgeArticleMapper.findArticleById(articleId, requesterId)
                 .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND));
         detail.setTags(knowledgeTagMapper.findTagsByArticleId(articleId));
         return detail;
+    }
+
+    public KnowledgeHubStatsDto getKnowledgeHubStats() {
+        return knowledgeArticleMapper.findKnowledgeHubStats();
     }
 
     public List<ContributorRankDto> getTopContributors(Integer limit) {
@@ -40,7 +47,9 @@ public class KnowledgeArticleQueryService {
     }
 
     public List<ArticleReadDto> getRecommendations() {
-        return knowledgeArticleMapper.findRecommendations();
+        List<ArticleReadDto> recommendations = knowledgeArticleMapper.findRecommendations();
+        recommendations.forEach(article -> article.setTags(knowledgeTagMapper.findTagsByArticleId(article.getArticleId())));
+        return recommendations;
     }
 
     private void normalizeQueryRequest(ArticleQueryRequest request) {
