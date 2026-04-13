@@ -22,6 +22,7 @@ public class KnowledgeArticleCommandService {
 
     private final KnowledgeArticleRepository knowledgeArticleRepository;
     private final KnowledgeEditHistoryRepository knowledgeEditHistoryRepository;
+    private final KnowledgeArticleViewGuardService knowledgeArticleViewGuardService;
     private final IdGenerator idGenerator;
 
     public Long register(Long authorId, Long equipmentId,
@@ -137,9 +138,12 @@ public class KnowledgeArticleCommandService {
         article.adminUpdate(title, category, content);
     }
 
-    public void incrementViewCount(Long articleId) {
+    public void incrementViewCount(Long articleId, Long requesterId) {
         KnowledgeArticle article = findArticleById(articleId);
         if (article.getArticleStatus() != ArticleStatus.APPROVED) {
+            return;
+        }
+        if (!knowledgeArticleViewGuardService.shouldIncrease(articleId, requesterId)) {
             return;
         }
         article.incrementViewCount();

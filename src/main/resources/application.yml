@@ -24,3 +24,7 @@ mybatis:
   type-aliases-package: com.ohgiraffers.team3backendkms
   configuration:
     map-underscore-to-camel-case: true
+
+kms:
+  view-count:
+    duplicate-window-minutes: 1440
