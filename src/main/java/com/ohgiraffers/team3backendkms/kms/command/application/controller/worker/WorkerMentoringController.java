@@ -1,19 +1,15 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.controller.worker;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.MentoringRequestAcceptRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.MentoringRequestCreateRequest;
+import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.MentoringRequestUpdateRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.MentoringCommandService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,9 +18,12 @@ public class WorkerMentoringController {
 
     private final MentoringCommandService mentoringCommandService;
 
+    /* 멘토링 신청 등록 (B/C 등급 Worker만) */
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> createRequest(
-            @Valid @RequestBody MentoringRequestCreateRequest request
+            @Valid @RequestBody MentoringRequestCreateRequest request,
+            @RequestHeader(value = "X-Member-Role", required = false) String role,
+            @RequestHeader(value = "X-Member-Tier", required = false) String tier
     ) {
         Long requestId = mentoringCommandService.createRequest(
                 request.getMenteeId(),
@@ -32,30 +31,25 @@ public class WorkerMentoringController {
                 request.getMentoringField(),
                 request.getRequestTitle(),
                 request.getRequestContent(),
-                request.getMentoringDurationWeeks(),
-                request.getMentoringFrequency(),
-                request.getRequestPriority()
+                role,
+                tier
         );
-
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("멘토링 요청이 등록되었고 멘토 수락 대기 상태가 되었습니다.", requestId));
+                .body(ApiResponse.success("멘토링 신청이 등록되었습니다.", requestId));
     }
 
-    @PostMapping("/{requestId}/accept")
-    public ResponseEntity<ApiResponse<Long>> acceptRequest(
+    /* 멘토링 신청 수정 (PENDING 상태, 본인만) */
+    @PutMapping("/{requestId}")
+    public ResponseEntity<ApiResponse<Void>> updateRequest(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long requestId,
-            @Valid @RequestBody MentoringRequestAcceptRequest request
+            @Valid @RequestBody MentoringRequestUpdateRequest request
     ) {
-        Long mentoringId = mentoringCommandService.acceptRequest(requestId, request.getMentorId());
-        return ResponseEntity.ok(ApiResponse.success("멘토링 요청이 수락되었고 진행 중 상태가 시작되었습니다.", mentoringId));
-    }
-
-    @PostMapping("/{requestId}/reject")
-    public ResponseEntity<ApiResponse<Void>> rejectRequest(
-            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long requestId,
-            @Valid @RequestBody MentoringRequestAcceptRequest request
-    ) {
-        mentoringCommandService.rejectRequest(requestId, request.getMentorId());
-        return ResponseEntity.ok(ApiResponse.success("멘토 개인 거절이 처리되어 해당 요청이 내 목록에서 제외되었습니다.", null));
+        mentoringCommandService.updateRequest(
+                requestId,
+                request.getMenteeId(),
+                request.getRequestTitle(),
+                request.getRequestContent()
+        );
+        return ResponseEntity.ok(ApiResponse.success("멘토링 신청이 수정되었습니다.", null));
     }
 }

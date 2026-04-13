@@ -1,17 +1,9 @@
 package com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoring;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import com.ohgiraffers.team3backendkms.common.exception.BusinessException;
+import com.ohgiraffers.team3backendkms.common.exception.MentoringErrorCode;
+import jakarta.persistence.*;
+import lombok.*;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -22,35 +14,54 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "mentoring")
+@EntityListeners(AuditingEntityListener.class)
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
 public class Mentoring {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long mentoringId;
-    private Long requestId;
+
+    @Column(nullable = false, unique = true)
+    private Long requestId;   // mentoring_request.request_id 참조
+
+    @Column(nullable = false)
     private Long mentorId;
+
+    @Column(nullable = false)
     private Long menteeId;
 
     @Enumerated(EnumType.STRING)
-    private MentoringStatus mentoringStatus;
+    @Column(nullable = false)
+    @Builder.Default
+    private MentoringStatus mentoringStatus = MentoringStatus.IN_PROGRESS;
 
     @CreatedDate
-    @Column(name = "created_at", updatable = false)
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @CreatedBy
-    @Column(name = "created_by", updatable = false)
+    @Column(updatable = false)
     private Long createdBy;
 
     @LastModifiedDate
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @LastModifiedBy
-    @Column(name = "updated_by")
     private Long updatedBy;
+
+    // ── 비즈니스 메서드 ────────────────────────────────────────────
+
+    public void complete(Long requesterId) {
+        if (!this.mentorId.equals(requesterId)) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_030);
+        }
+        if (this.mentoringStatus != MentoringStatus.IN_PROGRESS) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_031);
+        }
+        this.mentoringStatus = MentoringStatus.COMPLETED;
+    }
 }

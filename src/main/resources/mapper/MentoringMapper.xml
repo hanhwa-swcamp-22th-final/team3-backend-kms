@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ohgiraffers.team3backendkms.kms.query.mapper.MentoringMapper">
+
+    <!-- 멘토가 볼 수 있는 PENDING 요청 목록
+         조건: 해당 분야 멘토 자격 있음 + 본인이 거절하지 않은 것 -->
+    <select id="findPendingRequestsForMentor"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.mentoring.MentoringRequestListDto">
+        SELECT
+            mr.request_id       AS requestId,
+            mr.mentee_id        AS menteeId,
+            e.employee_name     AS menteeName,
+            mr.mentoring_field  AS mentoringField,
+            mr.request_title    AS requestTitle,
+            mr.request_content  AS requestContent,
+            mr.request_status   AS requestStatus,
+            mr.created_at       AS requestedAt
+        FROM mentoring_request mr
+        LEFT JOIN employee e ON mr.mentee_id = e.employee_id
+        INNER JOIN employee_mentoring_field emf
+            ON emf.employee_id = #{mentorId}
+            AND emf.mentoring_field = mr.mentoring_field
+        WHERE mr.request_status = 'PENDING'
+          AND mr.mentee_id != #{mentorId}
+          AND (
+              mr.rejected_mentor_ids IS NULL
+              OR mr.rejected_mentor_ids = '[]'
+              OR JSON_CONTAINS(mr.rejected_mentor_ids, CAST(#{mentorId} AS JSON)) = 0
+          )
+        <if test="mentoringField != null and mentoringField != ''">
+            AND mr.mentoring_field = #{mentoringField}
+        </if>
+        ORDER BY mr.created_at DESC
+    </select>
+
+    <!-- 멘티 본인 신청 목록 -->
+    <select id="findRequestsByMentee"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.mentoring.MentoringRequestListDto">
+        SELECT
+            mr.request_id       AS requestId,
+            mr.mentee_id        AS menteeId,
+            e.employee_name     AS menteeName,
+            mr.mentoring_field  AS mentoringField,
+            mr.request_title    AS requestTitle,
+            mr.request_content  AS requestContent,
+            mr.request_status   AS requestStatus,
+            mr.created_at       AS requestedAt
+        FROM mentoring_request mr
+        LEFT JOIN employee e ON mr.mentee_id = e.employee_id
+        WHERE mr.mentee_id = #{menteeId}
+        ORDER BY mr.created_at DESC
+    </select>
+
+    <!-- 멘토 기준 진행중/완료 멘토링 목록 -->
+    <select id="findMentoringsByMentor"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.mentoring.MentoringListDto">
+        SELECT
+            m.mentoring_id      AS mentoringId,
+            m.request_id        AS requestId,
+            m.mentor_id         AS mentorId,
+            em.employee_name    AS mentorName,
+            m.mentee_id         AS menteeId,
+            ee.employee_name    AS menteeName,
+            mr.mentoring_field  AS mentoringField,
+            m.mentoring_status  AS mentoringStatus,
+            m.created_at        AS startedAt,
+            m.updated_at        AS completedAt
+        FROM mentoring m
+        LEFT JOIN mentoring_request mr ON m.request_id = mr.request_id
+        LEFT JOIN employee em ON m.mentor_id = em.employee_id
+        LEFT JOIN employee ee ON m.mentee_id = ee.employee_id
+        WHERE m.mentor_id = #{mentorId}
+        ORDER BY m.created_at DESC
+    </select>
+
+    <!-- 멘티 기준 진행중/완료 멘토링 목록 -->
+    <select id="findMentoringsByMentee"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.mentoring.MentoringListDto">
+        SELECT
+            m.mentoring_id      AS mentoringId,
+            m.request_id        AS requestId,
+            m.mentor_id         AS mentorId,
+            em.employee_name    AS mentorName,
+            m.mentee_id         AS menteeId,
+            ee.employee_name    AS menteeName,
+            mr.mentoring_field  AS mentoringField,
+            m.mentoring_status  AS mentoringStatus,
+            m.created_at        AS startedAt,
+            m.updated_at        AS completedAt
+        FROM mentoring m
+        LEFT JOIN mentoring_request mr ON m.request_id = mr.request_id
+        LEFT JOIN employee em ON m.mentor_id = em.employee_id
+        LEFT JOIN employee ee ON m.mentee_id = ee.employee_id
+        WHERE m.mentee_id = #{menteeId}
+        ORDER BY m.created_at DESC
+    </select>
+
+    <!-- 전체 진행중 멘토링 목록 (사이드바 위젯용) -->
+    <select id="findInProgressMentorings"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.mentoring.MentoringListDto">
+        SELECT
+            m.mentoring_id      AS mentoringId,
+            m.request_id        AS requestId,
+            m.mentor_id         AS mentorId,
+            em.employee_name    AS mentorName,
+            m.mentee_id         AS menteeId,
+            ee.employee_name    AS menteeName,
+            mr.mentoring_field  AS mentoringField,
+            m.mentoring_status  AS mentoringStatus,
+            m.created_at        AS startedAt,
+            m.updated_at        AS completedAt
+        FROM mentoring m
+        LEFT JOIN mentoring_request mr ON m.request_id = mr.request_id
+        LEFT JOIN employee em ON m.mentor_id = em.employee_id
+        LEFT JOIN employee ee ON m.mentee_id = ee.employee_id
+        WHERE m.mentoring_status = 'IN_PROGRESS'
+        ORDER BY m.created_at DESC
+        LIMIT 10
+    </select>
+
+    <!-- 전체 PENDING 요청 목록 (사이드바 위젯용) -->
+    <select id="findAllPendingRequests"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.mentoring.MentoringRequestListDto">
+        SELECT
+            mr.request_id       AS requestId,
+            mr.mentee_id        AS menteeId,
+            e.employee_name     AS menteeName,
+            mr.mentoring_field  AS mentoringField,
+            mr.request_title    AS requestTitle,
+            mr.request_content  AS requestContent,
+            mr.request_status   AS requestStatus,
+            mr.created_at       AS requestedAt
+        FROM mentoring_request mr
+        LEFT JOIN employee e ON mr.mentee_id = e.employee_id
+        WHERE mr.request_status = 'PENDING'
+        ORDER BY mr.created_at DESC
+        LIMIT 10
+    </select>
+
+</mapper>

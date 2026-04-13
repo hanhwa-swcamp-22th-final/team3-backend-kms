@@ -91,7 +91,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
-        ErrorCode errorCode = e.getErrorCode();
+        KmsErrorCode errorCode = e.getErrorCode();
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiResponse.failure(errorCode.getCode(), e.getMessage()));
     }

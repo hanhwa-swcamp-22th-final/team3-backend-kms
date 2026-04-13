@@ -9,17 +9,11 @@ import org.hibernate.validator.constraints.Length;
 
 @Getter
 @NoArgsConstructor
-public class MentoringRequestCreateRequest {
+public class MentoringRequestUpdateRequest {
 
     @NotNull(message = "신청자 ID는 필수입니다")
     @Positive(message = "신청자 ID는 양수여야 합니다")
     private Long menteeId;
-
-    private Long articleId; // 선택
-
-    @NotBlank(message = "멘토링 분야는 필수입니다")
-    @Length(max = 100, message = "멘토링 분야는 100자 이하여야 합니다")
-    private String mentoringField;
 
     @NotBlank(message = "신청 제목은 필수입니다")
     @Length(min = 1, max = 255, message = "신청 제목은 1자 이상 255자 이하여야 합니다")

@@ -1,17 +1,10 @@
 package com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringrequest;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import com.ohgiraffers.team3backendkms.common.converter.LongListJsonConverter;
+import com.ohgiraffers.team3backendkms.common.exception.BusinessException;
+import com.ohgiraffers.team3backendkms.common.exception.MentoringErrorCode;
+import jakarta.persistence.*;
+import lombok.*;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -19,92 +12,102 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "mentoring_request")
+@EntityListeners(AuditingEntityListener.class)
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
 public class MentoringRequest {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long requestId;
+
+    private Long articleId;   // 참조 문서 (선택)
+    private Long mentorId;    // 수락 전 null, 수락 후 확정
     private Long menteeId;
-    private Long mentorId;
-    private Long articleId;
-    private String mentoringField;
+
+    @Column(nullable = false, length = 100)
+    private String mentoringField;   // ArticleCategory enum name
+
+    @Column(nullable = false, length = 255)
     private String requestTitle;
+
+    @Column(nullable = false, length = 1000)
     private String requestContent;
+
     private Integer mentoringDurationWeeks;
+
+    @Column(length = 50)
     private String mentoringFrequency;
 
     @Enumerated(EnumType.STRING)
     private RequestPriority requestPriority;
 
     @Enumerated(EnumType.STRING)
-    private MentoringRequestStatus requestStatus;
+    @Column(nullable = false)
+    @Builder.Default
+    private MentoringRequestStatus requestStatus = MentoringRequestStatus.PENDING;
 
+    @Column(length = 500)
     private String rejectReason;
 
-    @Column(columnDefinition = "json")
-    private String rejectedMentorIds;
+    @Convert(converter = LongListJsonConverter.class)
+    @Column(columnDefinition = "JSON")
+    @Builder.Default
+    private List<Long> rejectedMentorIds = new ArrayList<>();
 
     @CreatedDate
-    @Column(name = "created_at", updatable = false)
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @CreatedBy
-    @Column(name = "created_by", updatable = false)
+    @Column(updatable = false)
     private Long createdBy;
 
     @LastModifiedDate
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @LastModifiedBy
-    @Column(name = "updated_by")
     private Long updatedBy;
 
+    // ── 비즈니스 메서드 ────────────────────────────────────────────
+
+    public void update(String title, String content) {
+        if (this.requestStatus != MentoringRequestStatus.PENDING) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_013);
+        }
+        this.requestTitle = title;
+        this.requestContent = content;
+    }
+
     public void accept(Long mentorId) {
+        if (this.requestStatus != MentoringRequestStatus.PENDING) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_014);
+        }
         this.mentorId = mentorId;
         this.requestStatus = MentoringRequestStatus.ACCEPTED;
-        this.rejectReason = null;
     }
 
-    public void rejectByMentor(Long mentorId) {
-        Set<String> rejectedIds = parseRejectedMentorIds();
-        rejectedIds.add(String.valueOf(mentorId));
-        this.rejectedMentorIds = rejectedIds.stream()
-                .collect(Collectors.joining(",", "[", "]"));
-    }
-
-    public boolean hasRejectedMentor(Long mentorId) {
-        return parseRejectedMentorIds().contains(String.valueOf(mentorId));
-    }
-
-    private Set<String> parseRejectedMentorIds() {
-        if (rejectedMentorIds == null || rejectedMentorIds.isBlank()) {
-            return new LinkedHashSet<>();
+    public void addRejectedMentor(Long mentorId) {
+        if (this.rejectedMentorIds == null) {
+            this.rejectedMentorIds = new ArrayList<>();
         }
-
-        String normalized = rejectedMentorIds
-                .replace("[", "")
-                .replace("]", "")
-                .trim();
-
-        if (normalized.isBlank()) {
-            return new LinkedHashSet<>();
+        if (!this.rejectedMentorIds.contains(mentorId)) {
+            this.rejectedMentorIds.add(mentorId);
         }
+    }
 
-        return Arrays.stream(normalized.split(","))
-                .map(String::trim)
-                .filter(value -> !value.isBlank())
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+    public boolean isRejectedBy(Long mentorId) {
+        return this.rejectedMentorIds != null && this.rejectedMentorIds.contains(mentorId);
+    }
+
+    public void expireReject() {
+        this.requestStatus = MentoringRequestStatus.REJECTED;
     }
 }

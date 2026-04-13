@@ -3,22 +3,13 @@ package com.ohgiraffers.team3backendkms.kms.command.application.service;
 import com.ohgiraffers.team3backendkms.common.exception.BusinessException;
 import com.ohgiraffers.team3backendkms.common.exception.MentoringErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
-import com.ohgiraffers.team3backendkms.common.idgenerator.IdGenerator;
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoring.Mentoring;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoring.MentoringStatus;
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringemployee.EmployeeStatus;
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringemployee.EmployeeTier;
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringemployee.MentoringEmployee;
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringemployee.MentoringEmployeeRole;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringrequest.MentoringRequest;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringrequest.MentoringRequestStatus;
-import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.mentoringrequest.RequestPriority;
-import com.ohgiraffers.team3backendkms.kms.command.domain.repository.EmployeeMentoringFieldRepository;
-import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
-import com.ohgiraffers.team3backendkms.kms.command.domain.repository.MentoringEmployeeRepository;
-import com.ohgiraffers.team3backendkms.kms.command.domain.repository.MentoringRepository;
-import com.ohgiraffers.team3backendkms.kms.command.domain.repository.MentoringRequestRepository;
+import com.ohgiraffers.team3backendkms.kms.command.infrastructure.repository.JpaEmployeeMentoringFieldRepository;
+import com.ohgiraffers.team3backendkms.kms.command.infrastructure.repository.JpaMentoringRepository;
+import com.ohgiraffers.team3backendkms.kms.command.infrastructure.repository.JpaMentoringRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,155 +21,136 @@ import java.util.List;
 @Transactional
 public class MentoringCommandService {
 
-    private static final List<MentoringRequestStatus> ACTIVE_REQUEST_STATUSES =
-            List.of(MentoringRequestStatus.PENDING, MentoringRequestStatus.ACCEPTED);
+    private final JpaMentoringRequestRepository mentoringRequestRepository;
+    private final JpaMentoringRepository mentoringRepository;
+    private final JpaEmployeeMentoringFieldRepository employeeMentoringFieldRepository;
 
-    private final MentoringRequestRepository mentoringRequestRepository;
-    private final MentoringEmployeeRepository mentoringEmployeeRepository;
-    private final EmployeeMentoringFieldRepository employeeMentoringFieldRepository;
-    private final MentoringRepository mentoringRepository;
-    private final KnowledgeArticleRepository knowledgeArticleRepository;
-    private final IdGenerator idGenerator;
+    // ── 멘토링 신청 등록 (mentee: B/C 등급 worker) ─────────────────
+    public Long createRequest(Long menteeId, Long articleId, String field,
+                              String title, String content, String menteeRole, String menteeTier) {
+        validateMenteeEligibility(menteeRole, menteeTier);
 
-    public Long createRequest(
-            Long menteeId,
-            Long articleId,
-            String mentoringField,
-            String requestTitle,
-            String requestContent,
-            Integer mentoringDurationWeeks,
-            String mentoringFrequency,
-            RequestPriority requestPriority
-    ) {
-        MentoringEmployee mentee = mentoringEmployeeRepository.findById(menteeId)
-                .orElseThrow(() -> new ResourceNotFoundException(MentoringErrorCode.MENTORING_REQUEST_004));
-
-        validateMenteeEligibility(mentee);
-        validateArticle(articleId);
-        validateDuplicateRequest(menteeId, mentoringField, articleId);
-
-        MentoringRequest mentoringRequest = MentoringRequest.builder()
-                .requestId(idGenerator.generate())
-                .menteeId(menteeId)
-                .mentorId(null)
-                .articleId(articleId)
-                .mentoringField(mentoringField)
-                .requestTitle(requestTitle)
-                .requestContent(requestContent)
-                .mentoringDurationWeeks(mentoringDurationWeeks)
-                .mentoringFrequency(mentoringFrequency)
-                .requestPriority(requestPriority)
-                .requestStatus(MentoringRequestStatus.PENDING)
-                .rejectReason(null)
-                .rejectedMentorIds(null)
-                .build();
-
-        return mentoringRequestRepository.save(mentoringRequest).getRequestId();
-    }
-
-    public Long acceptRequest(Long requestId, Long mentorId) {
-        MentoringRequest mentoringRequest = mentoringRequestRepository.findById(requestId)
-                .orElseThrow(() -> new ResourceNotFoundException(MentoringErrorCode.MENTORING_REQUEST_006));
-
-        MentoringEmployee mentor = mentoringEmployeeRepository.findById(mentorId)
-                .orElseThrow(() -> new ResourceNotFoundException(MentoringErrorCode.MENTORING_REQUEST_004));
-
-        validateMentorEligibility(mentoringRequest, mentor);
-
-        if (mentoringRepository.existsByRequestId(requestId)) {
-            throw new BusinessException(MentoringErrorCode.MENTORING_REQUEST_010);
+        boolean duplicate = mentoringRequestRepository
+                .existsByMenteeIdAndMentoringFieldAndRequestStatusIn(
+                        menteeId, field, List.of(MentoringRequestStatus.PENDING, MentoringRequestStatus.ACCEPTED));
+        if (duplicate) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_011);
         }
 
-        mentoringRequest.accept(mentorId);
+        MentoringRequest request = MentoringRequest.builder()
+                .menteeId(menteeId)
+                .articleId(articleId)
+                .mentoringField(field)
+                .requestTitle(title)
+                .requestContent(content)
+                .requestStatus(MentoringRequestStatus.PENDING)
+                .build();
+
+        return mentoringRequestRepository.save(request).getRequestId();
+    }
+
+    // ── 멘토링 신청 수정 (PENDING 상태, 본인만) ────────────────────
+    public void updateRequest(Long requestId, Long menteeId, String title, String content) {
+        MentoringRequest request = findRequestById(requestId);
+
+        if (!request.getMenteeId().equals(menteeId)) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_012);
+        }
+
+        request.update(title, content);
+    }
+
+    // ── 멘토링 수락 (해당 분야 멘토, Pessimistic Lock) ─────────────
+    public Long acceptRequest(Long requestId, Long mentorId, String mentorRole, String mentorTier) {
+        validateMentorEligibility(mentorRole, mentorTier);
+
+        MentoringRequest request = mentoringRequestRepository.findByIdWithLock(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException(MentoringErrorCode.MENTORING_REQUEST_NOT_FOUND));
+
+        if (request.getMenteeId().equals(mentorId)) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_015);
+        }
+
+        if (!employeeMentoringFieldRepository.existsByEmployeeIdAndMentoringField(mentorId, request.getMentoringField())) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_020);
+        }
+
+        // 락 획득 후 재검증
+        if (request.getRequestStatus() != MentoringRequestStatus.PENDING) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_014);
+        }
+
+        if (mentoringRepository.existsByRequestId(requestId)) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_014);
+        }
+
+        request.accept(mentorId);
 
         Mentoring mentoring = Mentoring.builder()
-                .mentoringId(idGenerator.generate())
-                .requestId(mentoringRequest.getRequestId())
+                .requestId(requestId)
                 .mentorId(mentorId)
-                .menteeId(mentoringRequest.getMenteeId())
+                .menteeId(request.getMenteeId())
                 .mentoringStatus(MentoringStatus.IN_PROGRESS)
                 .build();
 
         return mentoringRepository.save(mentoring).getMentoringId();
     }
 
+    // ── 멘토 개인 거절 (해당 요청 내 목록에서만 제외) ──────────────
     public void rejectRequest(Long requestId, Long mentorId) {
-        MentoringRequest mentoringRequest = mentoringRequestRepository.findById(requestId)
-                .orElseThrow(() -> new ResourceNotFoundException(MentoringErrorCode.MENTORING_REQUEST_006));
+        MentoringRequest request = findRequestById(requestId);
 
-        MentoringEmployee mentor = mentoringEmployeeRepository.findById(mentorId)
-                .orElseThrow(() -> new ResourceNotFoundException(MentoringErrorCode.MENTORING_REQUEST_004));
-
-        validateMentorEligibility(mentoringRequest, mentor);
-
-        if (mentoringRequest.hasRejectedMentor(mentorId)) {
-            throw new BusinessException(MentoringErrorCode.MENTORING_REQUEST_012);
+        if (request.getRequestStatus() != MentoringRequestStatus.PENDING) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_014);
         }
 
-        mentoringRequest.rejectByMentor(mentorId);
+        if (request.isRejectedBy(mentorId)) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_022);
+        }
+
+        if (!employeeMentoringFieldRepository.existsByEmployeeIdAndMentoringField(mentorId, request.getMentoringField())) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_020);
+        }
+
+        request.addRejectedMentor(mentorId);
     }
 
-    private void validateMenteeEligibility(MentoringEmployee mentee) {
-        if (mentee.getEmployeeStatus() != EmployeeStatus.ACTIVE) {
-            throw new BusinessException(MentoringErrorCode.MENTORING_REQUEST_002);
-        }
+    // ── 멘토링 완료 처리 (담당 멘토만) ────────────────────────────
+    public void completeMentoring(Long mentoringId, Long mentorId) {
+        Mentoring mentoring = mentoringRepository.findById(mentoringId)
+                .orElseThrow(() -> new ResourceNotFoundException(MentoringErrorCode.MENTORING_NOT_FOUND));
 
-        if (mentee.getEmployeeRole() != MentoringEmployeeRole.WORKER
-                || (mentee.getEmployeeTier() != EmployeeTier.B && mentee.getEmployeeTier() != EmployeeTier.C)) {
-            throw new BusinessException(MentoringErrorCode.MENTORING_REQUEST_001);
-        }
+        mentoring.complete(mentorId);
     }
 
-    private void validateArticle(Long articleId) {
-        if (articleId == null) {
-            throw new BusinessException(MentoringErrorCode.MENTORING_REQUEST_011);
-        }
-
-        KnowledgeArticle article = knowledgeArticleRepository.findById(articleId)
-                .orElseThrow(() -> new ResourceNotFoundException(MentoringErrorCode.MENTORING_REQUEST_005));
-
-        if (Boolean.TRUE.equals(article.getIsDeleted())) {
-            throw new ResourceNotFoundException(MentoringErrorCode.MENTORING_REQUEST_005);
-        }
+    // ── Admin: 요청 강제 종료 ──────────────────────────────────────
+    public void expireRequest(Long requestId) {
+        MentoringRequest request = findRequestById(requestId);
+        request.expireReject();
     }
 
-    private void validateMentorEligibility(MentoringRequest mentoringRequest, MentoringEmployee mentor) {
-        if (mentoringRequest.getRequestStatus() != MentoringRequestStatus.PENDING) {
-            throw new BusinessException(MentoringErrorCode.MENTORING_REQUEST_007);
-        }
+    // ── 내부 헬퍼 ─────────────────────────────────────────────────
+    private MentoringRequest findRequestById(Long requestId) {
+        return mentoringRequestRepository.findById(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException(MentoringErrorCode.MENTORING_REQUEST_NOT_FOUND));
+    }
 
-        if (mentoringRequest.getMenteeId().equals(mentor.getEmployeeId())) {
-            throw new BusinessException(MentoringErrorCode.MENTORING_REQUEST_009);
-        }
-
-        if (mentor.getEmployeeStatus() != EmployeeStatus.ACTIVE) {
-            throw new BusinessException(MentoringErrorCode.MENTORING_REQUEST_008);
-        }
-
-        boolean mentorRoleAllowed = mentor.getEmployeeRole() == MentoringEmployeeRole.TL
-                || mentor.getEmployeeRole() == MentoringEmployeeRole.DL
-                || (mentor.getEmployeeRole() == MentoringEmployeeRole.WORKER
-                && (mentor.getEmployeeTier() == EmployeeTier.S || mentor.getEmployeeTier() == EmployeeTier.A));
-
-        if (!mentorRoleAllowed) {
-            throw new BusinessException(MentoringErrorCode.MENTORING_REQUEST_008);
-        }
-
-        if (!employeeMentoringFieldRepository.existsByEmployeeIdAndMentoringField(
-                mentor.getEmployeeId(), mentoringRequest.getMentoringField())) {
-            throw new BusinessException(MentoringErrorCode.MENTORING_REQUEST_008);
+    private void validateMenteeEligibility(String role, String tier) {
+        boolean isWorker = "WORKER".equalsIgnoreCase(role);
+        boolean isLowTier = "B".equalsIgnoreCase(tier) || "C".equalsIgnoreCase(tier);
+        if (!isWorker || !isLowTier) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_010);
         }
     }
 
-    private void validateDuplicateRequest(Long menteeId, String mentoringField, Long articleId) {
-        boolean duplicated = articleId == null
-                ? mentoringRequestRepository.existsByMenteeIdAndMentoringFieldAndRequestStatusIn(
-                        menteeId, mentoringField, ACTIVE_REQUEST_STATUSES)
-                : mentoringRequestRepository.existsByMenteeIdAndMentoringFieldAndArticleIdAndRequestStatusIn(
-                        menteeId, mentoringField, articleId, ACTIVE_REQUEST_STATUSES);
-
-        if (duplicated) {
-            throw new BusinessException(MentoringErrorCode.MENTORING_REQUEST_003);
+    private void validateMentorEligibility(String role, String tier) {
+        // TL, DL은 등급 무관하게 멘토 가능
+        if ("TL".equalsIgnoreCase(role) || "DL".equalsIgnoreCase(role)) return;
+        // WORKER는 S/A 등급만 가능
+        boolean isWorker = "WORKER".equalsIgnoreCase(role);
+        boolean isHighTier = "S".equalsIgnoreCase(tier) || "A".equalsIgnoreCase(tier);
+        if (!isWorker || !isHighTier) {
+            throw new BusinessException(MentoringErrorCode.MENTORING_021);
         }
     }
 }
