@@ -50,9 +50,10 @@ public class KnowledgeArticleQueryController {
     /* 지식 상세 조회 — 조회 후 조회수 증가 (Command는 Controller에서 조율) */
     @GetMapping(value = "/articles/{articleId}", params = "!stat")
     public ResponseEntity<ApiResponse<ArticleDetailDto>> getArticleDetail(
-            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
+            @RequestParam(required = false) Long requesterId
     ) {
-        ArticleDetailDto detail = knowledgeArticleQueryService.getArticleDetail(articleId);
+        ArticleDetailDto detail = knowledgeArticleQueryService.getArticleDetail(articleId, requesterId);
         knowledgeArticleCommandService.incrementViewCount(articleId);
         return ResponseEntity.ok(ApiResponse.success("지식 문서 상세를 조회했습니다.", detail));
     }

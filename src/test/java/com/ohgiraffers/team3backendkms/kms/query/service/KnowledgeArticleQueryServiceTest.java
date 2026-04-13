@@ -127,11 +127,11 @@ class KnowledgeArticleQueryServiceTest {
             KnowledgeTagReadDto tag = new KnowledgeTagReadDto();
             tag.setTagId(100L);
             tag.setTagName("가공");
-            given(knowledgeArticleMapper.findArticleById(1L)).willReturn(Optional.of(dto));
+            given(knowledgeArticleMapper.findArticleById(1L, null)).willReturn(Optional.of(dto));
             given(knowledgeTagMapper.findTagsByArticleId(1L)).willReturn(List.of(tag));
 
             // when
-            ArticleDetailDto result = knowledgeArticleQueryService.getArticleDetail(1L);
+            ArticleDetailDto result = knowledgeArticleQueryService.getArticleDetail(1L, null);
 
             // then
             assertNotNull(result);
@@ -146,12 +146,12 @@ class KnowledgeArticleQueryServiceTest {
         @DisplayName("Throws exception when article is not found")
         void getArticleDetail_whenNotFound_thenThrow() {
             // given
-            given(knowledgeArticleMapper.findArticleById(999L)).willReturn(Optional.empty());
+            given(knowledgeArticleMapper.findArticleById(999L, null)).willReturn(Optional.empty());
 
             // when & then
             ResourceNotFoundException exception = assertThrows(
                     ResourceNotFoundException.class,
-                    () -> knowledgeArticleQueryService.getArticleDetail(999L)
+                    () -> knowledgeArticleQueryService.getArticleDetail(999L, null)
             );
             assertTrue(exception.getMessage().contains("문서를 찾을 수 없습니다"));
         }

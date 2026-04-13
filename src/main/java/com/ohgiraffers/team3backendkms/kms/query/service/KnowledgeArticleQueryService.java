@@ -29,8 +29,8 @@ public class KnowledgeArticleQueryService {
         return knowledgeArticleMapper.findArticles(request);
     }
 
-    public ArticleDetailDto getArticleDetail(Long articleId) {
-        ArticleDetailDto detail = knowledgeArticleMapper.findArticleById(articleId)
+    public ArticleDetailDto getArticleDetail(Long articleId, Long requesterId) {
+        ArticleDetailDto detail = knowledgeArticleMapper.findArticleById(articleId, requesterId)
                 .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND));
         detail.setTags(knowledgeTagMapper.findTagsByArticleId(articleId));
         return detail;
