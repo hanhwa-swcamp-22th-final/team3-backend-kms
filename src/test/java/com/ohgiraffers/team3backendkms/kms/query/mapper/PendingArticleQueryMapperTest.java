@@ -5,10 +5,10 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
-import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto;
-import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
-import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
-import com.ohgiraffers.team3backendkms.kms.query.dto.request.ApprovalQueryRequest;
+import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleDetailDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleStatsDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.request.PendingArticleQueryRequest;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DataJpaTest
 @AutoConfigureMybatis
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-class KnowledgeArticleApprovalQueryMapperTest {
+class PendingArticleQueryMapperTest {
 
     private static final Long AUTHOR_ID = 1774942559890303L;
     private static final Long EQUIPMENT_ID = 1774836457838985L;
@@ -43,12 +43,12 @@ class KnowledgeArticleApprovalQueryMapperTest {
     private EntityManager entityManager;
 
     @Nested
-    @DisplayName("findApprovalStats()")
-    class FindApprovalStats {
+    @DisplayName("findPendingStats()")
+    class FindPendingStats {
 
         @Test
         @DisplayName("Returns non-null stats with valid numeric values")
-        void findApprovalStats_ReturnsStats() {
+        void findPendingStats_ReturnsStats() {
             // given
             knowledgeArticleRepository.save(buildArticle(ArticleStatus.PENDING));
             knowledgeArticleRepository.save(buildArticle(ArticleStatus.PENDING));
@@ -57,7 +57,7 @@ class KnowledgeArticleApprovalQueryMapperTest {
             entityManager.clear();
 
             // when
-            ApprovalStatsDto stats = knowledgeArticleMapper.findApprovalStats();
+            PendingArticleStatsDto stats = knowledgeArticleMapper.findPendingStats();
 
             // then
             assertNotNull(stats);
@@ -68,12 +68,12 @@ class KnowledgeArticleApprovalQueryMapperTest {
     }
 
     @Nested
-    @DisplayName("findApprovalArticles()")
-    class FindApprovalArticles {
+    @DisplayName("findPendingArticles()")
+    class FindPendingArticles {
 
         @Test
         @DisplayName("Returns PENDING articles when no filter applied")
-        void findApprovalArticles_NoFilter_ReturnsPendingList() {
+        void findPendingArticles_NoFilter_ReturnsPendingList() {
             // given
             knowledgeArticleRepository.save(buildArticle(ArticleStatus.PENDING));
             knowledgeArticleRepository.save(buildArticle(ArticleStatus.PENDING));
@@ -83,7 +83,7 @@ class KnowledgeArticleApprovalQueryMapperTest {
             entityManager.clear();
 
             // when
-            List<ApprovalArticleDto> result = knowledgeArticleMapper.findApprovalArticles(new ApprovalQueryRequest());
+            List<PendingArticleDto> result = knowledgeArticleMapper.findPendingArticles(new PendingArticleQueryRequest());
 
             // then
             assertFalse(result.isEmpty());
@@ -95,19 +95,19 @@ class KnowledgeArticleApprovalQueryMapperTest {
     }
 
     @Nested
-    @DisplayName("findApprovalArticleById()")
-    class FindApprovalArticleById {
+    @DisplayName("findPendingArticleById()")
+    class FindPendingArticleById {
 
         @Test
         @DisplayName("Returns detail when PENDING article exists")
-        void findApprovalArticleById_ReturnDetail() {
+        void findPendingArticleById_ReturnDetail() {
             // given
             KnowledgeArticle article = knowledgeArticleRepository.save(buildArticle(ArticleStatus.PENDING));
             entityManager.flush();
             entityManager.clear();
 
             // when
-            Optional<ApprovalArticleDetailDto> result = knowledgeArticleMapper.findApprovalArticleById(article.getArticleId());
+            Optional<PendingArticleDetailDto> result = knowledgeArticleMapper.findPendingArticleById(article.getArticleId());
 
             // then
             assertTrue(result.isPresent());
@@ -116,9 +116,9 @@ class KnowledgeArticleApprovalQueryMapperTest {
 
         @Test
         @DisplayName("Returns empty when article not found")
-        void findApprovalArticleById_NotFound_ReturnsEmpty() {
+        void findPendingArticleById_NotFound_ReturnsEmpty() {
             // when
-            Optional<ApprovalArticleDetailDto> result = knowledgeArticleMapper.findApprovalArticleById(-1L);
+            Optional<PendingArticleDetailDto> result = knowledgeArticleMapper.findPendingArticleById(-1L);
 
             // then
             assertTrue(result.isEmpty());

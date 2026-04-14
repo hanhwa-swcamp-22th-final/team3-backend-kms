@@ -163,12 +163,11 @@ class KnowledgeArticleMyQueryMapperTest {
         void findMyArticles_success() {
             // given
             MyArticleQueryRequest request = new MyArticleQueryRequest();
-            request.setAuthorId(validAuthorId);
             request.setPage(0);
             request.setSize(10);
 
             // when
-            List<MyArticleDto> result = knowledgeArticleMapper.findMyArticles(request);
+            List<MyArticleDto> result = knowledgeArticleMapper.findMyArticles(validAuthorId, request);
 
             // then
             assertNotNull(result);
@@ -182,13 +181,12 @@ class KnowledgeArticleMyQueryMapperTest {
         void findMyArticles_withStatusFilter_success() {
             // given
             MyArticleQueryRequest request = new MyArticleQueryRequest();
-            request.setAuthorId(validAuthorId);
             request.setStatus(ArticleStatus.APPROVED);
             request.setPage(0);
             request.setSize(10);
 
             // when
-            List<MyArticleDto> result = knowledgeArticleMapper.findMyArticles(request);
+            List<MyArticleDto> result = knowledgeArticleMapper.findMyArticles(validAuthorId, request);
 
             // then
             assertEquals(1, result.size());
@@ -200,12 +198,11 @@ class KnowledgeArticleMyQueryMapperTest {
         void findMyArticles_sortedByCreatedAtDesc() {
             // given
             MyArticleQueryRequest request = new MyArticleQueryRequest();
-            request.setAuthorId(validAuthorId);
             request.setPage(0);
             request.setSize(10);
 
             // when
-            List<MyArticleDto> result = knowledgeArticleMapper.findMyArticles(request);
+            List<MyArticleDto> result = knowledgeArticleMapper.findMyArticles(validAuthorId, request);
 
             // then
             for (int i = 0; i < result.size() - 1; i++) {
@@ -218,12 +215,11 @@ class KnowledgeArticleMyQueryMapperTest {
         void findMyArticles_withPaging_success() {
             // given
             MyArticleQueryRequest request = new MyArticleQueryRequest();
-            request.setAuthorId(validAuthorId);
             request.setPage(0);
             request.setSize(2);
 
             // when
-            List<MyArticleDto> result = knowledgeArticleMapper.findMyArticles(request);
+            List<MyArticleDto> result = knowledgeArticleMapper.findMyArticles(validAuthorId, request);
 
             // then
             assertEquals(2, result.size());
@@ -234,12 +230,11 @@ class KnowledgeArticleMyQueryMapperTest {
         void findMyArticles_whenNoArticles_thenEmpty() {
             // given
             MyArticleQueryRequest request = new MyArticleQueryRequest();
-            request.setAuthorId(-1L);
             request.setPage(0);
             request.setSize(10);
 
             // when
-            List<MyArticleDto> result = knowledgeArticleMapper.findMyArticles(request);
+            List<MyArticleDto> result = knowledgeArticleMapper.findMyArticles(-1L, request);
 
             // then
             assertNotNull(result);

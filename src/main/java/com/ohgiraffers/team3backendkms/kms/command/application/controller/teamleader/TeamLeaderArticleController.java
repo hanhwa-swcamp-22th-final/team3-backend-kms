@@ -1,17 +1,21 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.controller.teamleader;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
+import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleApprovalProcessRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/kms/tl/articles")
+@PreAuthorize("hasAuthority('TL')")
 public class TeamLeaderArticleController {
 
     private final KnowledgeArticleCommandService knowledgeArticleCommandService;
@@ -19,12 +23,12 @@ public class TeamLeaderArticleController {
     @PostMapping("/{articleId}/approval")
     public ResponseEntity<ApiResponse<Void>> processApproval(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
-            @RequestHeader("X-Employee-Id") Long approverId,
+            @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @Valid @RequestBody ArticleApprovalProcessRequest request
     ) {
         knowledgeArticleCommandService.processApproval(
                 articleId,
-                approverId,
+                userDetails.getEmployeeId(),
                 request.getStatus(),
                 request.getReviewComment()
         );
