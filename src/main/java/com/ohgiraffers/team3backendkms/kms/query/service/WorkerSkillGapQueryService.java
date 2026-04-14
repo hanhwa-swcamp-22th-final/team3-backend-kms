@@ -10,6 +10,7 @@ import com.ohgiraffers.team3backendkms.kms.query.dto.WorkerSkillGapResponse;
 import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeArticleMapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -25,10 +26,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class WorkerSkillGapQueryService {
 
-    private static final String REPORT_CONFIDENCE = "1.00";
     private static final String TOP_PRIORITY_COLOR = "#EF476F";
     private static final String MID_PRIORITY_COLOR = "#FFD166";
     private static final String LOW_PRIORITY_COLOR = "#5B4FCF";
+    private static final int SKILL_COUNT = SkillType.values().length;
+    private static final DecimalFormat CONFIDENCE_FORMAT = new DecimalFormat("0.00");
 
     private final AdminClient adminClient;
     private final HrClient hrClient;
@@ -72,7 +74,7 @@ public class WorkerSkillGapQueryService {
                         .targetOverall(targetOverall)
                         .totalGap(totalGap)
                         .build())
-                .report(buildReport(skills, currentTier, targetTier, totalGap))
+                .report(buildReport(skills, rawSkills, currentTier, targetTier, totalGap))
                 .courses(List.of())
                 .articles(buildRelatedArticles(weakestSkill))
                 .build();
@@ -132,6 +134,7 @@ public class WorkerSkillGapQueryService {
 
     private WorkerSkillGapResponse.Report buildReport(
             List<WorkerSkillGapResponse.SkillGapSkill> skills,
+            List<AdminEmployeeSkillResponse> rawSkills,
             String currentTier,
             String targetTier,
             int totalGap
@@ -142,14 +145,19 @@ public class WorkerSkillGapQueryService {
                 : "현재 역량 기준으로 다음 티어까지 평균 " + totalGap + "점 차이가 있습니다. 점수가 부족한 역량부터 보강하세요.";
 
         List<WorkerSkillGapResponse.GapItem> gaps = skills.stream()
-                .sorted(Comparator.comparingInt(WorkerSkillGapResponse.SkillGapSkill::getGap).reversed())
+                .sorted(Comparator
+                        .comparingInt(WorkerSkillGapResponse.SkillGapSkill::getCurrent)
+                        .thenComparing((left, right) -> Integer.compare(right.getGap(), left.getGap()))
+                        .thenComparingInt(skill -> SkillType.fromLabel(skill.getLabel())
+                                .map(type -> type.priority)
+                                .orElse(SKILL_COUNT)))
                 .limit(3)
                 .map(skill -> toGapItem(skill, highestTier))
                 .toList();
 
         return WorkerSkillGapResponse.Report.builder()
                 .summary(summary)
-                .confidence(REPORT_CONFIDENCE)
+                .confidence(calculateConfidence(rawSkills, skills))
                 .gaps(gaps)
                 .prediction(WorkerSkillGapResponse.Prediction.builder()
                         .normalDate(highestTier ? "승급 대상 아님" : "추후 연동 예정")
@@ -178,6 +186,33 @@ public class WorkerSkillGapQueryService {
                 .gap(skill.getGap())
                 .recommendation(recommendation)
                 .build();
+    }
+
+    private String calculateConfidence(
+            List<AdminEmployeeSkillResponse> rawSkills,
+            List<WorkerSkillGapResponse.SkillGapSkill> skills
+    ) {
+        long mappedSkillCount = rawSkills.stream()
+                .map(AdminEmployeeSkillResponse::getSkillName)
+                .map(SkillType::fromCode)
+                .filter(Optional::isPresent)
+                .count();
+        long nonZeroSkillCount = skills.stream()
+                .filter(skill -> skill.getCurrent() > 0)
+                .count();
+        double averageScoreRatio = skills.isEmpty()
+                ? 0
+                : skills.stream()
+                .mapToInt(WorkerSkillGapResponse.SkillGapSkill::getCurrent)
+                .average()
+                .orElse(0) / 100.0;
+
+        double confidence = 0.20
+                + (Math.min(mappedSkillCount, SKILL_COUNT) / (double) SKILL_COUNT) * 0.25
+                + (nonZeroSkillCount / (double) SKILL_COUNT) * 0.25
+                + averageScoreRatio * 0.30;
+
+        return CONFIDENCE_FORMAT.format(Math.min(1.0, confidence));
     }
 
     private int average(List<Integer> values) {
@@ -233,6 +268,8 @@ public class WorkerSkillGapQueryService {
                 .map(article -> WorkerSkillGapResponse.RelatedArticle.builder()
                         .id(article.getArticleId())
                         .title(article.getArticleTitle())
+                        .preview(article.getArticlePreview())
+                        .authorTier(article.getAuthorTier())
                         // 프론트 기존 카드 shape를 유지하기 위해 조회수를 표시용 숫자로 재사용한다.
                         .likes(article.getViewCount() == null ? 0 : article.getViewCount())
                         .build())
@@ -374,6 +411,12 @@ public class WorkerSkillGapQueryService {
         private static Optional<SkillType> fromCode(String code) {
             return Arrays.stream(values())
                     .filter(type -> type.code.equalsIgnoreCase(code))
+                    .findFirst();
+        }
+
+        private static Optional<SkillType> fromLabel(String label) {
+            return Arrays.stream(values())
+                    .filter(type -> type.label.equals(label))
                     .findFirst();
         }
 

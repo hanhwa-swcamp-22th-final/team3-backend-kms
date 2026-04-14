@@ -19,6 +19,7 @@ public class ArticleReadDto {
     private String authorName;
     private String authorTier;
     private String articleTitle;
+    private String articlePreview;
     private ArticleCategory articleCategory;
     private ArticleStatus articleStatus;
     private Integer viewCount;

@@ -82,6 +82,8 @@ public class WorkerSkillGapResponse {
     public static class RelatedArticle {
         private Long id;
         private String title;
+        private String preview;
+        private String authorTier;
         private int likes;
     }
 }
