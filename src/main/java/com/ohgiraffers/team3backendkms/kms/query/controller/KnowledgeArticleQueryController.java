@@ -1,6 +1,8 @@
 package com.ohgiraffers.team3backendkms.kms.query.controller;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
+import com.ohgiraffers.team3backendkms.jwt.AuthenticatedEmployee;
+import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
@@ -16,6 +18,7 @@ import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleQuerySe
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,8 +35,11 @@ public class KnowledgeArticleQueryController {
     /* 지식 목록 조회 */
     @GetMapping(value = "/articles", params = "!stat")
     public ResponseEntity<ApiResponse<List<ArticleReadDto>>> getArticles(
+            @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @ModelAttribute ArticleQueryRequest request
     ) {
+        request.setRequesterId(AuthenticatedEmployee.employeeId(userDetails, request.getRequesterId()));
+        request.setRequesterRole(AuthenticatedEmployee.role(userDetails, request.getRequesterRole()));
         List<ArticleReadDto> articles = knowledgeArticleQueryService.getArticles(request);
         return ResponseEntity.ok(ApiResponse.success("지식 문서 목록을 조회했습니다.", articles));
     }
@@ -51,10 +57,12 @@ public class KnowledgeArticleQueryController {
     @GetMapping(value = "/articles/{articleId}", params = "!stat")
     public ResponseEntity<ApiResponse<ArticleDetailDto>> getArticleDetail(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
+            @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @RequestParam(required = false) Long requesterId
     ) {
-        knowledgeArticleCommandService.incrementViewCount(articleId, requesterId);
-        ArticleDetailDto detail = knowledgeArticleQueryService.getArticleDetail(articleId, requesterId);
+        Long currentRequesterId = AuthenticatedEmployee.employeeId(userDetails, requesterId);
+        knowledgeArticleCommandService.incrementViewCount(articleId, currentRequesterId);
+        ArticleDetailDto detail = knowledgeArticleQueryService.getArticleDetail(articleId, currentRequesterId);
         return ResponseEntity.ok(ApiResponse.success("지식 문서 상세를 조회했습니다.", detail));
     }
 

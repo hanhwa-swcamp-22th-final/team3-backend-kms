@@ -11,6 +11,5 @@ public class BookmarkCreateRequest {
     @NotNull(message = "게시글 ID는 필수입니다.")
     private Long articleId;
 
-    @NotNull(message = "직원 ID는 필수입니다.")
-    private Long employeeId;
+    private Long employeeId;        // deprecated: JWT 인증 정보 우선 사용
 }
