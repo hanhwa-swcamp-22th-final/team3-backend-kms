@@ -10,6 +10,7 @@ import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleMyQuery
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +25,7 @@ import java.util.List;
 @Validated
 @RequiredArgsConstructor
 @RequestMapping("/api/kms/my")
+@PreAuthorize("hasAuthority('WORKER')")
 public class KnowledgeArticleMyQueryController {
 
     private final KnowledgeArticleMyQueryService knowledgeArticleMyQueryService;

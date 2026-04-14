@@ -18,6 +18,7 @@ import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleQuerySe
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,11 +35,13 @@ public class KnowledgeArticleQueryController {
 
     /* 지식 목록 조회 */
     @GetMapping(value = "/articles", params = "!status")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DL', 'TL', 'WORKER')")
     public ResponseEntity<ApiResponse<List<ArticleReadDto>>> getArticles(
             @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @ModelAttribute ArticleQueryRequest request
     ) {
         // 목록 권한 분기는 mapper 에서 requesterId/requesterRole 조합으로 처리한다.
+        userDetails.getEmployeeId();
         request.setRequesterId(AuthenticatedEmployee.employeeId(userDetails, request.getRequesterId()));
         request.setRequesterRole(AuthenticatedEmployee.role(userDetails, request.getRequesterRole()));
         List<ArticleReadDto> articles = knowledgeArticleQueryService.getArticles(request);
@@ -47,6 +50,7 @@ public class KnowledgeArticleQueryController {
 
     /* 승인 대기 목록 조회 - 공통 articles 경로에서 status=pending 으로 분기 */
     @GetMapping(value = "/articles", params = "status=pending")
+    @PreAuthorize("hasAnyAuthority('DL', 'TL')")
     public ResponseEntity<ApiResponse<List<PendingArticleDto>>> getPendingArticles(
             @ModelAttribute PendingArticleQueryRequest request
     ) {
@@ -57,6 +61,7 @@ public class KnowledgeArticleQueryController {
 
     /* 지식 상세 조회 — 조회 후 조회수 증가 (Command는 Controller에서 조율) */
     @GetMapping(value = "/articles/{articleId}", params = "!status")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DL', 'TL', 'WORKER')")
     public ResponseEntity<ApiResponse<ArticleDetailDto>> getArticleDetail(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
             @AuthenticationPrincipal EmployeeUserDetails userDetails,
@@ -71,6 +76,7 @@ public class KnowledgeArticleQueryController {
 
     /* 승인 상세 조회 - 공통 articles 경로에서 status=pending 으로 분기 */
     @GetMapping(value = "/articles/{articleId}", params = "status=pending")
+    @PreAuthorize("hasAnyAuthority('DL ', ' TL ')")
     public ResponseEntity<ApiResponse<PendingArticleDetailDto>> getPendingArticleDetail(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId
     ) {
@@ -80,6 +86,7 @@ public class KnowledgeArticleQueryController {
 
     /* 승인 통계 조회 - 공통 stats 경로에서 status=pending 으로 분기 */
     @GetMapping(value = "/stats", params = "status=pending")
+    @PreAuthorize("hasAnyAuthority('DL', 'TL')")
     public ResponseEntity<ApiResponse<PendingArticleStatsDto>> getPendingStats() {
         PendingArticleStatsDto stats = pendingArticleQueryService.getPendingStats();
         return ResponseEntity.ok(ApiResponse.success("승인 통계를 조회했습니다.", stats));
@@ -87,6 +94,7 @@ public class KnowledgeArticleQueryController {
 
     /* KMS 허브 통계 조회 */
     @GetMapping(value = "/stats", params = "status=hub")
+    @PreAuthorize("hasAnyAuthority(  'ADMIN', 'DL', 'TL', 'WORKER')")
     public ResponseEntity<ApiResponse<KnowledgeHubStatsDto>> getKnowledgeHubStats() {
         KnowledgeHubStatsDto stats = knowledgeArticleQueryService.getKnowledgeHubStats();
         return ResponseEntity.ok(ApiResponse.success("KMS 허브 통계를 조회했습니다.", stats));
@@ -94,6 +102,7 @@ public class KnowledgeArticleQueryController {
 
     /* KMS 허브 기여자 랭킹 조회 */
     @GetMapping("/articles/contributors")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DL', 'TL', 'WORKER')")
     public ResponseEntity<ApiResponse<List<ContributorRankDto>>> getTopContributors(
             @RequestParam(value = "limit", defaultValue = "3") Integer limit
     ) {
@@ -103,6 +112,7 @@ public class KnowledgeArticleQueryController {
 
     /* AI 지식 추천 조회 (APPROVED 문서 중 조회수 높은 순 TOP 3) */
     @GetMapping("/articles/recommendations")
+    @PreAuthorize("hasAnyAuthority('ADMIN ', 'DL', 'TL', 'WORKER')")
     public ResponseEntity<ApiResponse<List<ArticleReadDto>>> getRecommendations() {
         List<ArticleReadDto> recommendations = knowledgeArticleQueryService.getRecommendations();
         return ResponseEntity.ok(ApiResponse.success("추천 문서를 조회했습니다.", recommendations));

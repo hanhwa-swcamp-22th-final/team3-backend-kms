@@ -6,6 +6,7 @@ import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeBookmarkQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,7 @@ import java.util.List;
 @Validated
 @RequiredArgsConstructor
 @RequestMapping("/api/kms/my")
+@PreAuthorize("hasAuthority('WORKER')")
 public class KnowledgeBookmarkQueryController {
 
     private final KnowledgeBookmarkQueryService bookmarkQueryService;
