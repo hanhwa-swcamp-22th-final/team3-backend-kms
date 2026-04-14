@@ -46,8 +46,8 @@
         <if test="category != null">
             AND ka.article_category = #{category}
         </if>
-        <if test="status != null">
-            AND ka.article_status = #{status}
+        <if test="articleStatus != null">
+            AND ka.article_status = #{articleStatus}
         </if>
         <if test="keyword != null and keyword != '' and searchType != null and searchType != ''">
             <choose>
@@ -150,7 +150,6 @@
                       AND prev_ka.approved_at IS NOT NULL
                       AND YEAR(prev_ka.approved_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
                       AND MONTH(prev_ka.approved_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
-                      AND (prev_e.employee_name IS NULL OR prev_e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))
                 )
             ) AS newThisMonthChange,
             ROUND(
@@ -164,7 +163,6 @@
                           AND cur_ka.approved_at IS NOT NULL
                           AND YEAR(cur_ka.approved_at) = YEAR(CURDATE())
                           AND MONTH(cur_ka.approved_at) = MONTH(CURDATE())
-                          AND (cur_e.employee_name IS NULL OR cur_e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))
                     ),
                     0
                 )
@@ -179,7 +177,6 @@
                           AND prev_ka.approved_at IS NOT NULL
                           AND YEAR(prev_ka.approved_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
                           AND MONTH(prev_ka.approved_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
-                          AND (prev_e.employee_name IS NULL OR prev_e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))
                     ),
                     0
                 ),
@@ -323,8 +320,7 @@
              FROM knowledge_article ka
              LEFT JOIN employee e ON ka.author_id = e.employee_id
              WHERE ka.article_status = 'PENDING'
-               AND ka.is_deleted = false
-               AND (e.employee_name IS NULL OR e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))) AS pendingCount,
+               AND ka.is_deleted = false) AS pendingCount,
 
             (SELECT COUNT(*)
              FROM knowledge_article ka
@@ -332,8 +328,7 @@
              WHERE ka.article_status = 'APPROVED'
                AND ka.is_deleted = false
                AND YEAR(ka.approved_at) = YEAR(CURDATE())
-               AND MONTH(ka.approved_at) = MONTH(CURDATE())
-               AND (e.employee_name IS NULL OR e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))) AS approvedThisMonth,
+               AND MONTH(ka.approved_at) = MONTH(CURDATE())) AS approvedThisMonth,
 
             ROUND(
                 IFNULL(
@@ -341,15 +336,13 @@
                      FROM knowledge_article ka
                      LEFT JOIN employee e ON ka.author_id = e.employee_id
                      WHERE ka.article_status = 'REJECTED'
-                       AND ka.is_deleted = false
-                       AND (e.employee_name IS NULL OR e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))) * 100.0 /
+                       AND ka.is_deleted = false) * 100.0 /
                     NULLIF(
                         (SELECT COUNT(*)
                          FROM knowledge_article ka
                          LEFT JOIN employee e ON ka.author_id = e.employee_id
                          WHERE ka.article_status IN ('APPROVED', 'REJECTED')
-                           AND ka.is_deleted = false
-                           AND (e.employee_name IS NULL OR e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))),
+                           AND ka.is_deleted = false),
                         0
                     ),
                     0.0

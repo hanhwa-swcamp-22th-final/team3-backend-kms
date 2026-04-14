@@ -115,7 +115,7 @@ class KnowledgeArticleQueryControllerTest {
             mockMvc.perform(get("/api/kms/articles")
                             .with(user(authenticatedUser()))
                             .param("category", "TROUBLESHOOTING")
-                            .param("status", "APPROVED")
+                            .param("articleStatus", "APPROVED")
                             .param("searchType", "articleTitle")
                             .param("keyword", "테스트")
                             .param("sort", "latest")
@@ -127,8 +127,8 @@ class KnowledgeArticleQueryControllerTest {
         }
 
         @Test
-        @DisplayName("Returns approval list when stat=approval")
-        void getArticles_withApprovalStat_success() throws Exception {
+        @DisplayName("Returns pending list when status=pending")
+        void getArticles_withPendingStatus_success() throws Exception {
             // given
             PendingArticleDto dto = new PendingArticleDto();
             dto.setArticleId(1L);
@@ -138,7 +138,7 @@ class KnowledgeArticleQueryControllerTest {
 
             // when & then
             mockMvc.perform(get("/api/kms/articles")
-                            .param("stat", "approval")
+                            .param("status", "pending")
                             .param("keyword", "대기"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
@@ -197,8 +197,8 @@ class KnowledgeArticleQueryControllerTest {
         }
 
         @Test
-        @DisplayName("Returns approval detail when stat=approval")
-        void getArticleDetail_withApprovalStat_success() throws Exception {
+        @DisplayName("Returns pending detail when status=pending")
+        void getArticleDetail_withPendingStatus_success() throws Exception {
             // given
             PendingArticleDetailDto dto = new PendingArticleDetailDto();
             dto.setArticleId(1L);
@@ -207,7 +207,7 @@ class KnowledgeArticleQueryControllerTest {
 
             // when & then
             mockMvc.perform(get("/api/kms/articles/1")
-                            .param("stat", "approval"))
+                            .param("status", "pending"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data.articleId").value(1))
@@ -220,8 +220,8 @@ class KnowledgeArticleQueryControllerTest {
     class GetStats {
 
         @Test
-        @DisplayName("Returns approval stats when stat=approval")
-        void getStats_withApprovalStat_success() throws Exception {
+        @DisplayName("Returns pending stats when status=pending")
+        void getStats_withPendingStatus_success() throws Exception {
             // given
             PendingArticleStatsDto dto = new PendingArticleStatsDto();
             dto.setPendingCount(5L);
@@ -231,7 +231,7 @@ class KnowledgeArticleQueryControllerTest {
 
             // when & then
             mockMvc.perform(get("/api/kms/stats")
-                            .param("stat", "approval"))
+                            .param("status", "pending"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data.pendingCount").value(5))

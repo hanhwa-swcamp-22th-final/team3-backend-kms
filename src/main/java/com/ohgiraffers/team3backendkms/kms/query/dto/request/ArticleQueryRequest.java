@@ -12,7 +12,7 @@ import lombok.Setter;
 public class ArticleQueryRequest {
 
     private ArticleCategory category;   // 카테고리 필터
-    private ArticleStatus status;       // 상태 필터
+    private ArticleStatus articleStatus; // 문서 상태 필터
     private String sort;                // 정렬 (latest / popular)
     private String searchType;          // 검색 조건 (articleId / authorName / articleTitle)
     private String keyword;             // 검색어

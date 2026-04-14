@@ -33,7 +33,7 @@ public class KnowledgeArticleQueryController {
     private final KnowledgeArticleCommandService knowledgeArticleCommandService;
 
     /* 지식 목록 조회 */
-    @GetMapping(value = "/articles", params = "!stat")
+    @GetMapping(value = "/articles", params = "!status")
     public ResponseEntity<ApiResponse<List<ArticleReadDto>>> getArticles(
             @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @ModelAttribute ArticleQueryRequest request
@@ -45,18 +45,18 @@ public class KnowledgeArticleQueryController {
         return ResponseEntity.ok(ApiResponse.success("지식 문서 목록을 조회했습니다.", articles));
     }
 
-    /* 승인 대기 목록 조회 - 공통 articles 경로에서 stat=approval 로 분기 */
-    @GetMapping(value = "/articles", params = "stat=approval")
+    /* 승인 대기 목록 조회 - 공통 articles 경로에서 status=pending 으로 분기 */
+    @GetMapping(value = "/articles", params = "status=pending")
     public ResponseEntity<ApiResponse<List<PendingArticleDto>>> getPendingArticles(
             @ModelAttribute PendingArticleQueryRequest request
     ) {
-        // 승인 대기 조회는 기존 /approval 경로를 없애고 공통 articles 경로에서 stat 으로 분기한다.
+        // 승인 대기 조회는 기존 /approval 경로를 없애고 공통 articles 경로에서 status 로 분기한다.
         List<PendingArticleDto> articles = pendingArticleQueryService.getPendingArticles(request);
         return ResponseEntity.ok(ApiResponse.success("승인 대기 문서 목록을 조회했습니다.", articles));
     }
 
     /* 지식 상세 조회 — 조회 후 조회수 증가 (Command는 Controller에서 조율) */
-    @GetMapping(value = "/articles/{articleId}", params = "!stat")
+    @GetMapping(value = "/articles/{articleId}", params = "!status")
     public ResponseEntity<ApiResponse<ArticleDetailDto>> getArticleDetail(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
             @AuthenticationPrincipal EmployeeUserDetails userDetails,
@@ -69,8 +69,8 @@ public class KnowledgeArticleQueryController {
         return ResponseEntity.ok(ApiResponse.success("지식 문서 상세를 조회했습니다.", detail));
     }
 
-    /* 승인 상세 조회 - 공통 articles 경로에서 stat=approval 로 분기 */
-    @GetMapping(value = "/articles/{articleId}", params = "stat=approval")
+    /* 승인 상세 조회 - 공통 articles 경로에서 status=pending 으로 분기 */
+    @GetMapping(value = "/articles/{articleId}", params = "status=pending")
     public ResponseEntity<ApiResponse<PendingArticleDetailDto>> getPendingArticleDetail(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId
     ) {
@@ -78,15 +78,15 @@ public class KnowledgeArticleQueryController {
         return ResponseEntity.ok(ApiResponse.success("승인 대상 문서 상세를 조회했습니다.", detail));
     }
 
-    /* 승인 통계 조회 - 공통 stats 경로에서 stat=approval 로 분기 */
-    @GetMapping(value = "/stats", params = "stat=approval")
+    /* 승인 통계 조회 - 공통 stats 경로에서 status=pending 으로 분기 */
+    @GetMapping(value = "/stats", params = "status=pending")
     public ResponseEntity<ApiResponse<PendingArticleStatsDto>> getPendingStats() {
         PendingArticleStatsDto stats = pendingArticleQueryService.getPendingStats();
         return ResponseEntity.ok(ApiResponse.success("승인 통계를 조회했습니다.", stats));
     }
 
     /* KMS 허브 통계 조회 */
-    @GetMapping(value = "/stats", params = "stat=hub")
+    @GetMapping(value = "/stats", params = "status=hub")
     public ResponseEntity<ApiResponse<KnowledgeHubStatsDto>> getKnowledgeHubStats() {
         KnowledgeHubStatsDto stats = knowledgeArticleQueryService.getKnowledgeHubStats();
         return ResponseEntity.ok(ApiResponse.success("KMS 허브 통계를 조회했습니다.", stats));
