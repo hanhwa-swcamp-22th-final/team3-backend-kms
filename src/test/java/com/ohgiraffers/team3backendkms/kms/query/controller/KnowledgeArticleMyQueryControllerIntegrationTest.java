@@ -1,6 +1,7 @@
 package com.ohgiraffers.team3backendkms.kms.query.controller;
 
 import com.ohgiraffers.team3backendkms.common.idgenerator.TimeBasedIdGenerator;
+import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -93,6 +95,10 @@ class KnowledgeArticleMyQueryControllerIntegrationTest {
         jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=1");
     }
 
+    private EmployeeUserDetails authenticatedWorker() {
+        return new EmployeeUserDetails(AUTHOR_ID, "ITESTMY0001", List.of(() -> "WORKER"));
+    }
+
     @Test
     @DisplayName("GET /api/kms/my/articles/stats integration success: return my article counts only")
     void getMyArticleStats_success() throws Exception {
@@ -106,7 +112,7 @@ class KnowledgeArticleMyQueryControllerIntegrationTest {
         flushAndClear();
 
         mockMvc.perform(get("/api/kms/my/articles/stats")
-                        .param("authorId", String.valueOf(AUTHOR_ID))
+                        .with(user(authenticatedWorker()))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -141,7 +147,7 @@ class KnowledgeArticleMyQueryControllerIntegrationTest {
         flushAndClear();
 
         mockMvc.perform(get("/api/kms/my/articles")
-                        .param("authorId", String.valueOf(AUTHOR_ID))
+                        .with(user(authenticatedWorker()))
                         .param("page", "0")
                         .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -175,7 +181,7 @@ class KnowledgeArticleMyQueryControllerIntegrationTest {
         entityManager.clear();
 
         mockMvc.perform(get("/api/kms/my/articles/history")
-                        .param("authorId", String.valueOf(AUTHOR_ID))
+                        .with(user(authenticatedWorker()))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))

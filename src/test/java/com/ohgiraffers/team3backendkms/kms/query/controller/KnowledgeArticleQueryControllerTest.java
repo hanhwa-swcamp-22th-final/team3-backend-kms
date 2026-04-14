@@ -63,7 +63,7 @@ class KnowledgeArticleQueryControllerTest {
         return new EmployeeUserDetails(
                 10L,
                 "EMP0010",
-                List.of(new SimpleGrantedAuthority("ROLE_WORKER"))
+                List.of(new SimpleGrantedAuthority("WORKER"))
         );
     }
 
@@ -171,8 +171,7 @@ class KnowledgeArticleQueryControllerTest {
 
             // when & then
             mockMvc.perform(get("/api/kms/articles/1")
-                            .with(user(authenticatedUser()))
-                            .param("requesterId", "10"))
+                            .with(user(authenticatedUser())))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data.articleId").value(1))
@@ -189,8 +188,7 @@ class KnowledgeArticleQueryControllerTest {
 
             // when & then
             mockMvc.perform(get("/api/kms/articles/999")
-                            .with(user(authenticatedUser()))
-                            .param("requesterId", "10"))
+                            .with(user(authenticatedUser())))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"));

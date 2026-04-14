@@ -1,6 +1,7 @@
 package com.ohgiraffers.team3backendkms.kms.query.controller;
 
 import com.ohgiraffers.team3backendkms.common.exception.GlobalExceptionHandler;
+import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.query.dto.KnowledgeTagReadDto;
@@ -16,9 +17,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +32,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -34,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         controllers = KnowledgeArticleMyQueryController.class,
         excludeAutoConfiguration = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class}
 )
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, KnowledgeArticleMyQueryControllerTest.SecurityTestConfig.class})
 class KnowledgeArticleMyQueryControllerTest {
 
     @Autowired
@@ -42,6 +49,18 @@ class KnowledgeArticleMyQueryControllerTest {
 
     @MockitoBean
     private KnowledgeArticleMyQueryService knowledgeArticleMyQueryService;
+
+    private EmployeeUserDetails authenticatedWorker() {
+        return new EmployeeUserDetails(10L, "EMP0010", List.of(new SimpleGrantedAuthority("WORKER")));
+    }
+
+    @TestConfiguration
+    static class SecurityTestConfig implements WebMvcConfigurer {
+        @Override
+        public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+            resolvers.add(new AuthenticationPrincipalArgumentResolver());
+        }
+    }
 
     @Nested
     @DisplayName("GET /api/kms/my/articles/stats")
@@ -57,18 +76,11 @@ class KnowledgeArticleMyQueryControllerTest {
             dto.setDraftCount(4L);
             given(knowledgeArticleMyQueryService.getMyArticleStats(10L)).willReturn(dto);
 
-            mockMvc.perform(get("/api/kms/my/articles/stats").param("authorId", "10"))
+            mockMvc.perform(get("/api/kms/my/articles/stats").with(user(authenticatedWorker())))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data.approvedCount").value(3))
                     .andExpect(jsonPath("$.data.draftCount").value(4));
-        }
-
-        @Test
-        @DisplayName("Returns 400 when authorId is missing")
-        void getMyArticleStats_whenAuthorIdMissing_thenBadRequest() throws Exception {
-            mockMvc.perform(get("/api/kms/my/articles/stats"))
-                    .andExpect(status().isBadRequest());
         }
     }
 
@@ -95,7 +107,7 @@ class KnowledgeArticleMyQueryControllerTest {
                     .willReturn(List.of(article));
 
             mockMvc.perform(get("/api/kms/my/articles")
-                            .param("authorId", "10")
+                            .with(user(authenticatedWorker()))
                             .param("status", "APPROVED")
                             .param("page", "0")
                             .param("size", "10"))
@@ -105,13 +117,6 @@ class KnowledgeArticleMyQueryControllerTest {
                     .andExpect(jsonPath("$.data[0].articleTitle").value("내 문서"))
                     .andExpect(jsonPath("$.data[0].tags[0].tagId").value(100))
                     .andExpect(jsonPath("$.data[0].tags[0].tagName").value("가공"));
-        }
-
-        @Test
-        @DisplayName("Returns 400 when authorId is missing")
-        void getMyArticles_whenAuthorIdMissing_thenBadRequest() throws Exception {
-            mockMvc.perform(get("/api/kms/my/articles"))
-                    .andExpect(status().isBadRequest());
         }
     }
 
@@ -131,19 +136,12 @@ class KnowledgeArticleMyQueryControllerTest {
             given(knowledgeArticleMyQueryService.getMyRecentArticleHistory(10L))
                     .willReturn(List.of(history));
 
-            mockMvc.perform(get("/api/kms/my/articles/history").param("authorId", "10"))
+            mockMvc.perform(get("/api/kms/my/articles/history").with(user(authenticatedWorker())))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data[0].id").value(1))
                     .andExpect(jsonPath("$.data[0].title").value("최근 수정 문서"))
                     .andExpect(jsonPath("$.data[0].status").value("승인 대기"));
-        }
-
-        @Test
-        @DisplayName("Returns 400 when authorId is missing")
-        void getMyRecentArticleHistory_whenAuthorIdMissing_thenBadRequest() throws Exception {
-            mockMvc.perform(get("/api/kms/my/articles/history"))
-                    .andExpect(status().isBadRequest());
         }
     }
 }

@@ -11,9 +11,6 @@ import org.hibernate.validator.constraints.Length;
 @NoArgsConstructor
 public class ArticleUpdateRequest {
 
-    @NotNull(message = "작성자 ID는 필수입니다")
-    private Long authorId;          // 임시: JWT 연결 시 제거 예정
-
     @NotBlank(message = "제목은 필수입니다")
     @Length(min = 5, max = 200, message = "제목은 5자 이상 200자 이하여야 합니다")
     private String title;

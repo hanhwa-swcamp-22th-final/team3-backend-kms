@@ -1,7 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.query.controller;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
-import com.ohgiraffers.team3backendkms.jwt.AuthenticatedEmployee;
 import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleDetailDto;
@@ -41,9 +40,8 @@ public class KnowledgeArticleQueryController {
             @ModelAttribute ArticleQueryRequest request
     ) {
         // 목록 권한 분기는 mapper 에서 requesterId/requesterRole 조합으로 처리한다.
-        userDetails.getEmployeeId();
-        request.setRequesterId(AuthenticatedEmployee.employeeId(userDetails, request.getRequesterId()));
-        request.setRequesterRole(AuthenticatedEmployee.role(userDetails, request.getRequesterRole()));
+        request.setRequesterId(userDetails.getEmployeeId());
+        request.setRequesterRole(userDetails.getAuthorities().iterator().next().getAuthority());
         List<ArticleReadDto> articles = knowledgeArticleQueryService.getArticles(request);
         return ResponseEntity.ok(ApiResponse.success("지식 문서 목록을 조회했습니다.", articles));
     }
@@ -64,10 +62,9 @@ public class KnowledgeArticleQueryController {
     @PreAuthorize("hasAnyAuthority('ADMIN', 'DL', 'TL', 'WORKER')")
     public ResponseEntity<ApiResponse<ArticleDetailDto>> getArticleDetail(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
-            @AuthenticationPrincipal EmployeeUserDetails userDetails,
-            @RequestParam(required = false) Long requesterId
+            @AuthenticationPrincipal EmployeeUserDetails userDetails
     ) {
-        Long currentRequesterId = AuthenticatedEmployee.employeeId(userDetails, requesterId);
+        Long currentRequesterId = userDetails.getEmployeeId();
         // 조회수는 상세 응답 전에 증가시켜야 첫 조회 결과에도 최신 viewCount 가 반영된다.
         knowledgeArticleCommandService.incrementViewCount(articleId, currentRequesterId);
         ArticleDetailDto detail = knowledgeArticleQueryService.getArticleDetail(articleId, currentRequesterId);
