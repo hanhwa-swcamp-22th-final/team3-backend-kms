@@ -11,9 +11,6 @@ import org.hibernate.validator.constraints.Length;
 @NoArgsConstructor
 public class ArticleSubmitRequest {
 
-    @NotNull(message = "작성자 ID는 필수입니다")
-    private Long authorId;
-
     @NotBlank(message = "제목은 필수입니다")
     @Length(min = 1, max = 50, message = "제목은 1자 이상 50자 이하여야 합니다")
     private String title;

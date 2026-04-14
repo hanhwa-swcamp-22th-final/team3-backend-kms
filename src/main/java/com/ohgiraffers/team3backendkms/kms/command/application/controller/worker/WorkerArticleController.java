@@ -1,11 +1,10 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.controller.worker;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDeleteRequest;
+import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftUpdateRequest;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRevisionStartRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleSubmitRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.KnowledgeArticleTagUpdateRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
@@ -15,11 +14,14 @@ import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/kms/articles")
+@PreAuthorize("hasAuthority('WORKER')")
 public class WorkerArticleController {
 
     private final KnowledgeArticleCommandService knowledgeArticleCommandService;
@@ -28,9 +30,10 @@ public class WorkerArticleController {
     /* 지식 문서 등록 (PENDING) */
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> register(
+            @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @Valid @RequestBody ArticleRegisterRequest request) {
         Long articleId = knowledgeArticleCommandService.register(
-                request.getAuthorId(),
+                userDetails.getEmployeeId(),
                 request.getEquipmentId(),
                 request.getTitle(),
                 request.getCategory(),
@@ -42,9 +45,11 @@ public class WorkerArticleController {
 
     /* 지식 문서 임시저장 (DRAFT) */
     @PostMapping("/drafts")
-    public ResponseEntity<ApiResponse<Long>> draft(@Valid @RequestBody ArticleDraftRequest request) {
+    public ResponseEntity<ApiResponse<Long>> draft(
+            @AuthenticationPrincipal EmployeeUserDetails userDetails,
+            @Valid @RequestBody ArticleDraftRequest request) {
         Long articleId = knowledgeArticleCommandService.draft(
-                request.getAuthorId(),
+                userDetails.getEmployeeId(),
                 request.getEquipmentId(),
                 request.getTitle(),
                 request.getCategory(),
@@ -58,6 +63,7 @@ public class WorkerArticleController {
     @PutMapping("/{articleId}")
     public ResponseEntity<ApiResponse<Void>> update(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
+            @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @Valid @RequestBody ArticleDraftUpdateRequest request
     ) {
         knowledgeArticleCommandService.updateDraft(
@@ -66,7 +72,7 @@ public class WorkerArticleController {
                 request.getCategory(),
                 request.getEquipmentId(),
                 request.getContent(),
-                request.getAuthorId()
+                userDetails.getEmployeeId()
         );
         return ResponseEntity.ok(ApiResponse.success("문서가 수정되었습니다.", null));
     }
@@ -75,6 +81,7 @@ public class WorkerArticleController {
     @PutMapping("/{articleId}/draft")
     public ResponseEntity<ApiResponse<Void>> saveAsDraft(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
+            @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @Valid @RequestBody ArticleDraftUpdateRequest request
     ) {
         knowledgeArticleCommandService.saveAsDraft(
@@ -83,7 +90,7 @@ public class WorkerArticleController {
                 request.getCategory(),
                 request.getEquipmentId(),
                 request.getContent(),
-                request.getAuthorId()
+                userDetails.getEmployeeId()
         );
         return ResponseEntity.ok(ApiResponse.success("문서가 임시저장 상태로 변경되었습니다.", null));
     }
@@ -92,9 +99,12 @@ public class WorkerArticleController {
     @PutMapping("/{articleId}/revision")
     public ResponseEntity<ApiResponse<Long>> startRevision(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
-            @Valid @RequestBody ArticleRevisionStartRequest request
+            @AuthenticationPrincipal EmployeeUserDetails userDetails
     ) {
-        Long revisionArticleId = knowledgeArticleCommandService.startRevision(articleId, request.getRequesterId());
+        Long revisionArticleId = knowledgeArticleCommandService.startRevision(
+                articleId,
+                userDetails.getEmployeeId()
+        );
         return ResponseEntity.ok(ApiResponse.success("수정본 작업을 위한 초안이 생성되었습니다.", revisionArticleId));
     }
 
@@ -102,6 +112,7 @@ public class WorkerArticleController {
     @PutMapping("/{articleId}/submit")
     public ResponseEntity<ApiResponse<Void>> submit(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
+            @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @Valid @RequestBody ArticleSubmitRequest request
     ) {
         knowledgeArticleCommandService.submitDraft(
@@ -110,7 +121,7 @@ public class WorkerArticleController {
                 request.getCategory(),
                 request.getEquipmentId(),
                 request.getContent(),
-                request.getAuthorId()
+                userDetails.getEmployeeId()
         );
         return ResponseEntity.ok(ApiResponse.success("임시저장 문서가 제출되었고 승인 대기 상태로 변경되었습니다.", null));
     }
@@ -119,18 +130,18 @@ public class WorkerArticleController {
     @DeleteMapping("/{articleId}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
-            @Valid @RequestBody ArticleDeleteRequest request
+            @AuthenticationPrincipal EmployeeUserDetails userDetails
     ) {
-        knowledgeArticleCommandService.delete(articleId, request.getRequesterId());
+        knowledgeArticleCommandService.delete(articleId, userDetails.getEmployeeId());
         return ResponseEntity.ok(ApiResponse.success("문서가 삭제되었습니다.", null));
     }
 
     @PutMapping("/{articleId}/restore")
     public ResponseEntity<ApiResponse<Void>> restore(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
-            @Valid @RequestBody ArticleDeleteRequest request
+            @AuthenticationPrincipal EmployeeUserDetails userDetails
     ) {
-        knowledgeArticleCommandService.restore(articleId, request.getRequesterId());
+        knowledgeArticleCommandService.restore(articleId, userDetails.getEmployeeId());
         return ResponseEntity.ok(ApiResponse.success("문서가 복원되었습니다.", null));
     }
 

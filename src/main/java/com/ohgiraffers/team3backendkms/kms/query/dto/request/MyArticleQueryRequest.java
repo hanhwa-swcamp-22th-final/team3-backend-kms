@@ -1,7 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.query.dto.request;
 
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,8 +10,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class MyArticleQueryRequest {
 
-    @NotNull(message = "authorId는 필수입니다.")
-    private Long authorId;
     private ArticleStatus status;   // 상태 필터 (없으면 전체)
     private Integer page;
     private Integer size;

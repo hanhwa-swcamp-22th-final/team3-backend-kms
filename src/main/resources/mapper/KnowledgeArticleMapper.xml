@@ -4,10 +4,6 @@
 
 <mapper namespace="com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeArticleMapper">
 
-    <sql id="excludeHiddenKmsAuthors">
-        AND (e.employee_name IS NULL OR e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))
-    </sql>
-
     <!-- 지식 목록 조회 -->
     <select id="findArticles"
             parameterType="com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest"
@@ -32,7 +28,7 @@
         FROM knowledge_article ka
         LEFT JOIN employee e ON ka.author_id = e.employee_id
         WHERE 1 = 1
-        <include refid="excludeHiddenKmsAuthors"/>
+        
         <if test="requesterRole != 'ADMIN'">
             AND ka.is_deleted = false
         </if>
@@ -50,8 +46,8 @@
         <if test="category != null">
             AND ka.article_category = #{category}
         </if>
-        <if test="status != null">
-            AND ka.article_status = #{status}
+        <if test="articleStatus != null">
+            AND ka.article_status = #{articleStatus}
         </if>
         <if test="keyword != null and keyword != '' and searchType != null and searchType != ''">
             <choose>
@@ -154,7 +150,6 @@
                       AND prev_ka.approved_at IS NOT NULL
                       AND YEAR(prev_ka.approved_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
                       AND MONTH(prev_ka.approved_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
-                      AND (prev_e.employee_name IS NULL OR prev_e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))
                 )
             ) AS newThisMonthChange,
             ROUND(
@@ -168,7 +163,6 @@
                           AND cur_ka.approved_at IS NOT NULL
                           AND YEAR(cur_ka.approved_at) = YEAR(CURDATE())
                           AND MONTH(cur_ka.approved_at) = MONTH(CURDATE())
-                          AND (cur_e.employee_name IS NULL OR cur_e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))
                     ),
                     0
                 )
@@ -183,7 +177,6 @@
                           AND prev_ka.approved_at IS NOT NULL
                           AND YEAR(prev_ka.approved_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
                           AND MONTH(prev_ka.approved_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
-                          AND (prev_e.employee_name IS NULL OR prev_e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))
                     ),
                     0
                 ),
@@ -193,7 +186,7 @@
         LEFT JOIN employee e ON ka.author_id = e.employee_id
         WHERE ka.article_status = 'APPROVED'
           AND ka.is_deleted = false
-          <include refid="excludeHiddenKmsAuthors"/>
+          
     </select>
 
     <!-- KMS 허브 기여자 랭킹 조회 (APPROVED 문서 전체 기준) -->
@@ -211,7 +204,7 @@
         LEFT JOIN employee e ON ka.author_id = e.employee_id
         WHERE ka.article_status = 'APPROVED'
           AND ka.is_deleted = false
-          <include refid="excludeHiddenKmsAuthors"/>
+          
         GROUP BY ka.author_id, e.employee_name
         ORDER BY articleCount DESC, totalViewCount DESC, ka.author_id
         LIMIT #{limit}
@@ -233,15 +226,15 @@
         LEFT JOIN employee e ON ka.author_id = e.employee_id
         WHERE ka.article_status = 'APPROVED'
           AND ka.is_deleted = false
-          <include refid="excludeHiddenKmsAuthors"/>
+          
         ORDER BY ka.view_count DESC, ka.approved_at DESC
         LIMIT 3
     </select>
 
     <!-- 승인 대기 목록 조회 -->
-    <select id="findApprovalArticles"
-            parameterType="com.ohgiraffers.team3backendkms.kms.query.dto.request.ApprovalQueryRequest"
-            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto">
+    <select id="findPendingArticles"
+            parameterType="com.ohgiraffers.team3backendkms.kms.query.dto.request.PendingArticleQueryRequest"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleDto">
         SELECT
             ka.article_id       AS articleId,
             ka.author_id        AS authorId,
@@ -261,7 +254,7 @@
         LEFT JOIN employee approver ON ka.approved_by = approver.employee_id
         WHERE ka.is_deleted = false
           AND ka.article_status = 'PENDING'
-          <include refid="excludeHiddenKmsAuthors"/>
+          
         <if test="category != null">
             AND ka.article_category = #{category}
         </if>
@@ -292,9 +285,9 @@
     </select>
 
     <!-- 승인 상세 조회 -->
-    <select id="findApprovalArticleById"
+    <select id="findPendingArticleById"
             parameterType="long"
-            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto">
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleDetailDto">
         SELECT
             ka.article_id               AS articleId,
             ka.author_id                AS authorId,
@@ -316,19 +309,18 @@
         WHERE ka.article_id = #{articleId}
           AND ka.is_deleted = false
           AND ka.article_status = 'PENDING'
-          <include refid="excludeHiddenKmsAuthors"/>
+          
     </select>
 
     <!-- 승인 통계 조회 -->
-    <select id="findApprovalStats"
-            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto">
+    <select id="findPendingStats"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleStatsDto">
         SELECT
             (SELECT COUNT(*)
              FROM knowledge_article ka
              LEFT JOIN employee e ON ka.author_id = e.employee_id
              WHERE ka.article_status = 'PENDING'
-               AND ka.is_deleted = false
-               AND (e.employee_name IS NULL OR e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))) AS pendingCount,
+               AND ka.is_deleted = false) AS pendingCount,
 
             (SELECT COUNT(*)
              FROM knowledge_article ka
@@ -336,8 +328,7 @@
              WHERE ka.article_status = 'APPROVED'
                AND ka.is_deleted = false
                AND YEAR(ka.approved_at) = YEAR(CURDATE())
-               AND MONTH(ka.approved_at) = MONTH(CURDATE())
-               AND (e.employee_name IS NULL OR e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))) AS approvedThisMonth,
+               AND MONTH(ka.approved_at) = MONTH(CURDATE())) AS approvedThisMonth,
 
             ROUND(
                 IFNULL(
@@ -345,15 +336,13 @@
                      FROM knowledge_article ka
                      LEFT JOIN employee e ON ka.author_id = e.employee_id
                      WHERE ka.article_status = 'REJECTED'
-                       AND ka.is_deleted = false
-                       AND (e.employee_name IS NULL OR e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))) * 100.0 /
+                       AND ka.is_deleted = false) * 100.0 /
                     NULLIF(
                         (SELECT COUNT(*)
                          FROM knowledge_article ka
                          LEFT JOIN employee e ON ka.author_id = e.employee_id
                          WHERE ka.article_status IN ('APPROVED', 'REJECTED')
-                           AND ka.is_deleted = false
-                           AND (e.employee_name IS NULL OR e.employee_name NOT IN ('Batch-Test-Worker', '최상위관리자'))),
+                           AND ka.is_deleted = false),
                         0
                     ),
                     0.0
@@ -377,7 +366,6 @@
 
     <!-- 내 지식 목록 조회 -->
     <select id="findMyArticles"
-            parameterType="com.ohgiraffers.team3backendkms.kms.query.dto.request.MyArticleQueryRequest"
             resultType="com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleDto">
         SELECT
             ka.article_id       AS articleId,
@@ -402,12 +390,12 @@
         FROM knowledge_article ka
         LEFT JOIN equipment eq ON ka.equipment_id = eq.equipment_id
         WHERE ka.author_id = #{authorId}
-        <if test="status != null">
-            AND ka.article_status = #{status}
+        <if test="request.status != null">
+            AND ka.article_status = #{request.status}
         </if>
         ORDER BY ka.created_at DESC
-        <if test="page != null and size != null">
-            LIMIT #{size} OFFSET #{offset}
+        <if test="request.page != null and request.size != null">
+            LIMIT #{request.size} OFFSET #{request.offset}
         </if>
     </select>
 

@@ -2,6 +2,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.controller.teaml
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.common.idgenerator.TimeBasedIdGenerator;
+import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
@@ -19,10 +20,12 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -64,6 +67,10 @@ class TeamLeaderArticleControllerIntegrationTest {
         );
     }
 
+    private EmployeeUserDetails authenticatedTeamLeader() {
+        return new EmployeeUserDetails(approverId, "TL0001", List.of(() -> "TL"));
+    }
+
     @Test
     @DisplayName("Approve article API integration success: update article approval fields")
     void approveArticle_success() throws Exception {
@@ -73,7 +80,7 @@ class TeamLeaderArticleControllerIntegrationTest {
 
         // when
         mockMvc.perform(post("/api/kms/tl/articles/{articleId}/approval", pendingArticle.getArticleId())
-                .header("X-Employee-Id", approverId)
+                .with(user(authenticatedTeamLeader()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -98,7 +105,7 @@ class TeamLeaderArticleControllerIntegrationTest {
 
         // when
         mockMvc.perform(post("/api/kms/tl/articles/{articleId}/approval", pendingArticle.getArticleId())
-                .header("X-Employee-Id", approverId)
+                .with(user(authenticatedTeamLeader()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())

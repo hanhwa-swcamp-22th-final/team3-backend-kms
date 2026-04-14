@@ -24,8 +24,8 @@ public class KnowledgeArticleMyQueryService {
         return knowledgeArticleMapper.findMyArticleStats(authorId);
     }
 
-    public List<MyArticleDto> getMyArticles(MyArticleQueryRequest request) {
-        List<MyArticleDto> articles = knowledgeArticleMapper.findMyArticles(request);
+    public List<MyArticleDto> getMyArticles(Long authorId, MyArticleQueryRequest request) {
+        List<MyArticleDto> articles = knowledgeArticleMapper.findMyArticles(authorId, request);
         articles.forEach(article -> article.setTags(
                 knowledgeTagMapper.findTagsByArticleId(article.getArticleId())
         ));

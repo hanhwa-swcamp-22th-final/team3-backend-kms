@@ -2,6 +2,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.controller.worke
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.common.idgenerator.TimeBasedIdGenerator;
+import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
@@ -22,8 +23,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -79,6 +82,10 @@ class WorkerBookmarkControllerIntegrationTest {
         jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=1");
     }
 
+    private EmployeeUserDetails authenticatedWorker() {
+        return new EmployeeUserDetails(EMPLOYEE_ID, "ITESTWORKER", List.of(() -> "WORKER"));
+    }
+
     // =====================================================
     // POST /api/kms/bookmarks — 북마크 추가
     // =====================================================
@@ -90,12 +97,12 @@ class WorkerBookmarkControllerIntegrationTest {
         KnowledgeArticle article = saveArticle();
 
         Map<String, Object> request = Map.of(
-                "articleId", article.getArticleId(),
-                "employeeId", EMPLOYEE_ID
+                "articleId", article.getArticleId()
         );
 
         // when & then
         mockMvc.perform(post(BASE_URL)
+                        .with(user(authenticatedWorker()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -115,12 +122,12 @@ class WorkerBookmarkControllerIntegrationTest {
         saveBookmark(article.getArticleId(), EMPLOYEE_ID);
 
         Map<String, Object> request = Map.of(
-                "articleId", article.getArticleId(),
-                "employeeId", EMPLOYEE_ID
+                "articleId", article.getArticleId()
         );
 
         // when & then — 중복 북마크 시 409 응답
         mockMvc.perform(post(BASE_URL)
+                        .with(user(authenticatedWorker()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
@@ -140,8 +147,8 @@ class WorkerBookmarkControllerIntegrationTest {
 
         // when & then
         mockMvc.perform(delete(BASE_URL)
-                        .param("articleId", String.valueOf(article.getArticleId()))
-                        .param("employeeId", String.valueOf(EMPLOYEE_ID)))
+                        .with(user(authenticatedWorker()))
+                        .param("articleId", String.valueOf(article.getArticleId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
@@ -159,8 +166,8 @@ class WorkerBookmarkControllerIntegrationTest {
 
         // when & then — 없는 북마크 취소 시 404 응답
         mockMvc.perform(delete(BASE_URL)
-                        .param("articleId", String.valueOf(article.getArticleId()))
-                        .param("employeeId", String.valueOf(EMPLOYEE_ID)))
+                        .with(user(authenticatedWorker()))
+                        .param("articleId", String.valueOf(article.getArticleId())))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success").value(false));
     }
@@ -179,7 +186,7 @@ class WorkerBookmarkControllerIntegrationTest {
 
         // when & then
         mockMvc.perform(get(MY_URL)
-                        .param("employeeId", String.valueOf(EMPLOYEE_ID)))
+                        .with(user(authenticatedWorker())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").isArray())
@@ -193,7 +200,7 @@ class WorkerBookmarkControllerIntegrationTest {
 
         // when & then
         mockMvc.perform(get(MY_URL)
-                        .param("employeeId", String.valueOf(EMPLOYEE_ID)))
+                        .with(user(authenticatedWorker())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").isArray())

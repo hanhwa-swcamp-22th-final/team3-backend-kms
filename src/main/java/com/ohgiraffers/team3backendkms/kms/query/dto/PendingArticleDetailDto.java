@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-public class ApprovalArticleDetailDto {
+public class PendingArticleDetailDto {
 
     private Long articleId;
     private Long authorId;

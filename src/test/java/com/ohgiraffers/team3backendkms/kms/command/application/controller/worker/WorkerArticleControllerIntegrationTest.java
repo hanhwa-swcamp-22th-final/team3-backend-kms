@@ -3,6 +3,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.controller.worke
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.common.idgenerator.TimeBasedIdGenerator;
+import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
@@ -21,10 +22,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -80,13 +83,16 @@ class WorkerArticleControllerIntegrationTest {
         jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=1");
     }
 
+    private EmployeeUserDetails authenticatedWorker() {
+        return new EmployeeUserDetails(AUTHOR_ID, "ITESTWORKER", List.of(() -> "WORKER"));
+    }
+
     @Test
     @DisplayName("Create article API integration success: persist article with pending status")
     void createArticle_success() throws Exception {
         // given
         // 등록 요청 본문을 JSON 형태로 만들기 위해 Map으로 준비한다.
         Map<String, Object> request = Map.of(
-            "authorId", AUTHOR_ID,
             "equipmentId", EQUIPMENT_ID,
             "title", TITLE,
             "category", "TROUBLESHOOTING",
@@ -96,6 +102,7 @@ class WorkerArticleControllerIntegrationTest {
         // when
         // 등록 API를 실제로 호출하고 응답 결과를 받아 둔다.
         MvcResult result = mockMvc.perform(post(BASE_URL)
+                .with(user(authenticatedWorker()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
@@ -123,7 +130,6 @@ class WorkerArticleControllerIntegrationTest {
         KnowledgeArticle draftArticle = saveArticle(ArticleStatus.DRAFT, TITLE, CONTENT, 0);
         // 수정 요청 본문을 준비한다.
         Map<String, Object> request = Map.of(
-            "authorId", AUTHOR_ID,
             "equipmentId", EQUIPMENT_ID,
             "title", UPDATED_TITLE,
             "category", "PROCESS_IMPROVEMENT",
@@ -133,6 +139,7 @@ class WorkerArticleControllerIntegrationTest {
         // when
         // 임시저장 수정 API를 호출한다.
         mockMvc.perform(put(BASE_URL + "/{articleId}", draftArticle.getArticleId())
+                .with(user(authenticatedWorker()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -157,7 +164,6 @@ class WorkerArticleControllerIntegrationTest {
         KnowledgeArticle draftArticle = saveArticle(ArticleStatus.DRAFT, TITLE, "임시 작성 중인 본문", 0);
         // 제출 요청 본문을 준비한다.
         Map<String, Object> request = Map.of(
-            "authorId", AUTHOR_ID,
             "equipmentId", EQUIPMENT_ID,
             "title", UPDATED_TITLE,
             "category", "PROCESS_IMPROVEMENT",
@@ -167,6 +173,7 @@ class WorkerArticleControllerIntegrationTest {
         // when
         // 제출 API를 호출해 상태 전이를 유도한다.
         mockMvc.perform(put(BASE_URL + "/{articleId}/submit", draftArticle.getArticleId())
+                .with(user(authenticatedWorker()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -188,14 +195,9 @@ class WorkerArticleControllerIntegrationTest {
     void startRevision_success() throws Exception {
         // given
         KnowledgeArticle approvedArticle = saveArticle(ArticleStatus.APPROVED, TITLE, CONTENT, 0);
-        Map<String, Object> request = Map.of(
-            "requesterId", AUTHOR_ID
-        );
-
         // when
         MvcResult result = mockMvc.perform(put(BASE_URL + "/{articleId}/revision", approvedArticle.getArticleId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .with(user(authenticatedWorker())))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andReturn();
@@ -228,8 +230,7 @@ class WorkerArticleControllerIntegrationTest {
 
         // when 1. 수정 시작
         MvcResult revisionResult = mockMvc.perform(put(BASE_URL + "/{articleId}/revision", approvedArticle.getArticleId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of("requesterId", AUTHOR_ID))))
+                .with(user(authenticatedWorker())))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andReturn();
@@ -238,9 +239,9 @@ class WorkerArticleControllerIntegrationTest {
 
         // when 2. 재제출
         mockMvc.perform(put(BASE_URL + "/{articleId}/submit", revisionArticleId)
+                .with(user(authenticatedWorker()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of(
-                    "authorId", AUTHOR_ID,
                     "equipmentId", EQUIPMENT_ID,
                     "title", "재승인 요청 제목입니다",
                     "category", "PROCESS_IMPROVEMENT",
@@ -251,7 +252,7 @@ class WorkerArticleControllerIntegrationTest {
 
         // when 3. 반려
         mockMvc.perform(post("/api/kms/tl/articles/{articleId}/approval", revisionArticleId)
-                .header("X-Employee-Id", AUTHOR_ID)
+                .with(user(new EmployeeUserDetails(AUTHOR_ID, "TL0001", List.of(() -> "TL"))))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of(
                     "status", "REJECT",
@@ -262,9 +263,9 @@ class WorkerArticleControllerIntegrationTest {
 
         // when 4. 반려 후 수정
         mockMvc.perform(put(BASE_URL + "/{articleId}", revisionArticleId)
+                .with(user(authenticatedWorker()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of(
-                    "authorId", AUTHOR_ID,
                     "equipmentId", EQUIPMENT_ID,
                     "title", "반려 후 수정 제목입니다",
                     "category", "SAFETY",
@@ -275,9 +276,9 @@ class WorkerArticleControllerIntegrationTest {
 
         // when 5. 반려 후 재제출
         mockMvc.perform(put(BASE_URL + "/{articleId}/submit", revisionArticleId)
+                .with(user(authenticatedWorker()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of(
-                    "authorId", AUTHOR_ID,
                     "equipmentId", EQUIPMENT_ID,
                     "title", "반려 후 재제출 제목입니다",
                     "category", "SAFETY",

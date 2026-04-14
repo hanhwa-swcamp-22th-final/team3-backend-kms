@@ -2,6 +2,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.controller.worke
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ohgiraffers.team3backendkms.common.exception.GlobalExceptionHandler;
+import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleTagCommandService;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
@@ -14,14 +15,21 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAut
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -29,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     controllers = WorkerArticleController.class,
     excludeAutoConfiguration = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class}
 )
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, WorkerArticleControllerTest.SecurityTestConfig.class})
 class WorkerArticleControllerTest {
 
     private static final String BASE_URL = "/api/kms/articles";
@@ -46,6 +54,22 @@ class WorkerArticleControllerTest {
     @MockitoBean
     private KnowledgeArticleTagCommandService knowledgeArticleTagCommandService;
 
+    private EmployeeUserDetails authenticatedWorker() {
+        return new EmployeeUserDetails(
+                10L,
+                "EMP0010",
+                List.of(new SimpleGrantedAuthority("WORKER"))
+        );
+    }
+
+    @TestConfiguration
+    static class SecurityTestConfig implements WebMvcConfigurer {
+        @Override
+        public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+            resolvers.add(new AuthenticationPrincipalArgumentResolver());
+        }
+    }
+
     @Nested
     @DisplayName("POST /api/kms/articles")
     class Register {
@@ -60,6 +84,7 @@ class WorkerArticleControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL)
+                    .with(user(authenticatedWorker()))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isCreated())
@@ -72,7 +97,6 @@ class WorkerArticleControllerTest {
         void register_whenTitleIsBlank_thenBadRequest() throws Exception {
             // given
             Map<String, Object> body = Map.of(
-                "authorId", 10,
                 "equipmentId", 1,
                 "title", "",
                 "category", "TROUBLESHOOTING",
@@ -81,6 +105,7 @@ class WorkerArticleControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL)
+                    .with(user(authenticatedWorker()))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isBadRequest())
@@ -93,7 +118,6 @@ class WorkerArticleControllerTest {
         void register_whenContentTooShort_thenBadRequest() throws Exception {
             // given
             Map<String, Object> body = Map.of(
-                "authorId", 10,
                 "equipmentId", 1,
                 "title", "정상적인 제목입니다",
                 "category", "TROUBLESHOOTING",
@@ -102,6 +126,7 @@ class WorkerArticleControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL)
+                    .with(user(authenticatedWorker()))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isBadRequest())
@@ -124,6 +149,7 @@ class WorkerArticleControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/1")
+                    .with(user(authenticatedWorker()))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isOk())
@@ -135,7 +161,6 @@ class WorkerArticleControllerTest {
         void update_whenTitleIsBlank_thenOk() throws Exception {
             // given
             Map<String, Object> body = Map.of(
-                "authorId", 10,
                 "title", "",
                 "category", "TROUBLESHOOTING",
                 "content", "수정된 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 이제 충분한 길이입니다."
@@ -145,6 +170,7 @@ class WorkerArticleControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/1")
+                    .with(user(authenticatedWorker()))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isOk())
@@ -164,8 +190,7 @@ class WorkerArticleControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/1/revision")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(Map.of("requesterId", 10))))
+                    .with(user(authenticatedWorker())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value(2));
@@ -186,6 +211,7 @@ class WorkerArticleControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/1/submit")
+                    .with(user(authenticatedWorker()))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isOk())
@@ -197,7 +223,6 @@ class WorkerArticleControllerTest {
         void submit_whenContentTooShort_thenBadRequest() throws Exception {
             // given
             Map<String, Object> body = Map.of(
-                "authorId", 10,
                 "equipmentId", 1,
                 "title", "정상적인 제목입니다",
                 "category", "TROUBLESHOOTING",
@@ -206,6 +231,7 @@ class WorkerArticleControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/1/submit")
+                    .with(user(authenticatedWorker()))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isBadRequest())
@@ -226,8 +252,7 @@ class WorkerArticleControllerTest {
 
             // when & then
             mockMvc.perform(delete(BASE_URL + "/1")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(Map.of("requesterId", 10))))
+                    .with(user(authenticatedWorker())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
         }
@@ -235,7 +260,6 @@ class WorkerArticleControllerTest {
 
     private Map<String, Object> createRegisterRequest() {
         return Map.of(
-            "authorId", 10,
             "equipmentId", 1,
             "title", "정상적인 테스트 제목입니다",
             "category", "TROUBLESHOOTING",
@@ -245,7 +269,6 @@ class WorkerArticleControllerTest {
 
     private Map<String, Object> createDraftUpdateRequest() {
         return Map.of(
-            "authorId", 10,
             "equipmentId", 1,
             "title", "수정된 제목입니다",
             "category", "PROCESS_IMPROVEMENT",
@@ -255,7 +278,6 @@ class WorkerArticleControllerTest {
 
     private Map<String, Object> createSubmitRequest() {
         return Map.of(
-            "authorId", 10,
             "equipmentId", 1,
             "title", "수정된 제목입니다",
             "category", "PROCESS_IMPROVEMENT",

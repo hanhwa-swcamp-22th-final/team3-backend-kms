@@ -2,17 +2,18 @@ package com.ohgiraffers.team3backendkms.kms.query.controller;
 
 import com.ohgiraffers.team3backendkms.common.exception.GlobalExceptionHandler;
 import com.ohgiraffers.team3backendkms.common.exception.ResourceNotFoundException;
+import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
-import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto;
-import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
-import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleDetailDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
-import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleApprovalQueryService;
+import com.ohgiraffers.team3backendkms.kms.query.service.PendingArticleQueryService;
 import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleQueryService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,13 +24,19 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -37,7 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         controllers = KnowledgeArticleQueryController.class,
         excludeAutoConfiguration = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class}
 )
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, KnowledgeArticleQueryControllerTest.SecurityTestConfig.class})
 class KnowledgeArticleQueryControllerTest {
 
     @Autowired
@@ -47,10 +54,26 @@ class KnowledgeArticleQueryControllerTest {
     private KnowledgeArticleQueryService knowledgeArticleQueryService;
 
     @MockitoBean
-    private KnowledgeArticleApprovalQueryService knowledgeArticleApprovalQueryService;
+    private PendingArticleQueryService pendingArticleQueryService;
 
     @MockitoBean
     private KnowledgeArticleCommandService knowledgeArticleCommandService;
+
+    private EmployeeUserDetails authenticatedUser() {
+        return new EmployeeUserDetails(
+                10L,
+                "EMP0010",
+                List.of(new SimpleGrantedAuthority("WORKER"))
+        );
+    }
+
+    @TestConfiguration
+    static class SecurityTestConfig implements WebMvcConfigurer {
+        @Override
+        public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+            resolvers.add(new AuthenticationPrincipalArgumentResolver());
+        }
+    }
 
     @Nested
     @DisplayName("GET /api/kms/articles")
@@ -73,7 +96,7 @@ class KnowledgeArticleQueryControllerTest {
                     .willReturn(List.of(dto));
 
             // when & then
-            mockMvc.perform(get("/api/kms/articles"))
+            mockMvc.perform(get("/api/kms/articles").with(user(authenticatedUser())))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data[0].articleId").value(1))
@@ -90,12 +113,11 @@ class KnowledgeArticleQueryControllerTest {
 
             // when & then
             mockMvc.perform(get("/api/kms/articles")
+                            .with(user(authenticatedUser()))
                             .param("category", "TROUBLESHOOTING")
-                            .param("status", "APPROVED")
+                            .param("articleStatus", "APPROVED")
                             .param("searchType", "articleTitle")
                             .param("keyword", "테스트")
-                            .param("requesterId", "10")
-                            .param("requesterRole", "WORKER")
                             .param("sort", "latest")
                             .param("page", "0")
                             .param("size", "10"))
@@ -105,18 +127,18 @@ class KnowledgeArticleQueryControllerTest {
         }
 
         @Test
-        @DisplayName("Returns approval list when stat=approval")
-        void getArticles_withApprovalStat_success() throws Exception {
+        @DisplayName("Returns pending list when status=pending")
+        void getArticles_withPendingStatus_success() throws Exception {
             // given
-            ApprovalArticleDto dto = new ApprovalArticleDto();
+            PendingArticleDto dto = new PendingArticleDto();
             dto.setArticleId(1L);
             dto.setArticleTitle("승인 대기 문서 제목입니다");
-            given(knowledgeArticleApprovalQueryService.getApprovalArticles(any()))
+            given(pendingArticleQueryService.getPendingArticles(any()))
                     .willReturn(List.of(dto));
 
             // when & then
             mockMvc.perform(get("/api/kms/articles")
-                            .param("stat", "approval")
+                            .param("status", "pending")
                             .param("keyword", "대기"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
@@ -145,10 +167,11 @@ class KnowledgeArticleQueryControllerTest {
             dto.setViewCount(5);
             dto.setCreatedAt(LocalDateTime.of(2026, 3, 1, 12, 0));
             dto.setUpdatedAt(LocalDateTime.of(2026, 3, 2, 9, 0));
-            given(knowledgeArticleQueryService.getArticleDetail(1L, null)).willReturn(dto);
+            given(knowledgeArticleQueryService.getArticleDetail(1L, 10L)).willReturn(dto);
 
             // when & then
-            mockMvc.perform(get("/api/kms/articles/1"))
+            mockMvc.perform(get("/api/kms/articles/1")
+                            .with(user(authenticatedUser())))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data.articleId").value(1))
@@ -160,28 +183,29 @@ class KnowledgeArticleQueryControllerTest {
         @DisplayName("Returns 404 when article not found")
         void getArticleDetail_whenNotFound_thenNotFound() throws Exception {
             // given
-            given(knowledgeArticleQueryService.getArticleDetail(999L, null))
+            given(knowledgeArticleQueryService.getArticleDetail(999L, 10L))
                     .willThrow(new ResourceNotFoundException("문서를 찾을 수 없습니다. id=999"));
 
             // when & then
-            mockMvc.perform(get("/api/kms/articles/999"))
+            mockMvc.perform(get("/api/kms/articles/999")
+                            .with(user(authenticatedUser())))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"));
         }
 
         @Test
-        @DisplayName("Returns approval detail when stat=approval")
-        void getArticleDetail_withApprovalStat_success() throws Exception {
+        @DisplayName("Returns pending detail when status=pending")
+        void getArticleDetail_withPendingStatus_success() throws Exception {
             // given
-            ApprovalArticleDetailDto dto = new ApprovalArticleDetailDto();
+            PendingArticleDetailDto dto = new PendingArticleDetailDto();
             dto.setArticleId(1L);
             dto.setArticleTitle("승인 상세 제목입니다");
-            given(knowledgeArticleApprovalQueryService.getApprovalArticleById(1L)).willReturn(dto);
+            given(pendingArticleQueryService.getPendingArticleById(1L)).willReturn(dto);
 
             // when & then
             mockMvc.perform(get("/api/kms/articles/1")
-                            .param("stat", "approval"))
+                            .param("status", "pending"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data.articleId").value(1))
@@ -194,18 +218,18 @@ class KnowledgeArticleQueryControllerTest {
     class GetStats {
 
         @Test
-        @DisplayName("Returns approval stats when stat=approval")
-        void getStats_withApprovalStat_success() throws Exception {
+        @DisplayName("Returns pending stats when status=pending")
+        void getStats_withPendingStatus_success() throws Exception {
             // given
-            ApprovalStatsDto dto = new ApprovalStatsDto();
+            PendingArticleStatsDto dto = new PendingArticleStatsDto();
             dto.setPendingCount(5L);
             dto.setApprovedThisMonth(10L);
             dto.setRejectionRate(33.33);
-            given(knowledgeArticleApprovalQueryService.getApprovalStats()).willReturn(dto);
+            given(pendingArticleQueryService.getPendingStats()).willReturn(dto);
 
             // when & then
             mockMvc.perform(get("/api/kms/stats")
-                            .param("stat", "approval"))
+                            .param("status", "pending"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data.pendingCount").value(5))
