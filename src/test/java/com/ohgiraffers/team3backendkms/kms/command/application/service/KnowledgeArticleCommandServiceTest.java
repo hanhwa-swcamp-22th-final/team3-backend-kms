@@ -9,6 +9,7 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ApprovalStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeEditHistoryRepository;
+import com.ohgiraffers.team3backendkms.infrastructure.kafka.publisher.MissionProgressEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -47,6 +48,9 @@ class KnowledgeArticleCommandServiceTest {
 
     @Mock
     private IdGenerator idGenerator;
+
+    @Mock
+    private MissionProgressEventPublisher missionProgressEventPublisher;
 
     private KnowledgeArticle pendingArticle;
     private KnowledgeArticle draftArticle;
