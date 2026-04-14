@@ -2,11 +2,9 @@ package com.ohgiraffers.team3backendkms.kms.command.application.controller.worke
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDeleteRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRegisterRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftUpdateRequest;
-import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleRevisionStartRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleSubmitRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.KnowledgeArticleTagUpdateRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
@@ -99,8 +97,7 @@ public class WorkerArticleController {
     @PutMapping("/{articleId}/revision")
     public ResponseEntity<ApiResponse<Long>> startRevision(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
-            @AuthenticationPrincipal EmployeeUserDetails userDetails,
-            @Valid @RequestBody ArticleRevisionStartRequest request
+            @AuthenticationPrincipal EmployeeUserDetails userDetails
     ) {
         Long revisionArticleId = knowledgeArticleCommandService.startRevision(
                 articleId,
@@ -131,8 +128,7 @@ public class WorkerArticleController {
     @DeleteMapping("/{articleId}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
-            @AuthenticationPrincipal EmployeeUserDetails userDetails,
-            @Valid @RequestBody ArticleDeleteRequest request
+            @AuthenticationPrincipal EmployeeUserDetails userDetails
     ) {
         knowledgeArticleCommandService.delete(articleId, userDetails.getEmployeeId());
         return ResponseEntity.ok(ApiResponse.success("문서가 삭제되었습니다.", null));
@@ -141,8 +137,7 @@ public class WorkerArticleController {
     @PutMapping("/{articleId}/restore")
     public ResponseEntity<ApiResponse<Void>> restore(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
-            @AuthenticationPrincipal EmployeeUserDetails userDetails,
-            @Valid @RequestBody ArticleDeleteRequest request
+            @AuthenticationPrincipal EmployeeUserDetails userDetails
     ) {
         knowledgeArticleCommandService.restore(articleId, userDetails.getEmployeeId());
         return ResponseEntity.ok(ApiResponse.success("문서가 복원되었습니다.", null));

@@ -67,7 +67,6 @@ class KnowledgeArticleMyQueryServiceTest {
         @DisplayName("Returns article list with tags")
         void getMyArticles_success() {
             MyArticleQueryRequest request = new MyArticleQueryRequest();
-            request.setAuthorId(10L);
 
             MyArticleDto article = new MyArticleDto();
             article.setArticleId(1L);
@@ -80,10 +79,10 @@ class KnowledgeArticleMyQueryServiceTest {
             tag.setTagId(100L);
             tag.setTagName("가공");
 
-            given(knowledgeArticleMapper.findMyArticles(request)).willReturn(List.of(article));
+            given(knowledgeArticleMapper.findMyArticles(10L, request)).willReturn(List.of(article));
             given(knowledgeTagMapper.findTagsByArticleId(1L)).willReturn(List.of(tag));
 
-            List<MyArticleDto> result = knowledgeArticleMyQueryService.getMyArticles(request);
+            List<MyArticleDto> result = knowledgeArticleMyQueryService.getMyArticles(10L, request);
 
             assertNotNull(result);
             assertEquals(1, result.size());
@@ -96,10 +95,9 @@ class KnowledgeArticleMyQueryServiceTest {
         @DisplayName("Returns empty list when no article exists")
         void getMyArticles_whenNoData_thenEmptyList() {
             MyArticleQueryRequest request = new MyArticleQueryRequest();
-            request.setAuthorId(10L);
-            given(knowledgeArticleMapper.findMyArticles(request)).willReturn(List.of());
+            given(knowledgeArticleMapper.findMyArticles(10L, request)).willReturn(List.of());
 
-            List<MyArticleDto> result = knowledgeArticleMyQueryService.getMyArticles(request);
+            List<MyArticleDto> result = knowledgeArticleMyQueryService.getMyArticles(10L, request);
 
             assertNotNull(result);
             assertTrue(result.isEmpty());

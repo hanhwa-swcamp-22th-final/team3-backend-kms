@@ -41,7 +41,7 @@ public interface KnowledgeArticleMapper {
 
     MyArticleStatsDto findMyArticleStats(Long authorId);
 
-    List<MyArticleDto> findMyArticles(MyArticleQueryRequest request);
+    List<MyArticleDto> findMyArticles(@Param("authorId") Long authorId, @Param("request") MyArticleQueryRequest request);
 
     List<MyArticleHistoryDto> findMyRecentArticleHistory(Long authorId);
 }

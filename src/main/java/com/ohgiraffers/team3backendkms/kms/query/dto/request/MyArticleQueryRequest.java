@@ -10,7 +10,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class MyArticleQueryRequest {
 
-    private Long authorId;          // deprecated: JWT 인증 정보 우선 사용
     private ArticleStatus status;   // 상태 필터 (없으면 전체)
     private Integer page;
     private Integer size;

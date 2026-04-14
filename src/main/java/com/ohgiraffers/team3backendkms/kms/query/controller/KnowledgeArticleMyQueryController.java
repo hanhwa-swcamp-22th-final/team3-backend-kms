@@ -45,8 +45,10 @@ public class KnowledgeArticleMyQueryController {
             @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @Valid @ModelAttribute MyArticleQueryRequest request
     ) {
-        request.setAuthorId(userDetails.getEmployeeId());
-        List<MyArticleDto> articles = knowledgeArticleMyQueryService.getMyArticles(request);
+        List<MyArticleDto> articles = knowledgeArticleMyQueryService.getMyArticles(
+                userDetails.getEmployeeId(),
+                request
+        );
         return ResponseEntity.ok(ApiResponse.success("내 문서 목록을 조회했습니다.", articles));
     }
 

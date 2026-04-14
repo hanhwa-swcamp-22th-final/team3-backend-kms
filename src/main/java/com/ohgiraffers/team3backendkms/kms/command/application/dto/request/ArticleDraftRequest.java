@@ -9,7 +9,6 @@ import org.hibernate.validator.constraints.Length;
 @NoArgsConstructor
 public class ArticleDraftRequest {
 
-    private Long authorId;          // deprecated: JWT 인증 정보 우선 사용
     @Length(max = 200, message = "제목은 200자 이하여야 합니다")
     private String title;           // nullable — 입력 시 길이 검증
     private ArticleCategory category; // nullable

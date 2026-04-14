@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -90,7 +91,7 @@ class KnowledgeArticleMyQueryControllerTest {
             tag.setTagName("가공");
             article.setTags(List.of(tag));
 
-            given(knowledgeArticleMyQueryService.getMyArticles(any(MyArticleQueryRequest.class)))
+            given(knowledgeArticleMyQueryService.getMyArticles(anyLong(), any(MyArticleQueryRequest.class)))
                     .willReturn(List.of(article));
 
             mockMvc.perform(get("/api/kms/my/articles")
