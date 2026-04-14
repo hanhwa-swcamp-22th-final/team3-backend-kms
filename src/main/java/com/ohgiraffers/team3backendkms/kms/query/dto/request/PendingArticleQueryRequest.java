@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter // @ModelAttribute 쿼리 파라미터 바인딩에 필요 (예외적 Setter 허용)
 @NoArgsConstructor
-public class ApprovalQueryRequest {
+public class PendingArticleQueryRequest {
 
     private ArticleCategory category;   // 카테고리 필터
     private String sort;                // 정렬 (latest / popular)

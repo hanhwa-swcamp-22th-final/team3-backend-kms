@@ -1,15 +1,15 @@
 package com.ohgiraffers.team3backendkms.kms.query.mapper;
 
-import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto;
-import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
-import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleDetailDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.KnowledgeHubStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleHistoryDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleStatsDto;
-import com.ohgiraffers.team3backendkms.kms.query.dto.request.ApprovalQueryRequest;
+import com.ohgiraffers.team3backendkms.kms.query.dto.request.PendingArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.MyArticleQueryRequest;
@@ -33,11 +33,11 @@ public interface KnowledgeArticleMapper {
 
     List<ArticleReadDto> findRecommendations();
 
-    ApprovalStatsDto findApprovalStats();
+    PendingArticleStatsDto findPendingStats();
 
-    List<ApprovalArticleDto> findApprovalArticles(ApprovalQueryRequest request);
+    List<PendingArticleDto> findPendingArticles(PendingArticleQueryRequest request);
 
-    Optional<ApprovalArticleDetailDto> findApprovalArticleById(Long articleId);
+    Optional<PendingArticleDetailDto> findPendingArticleById(Long articleId);
 
     MyArticleStatsDto findMyArticleStats(Long authorId);
 

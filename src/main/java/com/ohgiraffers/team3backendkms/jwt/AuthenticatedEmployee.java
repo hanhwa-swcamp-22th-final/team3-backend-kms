@@ -22,6 +22,7 @@ public final class AuthenticatedEmployee {
         }
 
         String normalized = role.trim().toUpperCase();
+        // JWT claim/authority 는 ROLE_* 형태로 올 수 있어 KMS 권한 분기 전에 표준화한다.
         if (normalized.startsWith("ROLE_")) {
             normalized = normalized.substring(5);
         }

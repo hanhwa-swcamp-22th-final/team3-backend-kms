@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ApprovalStatsDto {
+public class PendingArticleStatsDto {
 
     private Long pendingCount;
     private Long approvedThisMonth;

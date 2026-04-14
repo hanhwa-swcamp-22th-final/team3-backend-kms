@@ -6,14 +6,14 @@ import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
-import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDetailDto;
-import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalArticleDto;
-import com.ohgiraffers.team3backendkms.kms.query.dto.ApprovalStatsDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleDetailDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
-import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleApprovalQueryService;
+import com.ohgiraffers.team3backendkms.kms.query.service.PendingArticleQueryService;
 import com.ohgiraffers.team3backendkms.kms.query.service.KnowledgeArticleQueryService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -54,7 +54,7 @@ class KnowledgeArticleQueryControllerTest {
     private KnowledgeArticleQueryService knowledgeArticleQueryService;
 
     @MockitoBean
-    private KnowledgeArticleApprovalQueryService knowledgeArticleApprovalQueryService;
+    private PendingArticleQueryService pendingArticleQueryService;
 
     @MockitoBean
     private KnowledgeArticleCommandService knowledgeArticleCommandService;
@@ -130,10 +130,10 @@ class KnowledgeArticleQueryControllerTest {
         @DisplayName("Returns approval list when stat=approval")
         void getArticles_withApprovalStat_success() throws Exception {
             // given
-            ApprovalArticleDto dto = new ApprovalArticleDto();
+            PendingArticleDto dto = new PendingArticleDto();
             dto.setArticleId(1L);
             dto.setArticleTitle("승인 대기 문서 제목입니다");
-            given(knowledgeArticleApprovalQueryService.getApprovalArticles(any()))
+            given(pendingArticleQueryService.getPendingArticles(any()))
                     .willReturn(List.of(dto));
 
             // when & then
@@ -200,10 +200,10 @@ class KnowledgeArticleQueryControllerTest {
         @DisplayName("Returns approval detail when stat=approval")
         void getArticleDetail_withApprovalStat_success() throws Exception {
             // given
-            ApprovalArticleDetailDto dto = new ApprovalArticleDetailDto();
+            PendingArticleDetailDto dto = new PendingArticleDetailDto();
             dto.setArticleId(1L);
             dto.setArticleTitle("승인 상세 제목입니다");
-            given(knowledgeArticleApprovalQueryService.getApprovalArticleById(1L)).willReturn(dto);
+            given(pendingArticleQueryService.getPendingArticleById(1L)).willReturn(dto);
 
             // when & then
             mockMvc.perform(get("/api/kms/articles/1")
@@ -223,11 +223,11 @@ class KnowledgeArticleQueryControllerTest {
         @DisplayName("Returns approval stats when stat=approval")
         void getStats_withApprovalStat_success() throws Exception {
             // given
-            ApprovalStatsDto dto = new ApprovalStatsDto();
+            PendingArticleStatsDto dto = new PendingArticleStatsDto();
             dto.setPendingCount(5L);
             dto.setApprovedThisMonth(10L);
             dto.setRejectionRate(33.33);
-            given(knowledgeArticleApprovalQueryService.getApprovalStats()).willReturn(dto);
+            given(pendingArticleQueryService.getPendingStats()).willReturn(dto);
 
             // when & then
             mockMvc.perform(get("/api/kms/stats")
