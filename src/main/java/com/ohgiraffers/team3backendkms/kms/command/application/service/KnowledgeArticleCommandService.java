@@ -11,9 +11,14 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeedithistory.KnowledgeEditHistory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeEditHistoryRepository;
+import com.ohgiraffers.team3backendkms.infrastructure.kafka.dto.KmsArticleSnapshotEvent;
+import com.ohgiraffers.team3backendkms.infrastructure.kafka.publisher.KmsArticleSnapshotEventPublisher;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +28,7 @@ public class KnowledgeArticleCommandService {
     private final KnowledgeArticleRepository knowledgeArticleRepository;
     private final KnowledgeEditHistoryRepository knowledgeEditHistoryRepository;
     private final KnowledgeArticleViewGuardService knowledgeArticleViewGuardService;
+    private final KmsArticleSnapshotEventPublisher kmsArticleSnapshotEventPublisher;
     private final IdGenerator idGenerator;
 
     public Long register(Long authorId, Long equipmentId,
@@ -169,6 +175,7 @@ public class KnowledgeArticleCommandService {
             throw new BusinessException(ArticleErrorCode.ARTICLE_008);
         }
         article.adminDelete(reason);
+        publishArticleSnapshotAfterCommit(article);
     }
 
     public void restore(Long articleId, Long requesterId) {
@@ -180,6 +187,7 @@ public class KnowledgeArticleCommandService {
             throw new BusinessException(ArticleErrorCode.ARTICLE_007);
         }
         article.restore();
+        publishArticleSnapshotAfterCommit(article);
     }
 
     public void adminRestore(Long articleId) {
@@ -188,6 +196,7 @@ public class KnowledgeArticleCommandService {
             throw new BusinessException(ArticleErrorCode.ARTICLE_NOT_FOUND);
         }
         article.restore();
+        publishArticleSnapshotAfterCommit(article);
     }
 
     public void approve(Long articleId, Long approverId, String reviewComment) {
@@ -220,6 +229,7 @@ public class KnowledgeArticleCommandService {
                     saveOriginalSnapshotIfNeeded(article);
                     originalArticle.applyApprovedRevision(article, approverId, reviewComment);
                     knowledgeArticleRepository.delete(article);
+                    publishArticleSnapshotAfterCommit(originalArticle);
                     return;
                 }
                 article.approve(approverId, reviewComment);
@@ -237,6 +247,7 @@ public class KnowledgeArticleCommandService {
                 article.hold(approverId, reviewComment);
             }
         }
+        publishArticleSnapshotAfterCommit(article);
     }
 
     private KnowledgeArticle buildArticle(Long authorId, Long equipmentId,
@@ -273,5 +284,28 @@ public class KnowledgeArticleCommandService {
     private KnowledgeArticle findArticleById(Long articleId) {
         return knowledgeArticleRepository.findById(articleId)
                 .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND));
+    }
+
+    private void publishArticleSnapshotAfterCommit(KnowledgeArticle article) {
+        KmsArticleSnapshotEvent event = KmsArticleSnapshotEvent.builder()
+                .articleId(article.getArticleId())
+                .authorId(article.getAuthorId())
+                .articleStatus(article.getArticleStatus() == null ? null : article.getArticleStatus().name())
+                .approvedAt(article.getApprovedAt())
+                .deleted(Boolean.TRUE.equals(article.getIsDeleted()))
+                .occurredAt(LocalDateTime.now())
+                .build();
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    kmsArticleSnapshotEventPublisher.publish(event);
+                }
+            });
+            return;
+        }
+
+        kmsArticleSnapshotEventPublisher.publish(event);
     }
 }

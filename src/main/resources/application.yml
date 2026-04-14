@@ -10,6 +10,9 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
   jpa:
     hibernate:
       ddl-auto: none
