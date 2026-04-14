@@ -1,7 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.query.controller;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
-import com.ohgiraffers.team3backendkms.jwt.AuthenticatedEmployee;
 import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.MyArticleHistoryDto;
@@ -32,11 +31,10 @@ public class KnowledgeArticleMyQueryController {
     // 내 게시글 상태
     @GetMapping("/articles/stats")
     public ResponseEntity<ApiResponse<MyArticleStatsDto>> getMyArticleStats(
-            @AuthenticationPrincipal EmployeeUserDetails userDetails,
-            @RequestParam(required = false) Long authorId
+            @AuthenticationPrincipal EmployeeUserDetails userDetails
     ) {
         MyArticleStatsDto stats = knowledgeArticleMyQueryService.getMyArticleStats(
-                AuthenticatedEmployee.employeeId(userDetails, authorId)
+                userDetails.getEmployeeId()
         );
         return ResponseEntity.ok(ApiResponse.success("내 문서 통계를 조회했습니다.", stats));
     }
@@ -47,7 +45,7 @@ public class KnowledgeArticleMyQueryController {
             @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @Valid @ModelAttribute MyArticleQueryRequest request
     ) {
-        request.setAuthorId(AuthenticatedEmployee.employeeId(userDetails, request.getAuthorId()));
+        request.setAuthorId(userDetails.getEmployeeId());
         List<MyArticleDto> articles = knowledgeArticleMyQueryService.getMyArticles(request);
         return ResponseEntity.ok(ApiResponse.success("내 문서 목록을 조회했습니다.", articles));
     }
@@ -55,11 +53,10 @@ public class KnowledgeArticleMyQueryController {
     /* 내 최근 문서 이력 조회 */
     @GetMapping("/articles/history")
     public ResponseEntity<ApiResponse<List<MyArticleHistoryDto>>> getMyRecentArticleHistory(
-            @AuthenticationPrincipal EmployeeUserDetails userDetails,
-            @RequestParam(required = false) Long authorId
+            @AuthenticationPrincipal EmployeeUserDetails userDetails
     ) {
         List<MyArticleHistoryDto> history = knowledgeArticleMyQueryService.getMyRecentArticleHistory(
-                AuthenticatedEmployee.employeeId(userDetails, authorId)
+                userDetails.getEmployeeId()
         );
         return ResponseEntity.ok(ApiResponse.success("내 최근 문서 이력을 조회했습니다.", history));
     }

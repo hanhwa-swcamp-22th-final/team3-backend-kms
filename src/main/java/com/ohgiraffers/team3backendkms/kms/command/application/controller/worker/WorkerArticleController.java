@@ -1,7 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.controller.worker;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
-import com.ohgiraffers.team3backendkms.jwt.AuthenticatedEmployee;
 import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDeleteRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleDraftRequest;
@@ -34,7 +33,7 @@ public class WorkerArticleController {
             @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @Valid @RequestBody ArticleRegisterRequest request) {
         Long articleId = knowledgeArticleCommandService.register(
-                AuthenticatedEmployee.employeeId(userDetails, request.getAuthorId()),
+                userDetails.getEmployeeId(),
                 request.getEquipmentId(),
                 request.getTitle(),
                 request.getCategory(),
@@ -50,7 +49,7 @@ public class WorkerArticleController {
             @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @Valid @RequestBody ArticleDraftRequest request) {
         Long articleId = knowledgeArticleCommandService.draft(
-                AuthenticatedEmployee.employeeId(userDetails, request.getAuthorId()),
+                userDetails.getEmployeeId(),
                 request.getEquipmentId(),
                 request.getTitle(),
                 request.getCategory(),
@@ -73,7 +72,7 @@ public class WorkerArticleController {
                 request.getCategory(),
                 request.getEquipmentId(),
                 request.getContent(),
-                AuthenticatedEmployee.employeeId(userDetails, request.getAuthorId())
+                userDetails.getEmployeeId()
         );
         return ResponseEntity.ok(ApiResponse.success("문서가 수정되었습니다.", null));
     }
@@ -91,7 +90,7 @@ public class WorkerArticleController {
                 request.getCategory(),
                 request.getEquipmentId(),
                 request.getContent(),
-                AuthenticatedEmployee.employeeId(userDetails, request.getAuthorId())
+                userDetails.getEmployeeId()
         );
         return ResponseEntity.ok(ApiResponse.success("문서가 임시저장 상태로 변경되었습니다.", null));
     }
@@ -105,7 +104,7 @@ public class WorkerArticleController {
     ) {
         Long revisionArticleId = knowledgeArticleCommandService.startRevision(
                 articleId,
-                AuthenticatedEmployee.employeeId(userDetails, request.getRequesterId())
+                userDetails.getEmployeeId()
         );
         return ResponseEntity.ok(ApiResponse.success("수정본 작업을 위한 초안이 생성되었습니다.", revisionArticleId));
     }
@@ -123,7 +122,7 @@ public class WorkerArticleController {
                 request.getCategory(),
                 request.getEquipmentId(),
                 request.getContent(),
-                AuthenticatedEmployee.employeeId(userDetails, request.getAuthorId())
+                userDetails.getEmployeeId()
         );
         return ResponseEntity.ok(ApiResponse.success("임시저장 문서가 제출되었고 승인 대기 상태로 변경되었습니다.", null));
     }
@@ -135,7 +134,7 @@ public class WorkerArticleController {
             @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @Valid @RequestBody ArticleDeleteRequest request
     ) {
-        knowledgeArticleCommandService.delete(articleId, AuthenticatedEmployee.employeeId(userDetails, request.getRequesterId()));
+        knowledgeArticleCommandService.delete(articleId, userDetails.getEmployeeId());
         return ResponseEntity.ok(ApiResponse.success("문서가 삭제되었습니다.", null));
     }
 
@@ -145,7 +144,7 @@ public class WorkerArticleController {
             @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @Valid @RequestBody ArticleDeleteRequest request
     ) {
-        knowledgeArticleCommandService.restore(articleId, AuthenticatedEmployee.employeeId(userDetails, request.getRequesterId()));
+        knowledgeArticleCommandService.restore(articleId, userDetails.getEmployeeId());
         return ResponseEntity.ok(ApiResponse.success("문서가 복원되었습니다.", null));
     }
 

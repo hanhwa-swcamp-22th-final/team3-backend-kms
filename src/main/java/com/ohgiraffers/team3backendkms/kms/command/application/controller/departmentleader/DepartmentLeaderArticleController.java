@@ -1,7 +1,6 @@
 package com.ohgiraffers.team3backendkms.kms.command.application.controller.departmentleader;
 
 import com.ohgiraffers.team3backendkms.common.dto.ApiResponse;
-import com.ohgiraffers.team3backendkms.jwt.AuthenticatedEmployee;
 import com.ohgiraffers.team3backendkms.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendkms.kms.command.application.dto.request.ArticleApprovalProcessRequest;
 import com.ohgiraffers.team3backendkms.kms.command.application.service.KnowledgeArticleCommandService;
@@ -23,12 +22,11 @@ public class DepartmentLeaderArticleController {
     public ResponseEntity<ApiResponse<Void>> processApproval(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
             @AuthenticationPrincipal EmployeeUserDetails userDetails,
-            @RequestHeader(value = "X-Employee-Id", required = false) Long approverId,
             @Valid @RequestBody ArticleApprovalProcessRequest request
     ) {
         knowledgeArticleCommandService.processApproval(
                 articleId,
-                AuthenticatedEmployee.employeeId(userDetails, approverId),
+                userDetails.getEmployeeId(),
                 request.getStatus(),
                 request.getReviewComment()
         );
