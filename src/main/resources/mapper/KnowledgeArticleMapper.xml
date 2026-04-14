@@ -231,6 +231,47 @@
         LIMIT 3
     </select>
 
+    <!-- 스킬갭 맞춤 추천 글 조회 -->
+    <select id="findSkillGapRecommendations"
+            parameterType="map"
+            resultType="com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto">
+        SELECT DISTINCT
+            ka.article_id       AS articleId,
+            ka.author_id        AS authorId,
+            e.employee_name     AS authorName,
+            ka.article_title    AS articleTitle,
+            ka.article_category AS articleCategory,
+            ka.article_status   AS articleStatus,
+            ka.view_count       AS viewCount,
+            ka.created_at       AS createdAt
+        FROM knowledge_article ka
+        LEFT JOIN employee e ON ka.author_id = e.employee_id
+        LEFT JOIN knowledge_article_tag kat ON ka.article_id = kat.article_id
+        LEFT JOIN knowledge_tag kt ON kat.tag_id = kt.tag_id
+        WHERE ka.article_status = 'APPROVED'
+          AND ka.is_deleted = false
+          AND (
+            <if test="categories != null and categories.size() > 0">
+                ka.article_category IN
+                <foreach collection="categories" item="category" open="(" separator="," close=")">
+                    #{category}
+                </foreach>
+            </if>
+            <if test="categories != null and categories.size() > 0 and tagKeywords != null and tagKeywords.size() > 0">
+                OR
+            </if>
+            <if test="tagKeywords != null and tagKeywords.size() > 0">
+                (
+                <foreach collection="tagKeywords" item="keyword" separator=" OR ">
+                    kt.tag_name LIKE CONCAT('%', #{keyword}, '%')
+                </foreach>
+                )
+            </if>
+          )
+        ORDER BY ka.view_count DESC, ka.approved_at DESC, ka.article_id DESC
+        LIMIT #{limit}
+    </select>
+
     <!-- 승인 대기 목록 조회 -->
     <select id="findPendingArticles"
             parameterType="com.ohgiraffers.team3backendkms.kms.query.dto.request.PendingArticleQueryRequest"

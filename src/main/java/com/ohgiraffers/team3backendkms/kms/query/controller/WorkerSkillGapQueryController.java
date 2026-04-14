@@ -20,7 +20,7 @@ public class WorkerSkillGapQueryController {
     private final WorkerSkillGapQueryService workerSkillGapQueryService;
 
     @GetMapping("/skill-gap")
-    @PreAuthorize("hasAuthority('WORKER')")
+    @PreAuthorize("hasAnyAuthority('WORKER')")
     public ResponseEntity<ApiResponse<WorkerSkillGapResponse>> getSkillGap(
             @AuthenticationPrincipal EmployeeUserDetails userDetails
     ) {

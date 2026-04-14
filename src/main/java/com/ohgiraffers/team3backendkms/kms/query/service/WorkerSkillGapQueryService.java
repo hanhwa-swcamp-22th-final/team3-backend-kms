@@ -5,13 +5,16 @@ import com.ohgiraffers.team3backendkms.infrastructure.client.HrClient;
 import com.ohgiraffers.team3backendkms.infrastructure.client.dto.AdminEmployeeProfileResponse;
 import com.ohgiraffers.team3backendkms.infrastructure.client.dto.AdminEmployeeSkillResponse;
 import com.ohgiraffers.team3backendkms.infrastructure.client.dto.HrTierCriteriaItem;
+import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.WorkerSkillGapResponse;
+import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeArticleMapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -29,10 +32,16 @@ public class WorkerSkillGapQueryService {
 
     private final AdminClient adminClient;
     private final HrClient hrClient;
+    private final KnowledgeArticleMapper knowledgeArticleMapper;
 
-    public WorkerSkillGapQueryService(AdminClient adminClient, HrClient hrClient) {
+    public WorkerSkillGapQueryService(
+            AdminClient adminClient,
+            HrClient hrClient,
+            KnowledgeArticleMapper knowledgeArticleMapper
+    ) {
         this.adminClient = adminClient;
         this.hrClient = hrClient;
+        this.knowledgeArticleMapper = knowledgeArticleMapper;
     }
 
     public WorkerSkillGapResponse getSkillGap(Long employeeId) {
@@ -52,6 +61,7 @@ public class WorkerSkillGapQueryService {
         int currentOverall = average(skills.stream().map(WorkerSkillGapResponse.SkillGapSkill::getCurrent).toList());
         int targetOverall = average(skills.stream().map(WorkerSkillGapResponse.SkillGapSkill::getTarget).toList());
         int totalGap = Math.max(targetOverall - currentOverall, 0);
+        SkillType weakestSkill = resolveWeakestSkill(currentScores);
 
         return WorkerSkillGapResponse.builder()
                 .currentTier(currentTier)
@@ -64,7 +74,7 @@ public class WorkerSkillGapQueryService {
                         .build())
                 .report(buildReport(skills, currentTier, targetTier, totalGap))
                 .courses(List.of())
-                .articles(List.of())
+                .articles(buildRelatedArticles(weakestSkill))
                 .build();
     }
 
@@ -198,6 +208,37 @@ public class WorkerSkillGapQueryService {
         return tier.trim().toUpperCase(Locale.ROOT);
     }
 
+    private SkillType resolveWeakestSkill(Map<SkillType, Integer> currentScores) {
+        return currentScores.entrySet().stream()
+                .min(Comparator
+                        .comparingInt((Map.Entry<SkillType, Integer> entry) -> entry.getValue() == null ? 0 : entry.getValue())
+                        .thenComparingInt(entry -> entry.getKey().priority))
+                .map(Map.Entry::getKey)
+                .orElse(SkillType.EQUIPMENT_RESPONSE);
+    }
+
+    private List<WorkerSkillGapResponse.RelatedArticle> buildRelatedArticles(SkillType weakestSkill) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("categories", weakestSkill.categories);
+        params.put("tagKeywords", weakestSkill.tagKeywords);
+        params.put("limit", 3);
+
+        List<ArticleReadDto> recommended = knowledgeArticleMapper.findSkillGapRecommendations(params);
+        if (recommended.isEmpty()) {
+            recommended = knowledgeArticleMapper.findRecommendations();
+        }
+
+        return recommended.stream()
+                .limit(3)
+                .map(article -> WorkerSkillGapResponse.RelatedArticle.builder()
+                        .id(article.getArticleId())
+                        .title(article.getArticleTitle())
+                        // 프론트 기존 카드 shape를 유지하기 위해 조회수를 표시용 숫자로 재사용한다.
+                        .likes(article.getViewCount() == null ? 0 : article.getViewCount())
+                        .build())
+                .toList();
+    }
+
     private String resolveTargetTier(String currentTier) {
         return switch (currentTier) {
             case "C" -> "B";
@@ -235,37 +276,73 @@ public class WorkerSkillGapQueryService {
     }
 
     private enum SkillType {
-        EQUIPMENT_RESPONSE("EQUIPMENT_RESPONSE", "설비대응") {
+        EQUIPMENT_RESPONSE(
+                "EQUIPMENT_RESPONSE",
+                "설비대응",
+                1,
+                List.of("설비대응", "설비 대응", "설비점검", "설비 점검", "설비운영"),
+                List.of("EQUIPMENT_OPERATION", "TROUBLESHOOTING")
+        ) {
             @Override
             int resolveTarget(HrTierCriteriaItem criteria) {
                 return toInt(criteria.getEquipmentResponseTargetScore(), criteria.getTierConfigPromotionPoint());
             }
         },
-        TECHNICAL_TRANSFER("TECHNICAL_TRANSFER", "기술전수") {
+        TECHNICAL_TRANSFER(
+                "TECHNICAL_TRANSFER",
+                "기술전수",
+                5,
+                List.of("기술전수", "기술 전수", "작업표준", "작업 표준", "노하우"),
+                List.of("PROCESS_IMPROVEMENT", "ETC")
+        ) {
             @Override
             int resolveTarget(HrTierCriteriaItem criteria) {
                 return toInt(criteria.getTechnicalTransferTargetScore(), criteria.getTierConfigPromotionPoint());
             }
         },
-        INNOVATION_PROPOSAL("INNOVATION_PROPOSAL", "혁신제안") {
+        INNOVATION_PROPOSAL(
+                "INNOVATION_PROPOSAL",
+                "혁신제안",
+                6,
+                List.of("혁신제안", "혁신 제안", "혁신", "개선사례", "개선 사례"),
+                List.of("PROCESS_IMPROVEMENT", "ETC")
+        ) {
             @Override
             int resolveTarget(HrTierCriteriaItem criteria) {
                 return toInt(criteria.getInnovationProposalTargetScore(), criteria.getTierConfigPromotionPoint());
             }
         },
-        SAFETY_COMPLIANCE("SAFETY_COMPLIANCE", "안전준수") {
+        SAFETY_COMPLIANCE(
+                "SAFETY_COMPLIANCE",
+                "안전준수",
+                2,
+                List.of("안전준수", "안전 준수", "안전", "안전수칙", "안전 수칙"),
+                List.of("SAFETY")
+        ) {
             @Override
             int resolveTarget(HrTierCriteriaItem criteria) {
                 return toInt(criteria.getSafetyComplianceTargetScore(), criteria.getTierConfigPromotionPoint());
             }
         },
-        QUALITY_MANAGEMENT("QUALITY_MANAGEMENT", "품질관리") {
+        QUALITY_MANAGEMENT(
+                "QUALITY_MANAGEMENT",
+                "품질관리",
+                3,
+                List.of("품질관리", "품질 관리", "품질", "불량개선", "불량 개선"),
+                List.of("PROCESS_IMPROVEMENT", "ETC")
+        ) {
             @Override
             int resolveTarget(HrTierCriteriaItem criteria) {
                 return toInt(criteria.getQualityManagementTargetScore(), criteria.getTierConfigPromotionPoint());
             }
         },
-        PRODUCTIVITY("PRODUCTIVITY", "생산성") {
+        PRODUCTIVITY(
+                "PRODUCTIVITY",
+                "생산성",
+                4,
+                List.of("생산성", "공정개선", "공정 개선", "작업효율", "작업 효율"),
+                List.of("PROCESS_IMPROVEMENT", "EQUIPMENT_OPERATION")
+        ) {
             @Override
             int resolveTarget(HrTierCriteriaItem criteria) {
                 return toInt(criteria.getProductivityTargetScore(), criteria.getTierConfigPromotionPoint());
@@ -274,10 +351,22 @@ public class WorkerSkillGapQueryService {
 
         private final String code;
         private final String label;
+        private final int priority;
+        private final List<String> tagKeywords;
+        private final List<String> categories;
 
-        SkillType(String code, String label) {
+        SkillType(
+                String code,
+                String label,
+                int priority,
+                List<String> tagKeywords,
+                List<String> categories
+        ) {
             this.code = code;
             this.label = label;
+            this.priority = priority;
+            this.tagKeywords = tagKeywords;
+            this.categories = categories;
         }
 
         abstract int resolveTarget(HrTierCriteriaItem criteria);
