@@ -33,6 +33,8 @@ public interface KnowledgeArticleMapper {
 
     List<ArticleReadDto> findRecommendations();
 
+    List<ArticleReadDto> findSkillGapRecommendations(Map<String, Object> params);
+
     PendingArticleStatsDto findPendingStats();
 
     List<PendingArticleDto> findPendingArticles(PendingArticleQueryRequest request);

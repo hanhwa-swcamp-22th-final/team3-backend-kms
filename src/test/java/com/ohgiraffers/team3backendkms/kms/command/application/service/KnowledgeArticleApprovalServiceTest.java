@@ -8,6 +8,8 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgeart
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
 import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeArticleRepository;
+import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeEditHistoryRepository;
+import com.ohgiraffers.team3backendkms.infrastructure.kafka.publisher.MissionProgressEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,6 +36,15 @@ class KnowledgeArticleApprovalServiceTest {
 
     @Mock
     private IdGenerator idGenerator;
+
+    @Mock
+    private KnowledgeEditHistoryRepository knowledgeEditHistoryRepository;
+
+    @Mock
+    private KnowledgeArticleViewGuardService knowledgeArticleViewGuardService;
+
+    @Mock
+    private MissionProgressEventPublisher missionProgressEventPublisher;
 
     private KnowledgeArticle pendingArticle;
     private KnowledgeArticle draftArticle;

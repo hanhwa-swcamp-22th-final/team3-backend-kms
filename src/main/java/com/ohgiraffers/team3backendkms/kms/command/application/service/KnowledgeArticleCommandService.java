@@ -14,6 +14,7 @@ import com.ohgiraffers.team3backendkms.kms.command.domain.repository.KnowledgeEd
 import com.ohgiraffers.team3backendkms.infrastructure.kafka.dto.KmsArticleSnapshotEvent;
 import com.ohgiraffers.team3backendkms.infrastructure.kafka.publisher.KmsArticleSnapshotEventPublisher;
 import java.time.LocalDateTime;
+import com.ohgiraffers.team3backendkms.infrastructure.kafka.publisher.MissionProgressEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ public class KnowledgeArticleCommandService {
     private final KnowledgeArticleViewGuardService knowledgeArticleViewGuardService;
     private final KmsArticleSnapshotEventPublisher kmsArticleSnapshotEventPublisher;
     private final IdGenerator idGenerator;
+    private final MissionProgressEventPublisher missionProgressEventPublisher;
 
     public Long register(Long authorId, Long equipmentId,
                          String title, ArticleCategory category, String content) {
@@ -230,9 +232,12 @@ public class KnowledgeArticleCommandService {
                     originalArticle.applyApprovedRevision(article, approverId, reviewComment);
                     knowledgeArticleRepository.delete(article);
                     publishArticleSnapshotAfterCommit(originalArticle);
+                    missionProgressEventPublisher.publishKmsContributionAfterCommit(originalArticle.getAuthorId());
+                    publishArticleSnapshotAfterCommit(originalArticle);
                     return;
                 }
                 article.approve(approverId, reviewComment);
+                missionProgressEventPublisher.publishKmsContributionAfterCommit(article.getAuthorId());
             }
             case REJECT -> {
                 if (reviewComment == null || reviewComment.length() < 10 || reviewComment.length() > 500) {
