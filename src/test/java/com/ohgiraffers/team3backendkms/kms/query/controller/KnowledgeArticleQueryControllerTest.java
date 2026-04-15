@@ -138,6 +138,11 @@ class KnowledgeArticleQueryControllerTest {
 
             // when & then
             mockMvc.perform(get("/api/kms/articles")
+                            .with(user(new EmployeeUserDetails(
+                                    20L,
+                                    "TL001",
+                                    List.of(new SimpleGrantedAuthority("TL"))
+                            )))
                             .param("status", "pending")
                             .param("keyword", "대기"))
                     .andExpect(status().isOk())
@@ -201,10 +206,15 @@ class KnowledgeArticleQueryControllerTest {
             PendingArticleDetailDto dto = new PendingArticleDetailDto();
             dto.setArticleId(1L);
             dto.setArticleTitle("승인 상세 제목입니다");
-            given(pendingArticleQueryService.getPendingArticleById(1L)).willReturn(dto);
+            given(pendingArticleQueryService.getPendingArticleById(1L, 20L)).willReturn(dto);
 
             // when & then
             mockMvc.perform(get("/api/kms/articles/1")
+                            .with(user(new EmployeeUserDetails(
+                                    20L,
+                                    "TL001",
+                                    List.of(new SimpleGrantedAuthority("TL"))
+                            )))
                             .param("status", "pending"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
@@ -225,10 +235,15 @@ class KnowledgeArticleQueryControllerTest {
             dto.setPendingCount(5L);
             dto.setApprovedThisMonth(10L);
             dto.setRejectionRate(33.33);
-            given(pendingArticleQueryService.getPendingStats()).willReturn(dto);
+            given(pendingArticleQueryService.getPendingStats(20L)).willReturn(dto);
 
             // when & then
             mockMvc.perform(get("/api/kms/stats")
+                            .with(user(new EmployeeUserDetails(
+                                    20L,
+                                    "TL001",
+                                    List.of(new SimpleGrantedAuthority("TL"))
+                            )))
                             .param("status", "pending"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))

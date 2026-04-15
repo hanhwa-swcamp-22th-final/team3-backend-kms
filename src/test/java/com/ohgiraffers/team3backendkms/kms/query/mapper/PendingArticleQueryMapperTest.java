@@ -32,6 +32,7 @@ class PendingArticleQueryMapperTest {
 
     private static final Long AUTHOR_ID = 1774942559890303L;
     private static final Long EQUIPMENT_ID = 1774836457838985L;
+    private static final Long REQUESTER_ID = AUTHOR_ID;
 
     @Autowired
     private KnowledgeArticleMapper knowledgeArticleMapper;
@@ -57,7 +58,7 @@ class PendingArticleQueryMapperTest {
             entityManager.clear();
 
             // when
-            PendingArticleStatsDto stats = knowledgeArticleMapper.findPendingStats();
+            PendingArticleStatsDto stats = knowledgeArticleMapper.findPendingStats(REQUESTER_ID);
 
             // then
             assertNotNull(stats);
@@ -83,7 +84,10 @@ class PendingArticleQueryMapperTest {
             entityManager.clear();
 
             // when
-            List<PendingArticleDto> result = knowledgeArticleMapper.findPendingArticles(new PendingArticleQueryRequest());
+            PendingArticleQueryRequest request = new PendingArticleQueryRequest();
+            request.setRequesterId(REQUESTER_ID);
+
+            List<PendingArticleDto> result = knowledgeArticleMapper.findPendingArticles(request);
 
             // then
             assertFalse(result.isEmpty());
@@ -107,7 +111,7 @@ class PendingArticleQueryMapperTest {
             entityManager.clear();
 
             // when
-            Optional<PendingArticleDetailDto> result = knowledgeArticleMapper.findPendingArticleById(article.getArticleId());
+            Optional<PendingArticleDetailDto> result = knowledgeArticleMapper.findPendingArticleById(article.getArticleId(), REQUESTER_ID);
 
             // then
             assertTrue(result.isPresent());
@@ -118,7 +122,7 @@ class PendingArticleQueryMapperTest {
         @DisplayName("Returns empty when article not found")
         void findPendingArticleById_NotFound_ReturnsEmpty() {
             // when
-            Optional<PendingArticleDetailDto> result = knowledgeArticleMapper.findPendingArticleById(-1L);
+            Optional<PendingArticleDetailDto> result = knowledgeArticleMapper.findPendingArticleById(-1L, REQUESTER_ID);
 
             // then
             assertTrue(result.isEmpty());

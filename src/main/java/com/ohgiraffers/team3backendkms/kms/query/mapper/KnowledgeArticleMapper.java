@@ -35,11 +35,11 @@ public interface KnowledgeArticleMapper {
 
     List<ArticleReadDto> findSkillGapRecommendations(Map<String, Object> params);
 
-    PendingArticleStatsDto findPendingStats();
+    PendingArticleStatsDto findPendingStats(Long requesterId);
 
     List<PendingArticleDto> findPendingArticles(PendingArticleQueryRequest request);
 
-    Optional<PendingArticleDetailDto> findPendingArticleById(Long articleId);
+    Optional<PendingArticleDetailDto> findPendingArticleById(@Param("articleId") Long articleId, @Param("requesterId") Long requesterId);
 
     MyArticleStatsDto findMyArticleStats(Long authorId);
 

@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/kms/bookmarks")
-@PreAuthorize("hasAuthority('WORKER')")
+@PreAuthorize("hasAnyAuthority('ADMIN', 'DL', 'TL', 'WORKER')")
 public class WorkerBookmarkController {
 
     private final KnowledgeBookmarkCommandService bookmarkCommandService;

@@ -305,6 +305,7 @@
         LEFT JOIN employee approver ON ka.approved_by = approver.employee_id
         WHERE ka.is_deleted = false
           AND ka.article_status = 'PENDING'
+          AND (ka.approved_by IS NULL OR ka.approved_by = #{requesterId})
           
         <if test="category != null">
             AND ka.article_category = #{category}
@@ -337,7 +338,7 @@
 
     <!-- 승인 상세 조회 -->
     <select id="findPendingArticleById"
-            parameterType="long"
+            parameterType="map"
             resultType="com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleDetailDto">
         SELECT
             ka.article_id               AS articleId,
@@ -360,18 +361,21 @@
         WHERE ka.article_id = #{articleId}
           AND ka.is_deleted = false
           AND ka.article_status = 'PENDING'
+          AND (ka.approved_by IS NULL OR ka.approved_by = #{requesterId})
           
     </select>
 
     <!-- 승인 통계 조회 -->
     <select id="findPendingStats"
+            parameterType="long"
             resultType="com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleStatsDto">
         SELECT
             (SELECT COUNT(*)
              FROM knowledge_article ka
              LEFT JOIN employee e ON ka.author_id = e.employee_id
              WHERE ka.article_status = 'PENDING'
-               AND ka.is_deleted = false) AS pendingCount,
+               AND ka.is_deleted = false
+               AND (ka.approved_by IS NULL OR ka.approved_by = #{requesterId})) AS pendingCount,
 
             (SELECT COUNT(*)
              FROM knowledge_article ka

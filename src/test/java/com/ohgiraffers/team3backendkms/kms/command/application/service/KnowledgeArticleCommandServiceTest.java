@@ -21,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -107,6 +108,9 @@ class KnowledgeArticleCommandServiceTest {
         @DisplayName("Saves article with PENDING status")
         void register_Success() {
             // given
+            given(knowledgeArticleRepository.existsByAuthorIdAndEquipmentIdAndArticleTitleAndArticleCategoryAndArticleContentAndArticleStatusAndIsDeletedFalseAndCreatedAtAfter(
+                    any(), any(), any(), any(), any(), any(), any(LocalDateTime.class)
+            )).willReturn(false);
             given(knowledgeArticleRepository.save(any(KnowledgeArticle.class)))
                     .willReturn(pendingArticle);
 
@@ -122,6 +126,29 @@ class KnowledgeArticleCommandServiceTest {
             ArgumentCaptor<KnowledgeArticle> captor = ArgumentCaptor.forClass(KnowledgeArticle.class);
             verify(knowledgeArticleRepository).save(captor.capture());
             assertEquals(ArticleStatus.PENDING, captor.getValue().getArticleStatus());
+        }
+
+        @Test
+        @DisplayName("Throws conflict when same pending article was just submitted")
+        void register_DuplicatePending_ThrowsException() {
+            // given
+            given(knowledgeArticleRepository.existsByAuthorIdAndEquipmentIdAndArticleTitleAndArticleCategoryAndArticleContentAndArticleStatusAndIsDeletedFalseAndCreatedAtAfter(
+                    any(), any(), any(), any(), any(), any(), any(LocalDateTime.class)
+            )).willReturn(true);
+
+            // when & then
+            BusinessException exception = assertThrows(BusinessException.class, () ->
+                    knowledgeArticleCommandService.register(
+                            1L,
+                            1L,
+                            "테스트 지식 문서 제목입니다",
+                            ArticleCategory.TROUBLESHOOTING,
+                            "테스트 본문 내용입니다. 최소 50자 이상이어야 합니다. 충분한 내용을 작성합니다. 추가로 작성한 내용입니다."
+                    )
+            );
+
+            assertEquals(ArticleErrorCode.ARTICLE_013, exception.getErrorCode());
+            verify(knowledgeArticleRepository, never()).save(any(KnowledgeArticle.class));
         }
     }
 

@@ -24,7 +24,7 @@ import java.util.List;
 @Validated
 @RequiredArgsConstructor
 @RequestMapping("/api/kms/my")
-@PreAuthorize("hasAuthority('WORKER')")
+@PreAuthorize("hasAnyAuthority('ADMIN', 'DL', 'TL', 'WORKER')")
 public class KnowledgeBookmarkQueryController {
 
     private final KnowledgeBookmarkQueryService bookmarkQueryService;
