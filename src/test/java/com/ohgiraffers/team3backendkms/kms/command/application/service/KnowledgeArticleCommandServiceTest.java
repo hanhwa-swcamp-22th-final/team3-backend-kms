@@ -3,6 +3,7 @@ package com.ohgiraffers.team3backendkms.kms.command.application.service;
 import com.ohgiraffers.team3backendkms.common.exception.ArticleErrorCode;
 import com.ohgiraffers.team3backendkms.common.exception.BusinessException;
 import com.ohgiraffers.team3backendkms.common.idgenerator.IdGenerator;
+import com.ohgiraffers.team3backendkms.infrastructure.kafka.publisher.KmsArticleSnapshotEventPublisher;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleCategory;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.ArticleStatus;
 import com.ohgiraffers.team3backendkms.kms.command.domain.aggregate.knowledgearticle.KnowledgeArticle;
@@ -45,6 +46,9 @@ class KnowledgeArticleCommandServiceTest {
 
     @Mock
     private KnowledgeArticleViewGuardService knowledgeArticleViewGuardService;
+
+    @Mock
+    private KmsArticleSnapshotEventPublisher kmsArticleSnapshotEventPublisher;
 
     @Mock
     private IdGenerator idGenerator;
@@ -239,7 +243,7 @@ class KnowledgeArticleCommandServiceTest {
         }
 
         @Test
-        @DisplayName("Allows delete when status is PENDING")
+        @DisplayName("Sets isDeleted to true when status is PENDING")
         void delete_PendingArticle_Success() {
             // given
             given(knowledgeArticleRepository.findById(1L))
@@ -354,7 +358,7 @@ class KnowledgeArticleCommandServiceTest {
         }
 
         @Test
-        @DisplayName("Throws exception when status is PENDING")
+        @DisplayName("Throws exception when article status is already PENDING")
         void submitDraft_PendingArticle_ThrowsException() {
             // given
             String newTitle = "승인대기 중 다시 수정한 제목입니다";
