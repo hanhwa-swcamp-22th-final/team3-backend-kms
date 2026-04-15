@@ -86,6 +86,14 @@ class WorkerBookmarkControllerIntegrationTest {
         return new EmployeeUserDetails(EMPLOYEE_ID, "ITESTWORKER", List.of(() -> "WORKER"));
     }
 
+    private EmployeeUserDetails authenticatedTeamLeader() {
+        return new EmployeeUserDetails(EMPLOYEE_ID, "ITESTTL", List.of(() -> "TL"));
+    }
+
+    private EmployeeUserDetails authenticatedAdmin() {
+        return new EmployeeUserDetails(EMPLOYEE_ID, "ITESTADMIN", List.of(() -> "ADMIN"));
+    }
+
     // =====================================================
     // POST /api/kms/bookmarks — 북마크 추가
     // =====================================================
@@ -112,6 +120,22 @@ class WorkerBookmarkControllerIntegrationTest {
         flushAndClear();
         KnowledgeBookmarkId id = new KnowledgeBookmarkId(article.getArticleId(), EMPLOYEE_ID);
         assert bookmarkRepository.existsById(id);
+    }
+
+    @Test
+    @DisplayName("Add bookmark API integration success: team leader can save bookmark")
+    void addBookmark_TeamLeader_Success() throws Exception {
+        // given
+        KnowledgeArticle article = saveArticle();
+        Map<String, Object> request = Map.of("articleId", article.getArticleId());
+
+        // when & then
+        mockMvc.perform(post(BASE_URL)
+                        .with(user(authenticatedTeamLeader()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
@@ -205,6 +229,23 @@ class WorkerBookmarkControllerIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data").isEmpty());
+    }
+
+    @Test
+    @DisplayName("Get my bookmarks API integration success: admin can query bookmarks")
+    void getMyBookmarks_Admin_Success() throws Exception {
+        // given
+        KnowledgeArticle article = saveArticle();
+        saveBookmark(article.getArticleId(), EMPLOYEE_ID);
+        flushAndClear();
+
+        // when & then
+        mockMvc.perform(get(MY_URL)
+                        .with(user(authenticatedAdmin())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].articleId").value(article.getArticleId()));
     }
 
     // =====================================================

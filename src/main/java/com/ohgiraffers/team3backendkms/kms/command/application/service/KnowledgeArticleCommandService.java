@@ -16,6 +16,7 @@ import com.ohgiraffers.team3backendkms.infrastructure.kafka.publisher.KmsArticle
 import java.time.LocalDateTime;
 import com.ohgiraffers.team3backendkms.infrastructure.kafka.publisher.MissionProgressEventPublisher;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -32,10 +33,13 @@ public class KnowledgeArticleCommandService {
     private final KmsArticleSnapshotEventPublisher kmsArticleSnapshotEventPublisher;
     private final IdGenerator idGenerator;
     private final MissionProgressEventPublisher missionProgressEventPublisher;
+    @Value("${kms.article-submit.duplicate-window-seconds:10}")
+    private long duplicateWindowSeconds;
 
     public Long register(Long authorId, Long equipmentId,
                          String title, ArticleCategory category, String content) {
         validateEquipmentId(equipmentId);
+        ensureNotDuplicatePendingSubmission(authorId, equipmentId, title, category, content);
         return knowledgeArticleRepository.save(
                 buildArticle(authorId, equipmentId, title, category, content, ArticleStatus.PENDING)
         ).getArticleId();
@@ -283,6 +287,26 @@ public class KnowledgeArticleCommandService {
     private void validateEquipmentIdIfPresent(Long equipmentId) {
         if (equipmentId != null && equipmentId <= 0) {
             throw new BusinessException(ArticleErrorCode.ARTICLE_005);
+        }
+    }
+
+    private void ensureNotDuplicatePendingSubmission(Long authorId, Long equipmentId,
+                                                     String title, ArticleCategory category,
+                                                     String content) {
+        LocalDateTime duplicateCutoff = LocalDateTime.now().minusSeconds(Math.max(1, duplicateWindowSeconds));
+        boolean duplicated = knowledgeArticleRepository
+                .existsByAuthorIdAndEquipmentIdAndArticleTitleAndArticleCategoryAndArticleContentAndArticleStatusAndIsDeletedFalseAndCreatedAtAfter(
+                        authorId,
+                        equipmentId,
+                        title,
+                        category,
+                        content,
+                        ArticleStatus.PENDING,
+                        duplicateCutoff
+                );
+
+        if (duplicated) {
+            throw new BusinessException(ArticleErrorCode.ARTICLE_013);
         }
     }
 

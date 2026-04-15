@@ -50,9 +50,11 @@ public class KnowledgeArticleQueryController {
     @GetMapping(value = "/articles", params = "status=pending")
     @PreAuthorize("hasAnyAuthority('DL', 'TL')")
     public ResponseEntity<ApiResponse<List<PendingArticleDto>>> getPendingArticles(
+            @AuthenticationPrincipal EmployeeUserDetails userDetails,
             @ModelAttribute PendingArticleQueryRequest request
     ) {
         // 승인 대기 조회는 기존 /approval 경로를 없애고 공통 articles 경로에서 status 로 분기한다.
+        request.setRequesterId(userDetails.getEmployeeId());
         List<PendingArticleDto> articles = pendingArticleQueryService.getPendingArticles(request);
         return ResponseEntity.ok(ApiResponse.success("승인 대기 문서 목록을 조회했습니다.", articles));
     }
@@ -75,17 +77,20 @@ public class KnowledgeArticleQueryController {
     @GetMapping(value = "/articles/{articleId}", params = "status=pending")
     @PreAuthorize("hasAnyAuthority('DL', 'TL')")
     public ResponseEntity<ApiResponse<PendingArticleDetailDto>> getPendingArticleDetail(
-            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId
+            @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId,
+            @AuthenticationPrincipal EmployeeUserDetails userDetails
     ) {
-        PendingArticleDetailDto detail = pendingArticleQueryService.getPendingArticleById(articleId);
+        PendingArticleDetailDto detail = pendingArticleQueryService.getPendingArticleById(articleId, userDetails.getEmployeeId());
         return ResponseEntity.ok(ApiResponse.success("승인 대상 문서 상세를 조회했습니다.", detail));
     }
 
     /* 승인 통계 조회 - 공통 stats 경로에서 status=pending 으로 분기 */
     @GetMapping(value = "/stats", params = "status=pending")
     @PreAuthorize("hasAnyAuthority('DL', 'TL')")
-    public ResponseEntity<ApiResponse<PendingArticleStatsDto>> getPendingStats() {
-        PendingArticleStatsDto stats = pendingArticleQueryService.getPendingStats();
+    public ResponseEntity<ApiResponse<PendingArticleStatsDto>> getPendingStats(
+            @AuthenticationPrincipal EmployeeUserDetails userDetails
+    ) {
+        PendingArticleStatsDto stats = pendingArticleQueryService.getPendingStats(userDetails.getEmployeeId());
         return ResponseEntity.ok(ApiResponse.success("승인 통계를 조회했습니다.", stats));
     }
 

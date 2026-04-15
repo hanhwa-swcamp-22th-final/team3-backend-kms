@@ -20,8 +20,8 @@ public class PendingArticleQueryService {
 
     private final KnowledgeArticleMapper knowledgeArticleMapper;
 
-    public PendingArticleDetailDto getPendingArticleById(Long articleId) {
-        return knowledgeArticleMapper.findPendingArticleById(articleId)
+    public PendingArticleDetailDto getPendingArticleById(Long articleId, Long requesterId) {
+        return knowledgeArticleMapper.findPendingArticleById(articleId, requesterId)
                 .orElseThrow(() -> new ResourceNotFoundException(ArticleErrorCode.ARTICLE_NOT_FOUND));
     }
 
@@ -30,8 +30,8 @@ public class PendingArticleQueryService {
         return knowledgeArticleMapper.findPendingArticles(request);
     }
 
-    public PendingArticleStatsDto getPendingStats() {
-        return knowledgeArticleMapper.findPendingStats();
+    public PendingArticleStatsDto getPendingStats(Long requesterId) {
+        return knowledgeArticleMapper.findPendingStats(requesterId);
     }
 
     private void normalizeRequest(PendingArticleQueryRequest request) {

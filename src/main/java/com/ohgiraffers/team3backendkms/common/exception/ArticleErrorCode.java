@@ -177,6 +177,11 @@ public enum ArticleErrorCode {
     ARTICLE_012(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[ARTICLE_012] 삭제 사유는 10자 이상 500자 이하여야 합니다."),
 
     /**
+     * 짧은 시간 안에 동일한 PENDING 문서를 중복 등록한 경우
+     */
+    ARTICLE_013(HttpStatus.CONFLICT, "CONFLICT", "[ARTICLE_013] 동일한 문서가 이미 등록 처리 중입니다. 잠시 후 다시 확인해 주세요."),
+
+    /**
      * 문서 미존재 (리소스 찾을 수 없음)
      * 발생 위치: KnowledgeArticleCommandService.findArticleById(),
      *           KnowledgeArticleApprovalService.findArticleById()

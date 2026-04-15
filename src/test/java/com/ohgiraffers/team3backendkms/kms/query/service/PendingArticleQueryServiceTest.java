@@ -27,6 +27,8 @@ import static org.mockito.BDDMockito.given;
 @ExtendWith(MockitoExtension.class)
 class PendingArticleQueryServiceTest {
 
+    private static final long REQUESTER_ID = 20L;
+
     @InjectMocks
     private PendingArticleQueryService pendingArticleQueryService;
 
@@ -45,10 +47,10 @@ class PendingArticleQueryServiceTest {
             dto.setArticleId(1L);
             dto.setArticleTitle("승인 상세 조회 제목입니다");
 
-            given(knowledgeArticleMapper.findPendingArticleById(1L)).willReturn(Optional.of(dto));
+            given(knowledgeArticleMapper.findPendingArticleById(1L, REQUESTER_ID)).willReturn(Optional.of(dto));
 
             // when
-            PendingArticleDetailDto result = pendingArticleQueryService.getPendingArticleById(1L);
+            PendingArticleDetailDto result = pendingArticleQueryService.getPendingArticleById(1L, REQUESTER_ID);
 
             // then
             assertNotNull(result);
@@ -60,11 +62,11 @@ class PendingArticleQueryServiceTest {
         @DisplayName("Throws exception when article not found (ARTICLE_NOT_FOUND)")
         void getPendingArticleById_NotFound_ThrowsException() {
             // given
-            given(knowledgeArticleMapper.findPendingArticleById(anyLong())).willReturn(Optional.empty());
+            given(knowledgeArticleMapper.findPendingArticleById(anyLong(), anyLong())).willReturn(Optional.empty());
 
             // when & then
             assertThrows(ResourceNotFoundException.class, () ->
-                pendingArticleQueryService.getPendingArticleById(99L)
+                pendingArticleQueryService.getPendingArticleById(99L, REQUESTER_ID)
             );
         }
     }
@@ -106,10 +108,10 @@ class PendingArticleQueryServiceTest {
             dto.setApprovedThisMonth(10L);
             dto.setRejectionRate(33.33);
 
-            given(knowledgeArticleMapper.findPendingStats()).willReturn(dto);
+            given(knowledgeArticleMapper.findPendingStats(REQUESTER_ID)).willReturn(dto);
 
             // when
-            PendingArticleStatsDto result = pendingArticleQueryService.getPendingStats();
+            PendingArticleStatsDto result = pendingArticleQueryService.getPendingStats(REQUESTER_ID);
 
             // then
             assertNotNull(result);
