@@ -39,7 +39,7 @@ public class DepartmentLeaderArticleController {
         return switch (request.getStatus()) {
             case APPROVE -> "부서장 승인 처리가 완료되었습니다.";
             case REJECT -> "부서장 반려 처리가 완료되었습니다.";
-            case PENDING -> "부서장 보류 처리가 완료되었습니다.";
+            case PENDING -> "부서장 임시저장 처리가 완료되었습니다.";
         };
     }
 }

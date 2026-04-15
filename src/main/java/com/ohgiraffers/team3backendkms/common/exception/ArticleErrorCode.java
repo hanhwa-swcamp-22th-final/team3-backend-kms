@@ -225,7 +225,7 @@ public enum ArticleErrorCode {
     APPROVAL_002(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_002] 승인 의견은 500자 이하여야 합니다."),
 
     /**
-     * 보류 사유 필수 및 길이 검증
+     * 임시저장 사유 필수 및 길이 검증
      * 발생 위치: KnowledgeArticleCommandService.processApproval()
      * 호출 메서드: POST /api/kms/tl/approval/{articleId}/pending
      *            POST /api/kms/dl/approval/{articleId}/pending
@@ -233,9 +233,9 @@ public enum ArticleErrorCode {
      * HTTP 응답:
      *   - Status: 400
      *   - errorCode: "BAD_REQUEST"
-     *   - message: "[APPROVAL_004] 보류 사유는 필수이며 500자 이하여야 합니다."
+     *   - message: "[APPROVAL_004] 임시저장 사유는 필수이며 500자 이하여야 합니다."
      */
-    APPROVAL_004(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_004] 보류 사유는 필수이며 500자 이하여야 합니다."),
+    APPROVAL_004(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_004] 임시저장 사유는 필수이며 500자 이하여야 합니다."),
 
     /**
      * PENDING 상태가 아닌 문서에 대한 승인/반려 시도
@@ -248,7 +248,7 @@ public enum ArticleErrorCode {
      *   - errorCode: "BAD_REQUEST"
      *   - message: "[APPROVAL_003] PENDING 상태에서만 처리할 수 있습니다."
      */
-    APPROVAL_003(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_003] 승인/반려/보류 처리는 PENDING 상태 문서에서만 가능합니다."),
+    APPROVAL_003(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "[APPROVAL_003] 승인/반려/임시저장 처리는 PENDING 상태 문서에서만 가능합니다."),
 
     /**
      * 이미 승인된 문서의 재승인 시도

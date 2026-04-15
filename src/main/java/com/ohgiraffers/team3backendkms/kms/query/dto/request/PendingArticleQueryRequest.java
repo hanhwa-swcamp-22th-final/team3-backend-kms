@@ -15,7 +15,7 @@ public class PendingArticleQueryRequest {
     private String searchType;          // 검색 조건 (articleId / authorName / articleTitle)
     private String keyword;             // 검색어
     private Long articleIdKeyword;      // articleId 검색용 숫자 변환 결과
-    private Long requesterId;           // 보류 처리한 리더 본인만 보이도록 필터링할 때 사용
+    private Long requesterId;           // 임시저장 처리한 리더 본인만 보이도록 필터링할 때 사용
     private Integer page;
     private Integer size;
 
