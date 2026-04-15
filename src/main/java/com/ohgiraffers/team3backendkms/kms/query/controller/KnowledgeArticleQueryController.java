@@ -73,7 +73,7 @@ public class KnowledgeArticleQueryController {
 
     /* 승인 상세 조회 - 공통 articles 경로에서 status=pending 으로 분기 */
     @GetMapping(value = "/articles/{articleId}", params = "status=pending")
-    @PreAuthorize("hasAnyAuthority('DL ', ' TL ')")
+    @PreAuthorize("hasAnyAuthority('DL', 'TL')")
     public ResponseEntity<ApiResponse<PendingArticleDetailDto>> getPendingArticleDetail(
             @PathVariable @Positive(message = "ID는 양수여야 합니다") Long articleId
     ) {
@@ -91,7 +91,7 @@ public class KnowledgeArticleQueryController {
 
     /* KMS 허브 통계 조회 */
     @GetMapping(value = "/stats", params = "status=hub")
-    @PreAuthorize("hasAnyAuthority(  'ADMIN', 'DL', 'TL', 'WORKER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DL', 'TL', 'WORKER')")
     public ResponseEntity<ApiResponse<KnowledgeHubStatsDto>> getKnowledgeHubStats() {
         KnowledgeHubStatsDto stats = knowledgeArticleQueryService.getKnowledgeHubStats();
         return ResponseEntity.ok(ApiResponse.success("KMS 허브 통계를 조회했습니다.", stats));
@@ -109,7 +109,7 @@ public class KnowledgeArticleQueryController {
 
     /* AI 지식 추천 조회 (APPROVED 문서 중 조회수 높은 순 TOP 3) */
     @GetMapping("/articles/recommendations")
-    @PreAuthorize("hasAnyAuthority('ADMIN ', 'DL', 'TL', 'WORKER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DL', 'TL', 'WORKER')")
     public ResponseEntity<ApiResponse<List<ArticleReadDto>>> getRecommendations() {
         List<ArticleReadDto> recommendations = knowledgeArticleQueryService.getRecommendations();
         return ResponseEntity.ok(ApiResponse.success("추천 문서를 조회했습니다.", recommendations));
