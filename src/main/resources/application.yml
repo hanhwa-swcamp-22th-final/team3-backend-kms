@@ -30,3 +30,9 @@ mybatis:
 kms:
   view-count:
     duplicate-window-minutes: 1440
+
+feign:
+  admin:
+    url: ${FEIGN_ADMIN_URL:http://localhost:8080}
+  hr:
+    url: ${FEIGN_HR_URL:http://localhost:8081}
