@@ -131,7 +131,7 @@ public class KnowledgeArticle {
         this.articleDeletionReason = null;
     }
 
-    /* PENDING 유지 — articleApprovalOpinion 저장 (보류) */
+    /* PENDING 유지 — articleApprovalOpinion 저장 (임시저장) */
     public void hold(Long approverId, String reviewComment) {
         this.approvedBy = approverId;
         this.articleApprovalOpinion = reviewComment;

@@ -39,7 +39,7 @@ public class TeamLeaderArticleController {
         return switch (request.getStatus()) {
             case APPROVE -> "팀장 승인 처리가 완료되었습니다.";
             case REJECT -> "팀장 반려 처리가 완료되었습니다.";
-            case PENDING -> "팀장 보류 처리가 완료되었습니다.";
+            case PENDING -> "팀장 임시저장 처리가 완료되었습니다.";
         };
     }
 }
