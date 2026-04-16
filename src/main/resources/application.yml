@@ -37,6 +37,15 @@ kms:
   view-count:
     duplicate-window-minutes: 1440
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
 feign:
   admin:
     url: ${FEIGN_ADMIN_URL:http://localhost:8080}
