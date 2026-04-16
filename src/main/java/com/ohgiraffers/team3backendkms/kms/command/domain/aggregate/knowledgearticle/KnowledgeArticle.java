@@ -76,6 +76,10 @@ public class KnowledgeArticle {
     /* DRAFT → PENDING */
     public void submit() {
         this.articleStatus = ArticleStatus.PENDING;
+        this.approvedBy = null;
+        this.articleApprovalOpinion = null;
+        this.articleRejectionReason = null;
+        this.approvedAt = null;
     }
 
     /* PENDING/REJECTED/DRAFT → DRAFT */
@@ -166,15 +170,15 @@ public class KnowledgeArticle {
                 .articleId(articleId)
                 .originalArticleId(original.getArticleId())
                 .authorId(original.getAuthorId())
-                .approvedBy(original.getApprovedBy())
+                .approvedBy(null)
                 .equipmentId(original.getEquipmentId())
                 .fileGroupId(original.getFileGroupId())
                 .articleTitle(original.getArticleTitle())
                 .articleCategory(original.getArticleCategory())
                 .articleContent(original.getArticleContent())
                 .articleStatus(ArticleStatus.DRAFT)
-                .articleApprovalOpinion(original.getArticleApprovalOpinion())
-                .approvedAt(original.getApprovedAt())
+                .articleApprovalOpinion(null)
+                .approvedAt(null)
                 .approvalVersion(original.getApprovalVersion())
                 .articleRejectionReason(null)
                 .articleDeletionReason(null)

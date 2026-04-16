@@ -30,16 +30,36 @@ class KnowledgeArticleTest {
     class SubmitTest {
 
         @Test
-        @DisplayName("Changes status to PENDING")
+        @DisplayName("Changes status to PENDING and clears stale approval state")
         void submit_ChangesStatusToPending() {
             // given
-            KnowledgeArticle article = buildArticle(ArticleStatus.DRAFT, 0);
+            KnowledgeArticle article = KnowledgeArticle.builder()
+                    .articleId(1L)
+                    .authorId(10L)
+                    .equipmentId(100L)
+                    .fileGroupId(0L)
+                    .articleTitle("기본 지식 문서 제목입니다")
+                    .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                    .articleContent("기본 본문 내용입니다. 도메인 테스트를 위해 충분한 길이의 문장을 작성합니다.")
+                    .articleStatus(ArticleStatus.REJECTED)
+                    .approvedBy(20L)
+                    .articleApprovalOpinion("이전 승인 의견입니다.")
+                    .articleRejectionReason("이전 반려 사유입니다.")
+                    .approvedAt(java.time.LocalDateTime.now())
+                    .approvalVersion(1)
+                    .isDeleted(false)
+                    .viewCount(0)
+                    .build();
 
             // when
             article.submit();
 
             // then
             assertEquals(ArticleStatus.PENDING, article.getArticleStatus());
+            assertNull(article.getApprovedBy());
+            assertNull(article.getArticleApprovalOpinion());
+            assertNull(article.getArticleRejectionReason());
+            assertNull(article.getApprovedAt());
         }
     }
 
@@ -73,7 +93,22 @@ class KnowledgeArticleTest {
         @DisplayName("Creates revision copy without changing original")
         void createRevisionCopy_CreatesDraftCopy() {
             // given
-            KnowledgeArticle original = buildArticle(ArticleStatus.APPROVED, 0);
+            KnowledgeArticle original = KnowledgeArticle.builder()
+                    .articleId(1L)
+                    .authorId(10L)
+                    .equipmentId(100L)
+                    .fileGroupId(0L)
+                    .articleTitle("기본 지식 문서 제목입니다")
+                    .articleCategory(ArticleCategory.TROUBLESHOOTING)
+                    .articleContent("기본 본문 내용입니다. 도메인 테스트를 위해 충분한 길이의 문장을 작성합니다.")
+                    .articleStatus(ArticleStatus.APPROVED)
+                    .approvedBy(20L)
+                    .articleApprovalOpinion("기존 승인 의견입니다.")
+                    .approvedAt(java.time.LocalDateTime.now())
+                    .approvalVersion(1)
+                    .isDeleted(false)
+                    .viewCount(0)
+                    .build();
 
             // when
             KnowledgeArticle revision = KnowledgeArticle.createRevisionCopy(2L, original);
@@ -83,6 +118,9 @@ class KnowledgeArticleTest {
             assertEquals(original.getArticleId(), revision.getOriginalArticleId());
             assertEquals(ArticleStatus.DRAFT, revision.getArticleStatus());
             assertEquals(original.getArticleTitle(), revision.getArticleTitle());
+            assertNull(revision.getApprovedBy());
+            assertNull(revision.getArticleApprovalOpinion());
+            assertNull(revision.getApprovedAt());
         }
     }
 
