@@ -57,6 +57,8 @@ dependencies {
     testImplementation 'org.springframework.kafka:spring-kafka-test'
     testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // build.gradle
+    implementation 'software.amazon.msk:aws-msk-iam-auth:2.2.0'
 }
 
 tasks.named('test') {
