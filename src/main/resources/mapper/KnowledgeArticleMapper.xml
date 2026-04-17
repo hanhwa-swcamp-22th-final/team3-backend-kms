@@ -199,14 +199,21 @@
             e.employee_tier  AS employeeTier,
             COUNT(*)         AS articleCount,
             COALESCE(SUM(ka.view_count), 0) AS totalViewCount,
-            ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC, COALESCE(SUM(ka.view_count), 0) DESC, ka.author_id) AS rank
+            COUNT(*) + FLOOR(COALESCE(SUM(ka.view_count), 0) / 50) AS contributionScore,
+            ROW_NUMBER() OVER (
+                ORDER BY
+                    COUNT(*) + FLOOR(COALESCE(SUM(ka.view_count), 0) / 50) DESC,
+                    COUNT(*) DESC,
+                    COALESCE(SUM(ka.view_count), 0) DESC,
+                    ka.author_id
+            ) AS rank
         FROM knowledge_article ka
         LEFT JOIN employee e ON ka.author_id = e.employee_id
         WHERE ka.article_status = 'APPROVED'
           AND ka.is_deleted = false
           
-        GROUP BY ka.author_id, e.employee_name
-        ORDER BY articleCount DESC, totalViewCount DESC, ka.author_id
+        GROUP BY ka.author_id, e.employee_name, e.employee_tier
+        ORDER BY contributionScore DESC, articleCount DESC, totalViewCount DESC, ka.author_id
         LIMIT #{limit}
     </select>
 
