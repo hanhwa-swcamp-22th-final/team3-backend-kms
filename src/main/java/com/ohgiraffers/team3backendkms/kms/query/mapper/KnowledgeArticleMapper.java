@@ -25,6 +25,8 @@ public interface KnowledgeArticleMapper {
 
     List<ArticleReadDto> findArticles(ArticleQueryRequest request);
 
+    long countArticles(ArticleQueryRequest request);
+
     Optional<ArticleDetailDto> findArticleById(@Param("articleId") Long articleId, @Param("requesterId") Long requesterId);
 
     KnowledgeHubStatsDto findKnowledgeHubStats();

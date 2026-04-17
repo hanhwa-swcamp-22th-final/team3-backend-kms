@@ -7,6 +7,7 @@ import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleDetailDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.PendingArticleStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleDetailDto;
+import com.ohgiraffers.team3backendkms.kms.query.dto.ArticlePageResponse;
 import com.ohgiraffers.team3backendkms.kms.query.dto.ContributorRankDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.KnowledgeHubStatsDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.request.ArticleQueryRequest;
@@ -44,6 +45,18 @@ public class KnowledgeArticleQueryController {
         request.setRequesterRole(userDetails.getAuthorities().iterator().next().getAuthority());
         List<ArticleReadDto> articles = knowledgeArticleQueryService.getArticles(request);
         return ResponseEntity.ok(ApiResponse.success("지식 문서 목록을 조회했습니다.", articles));
+    }
+
+    @GetMapping("/articles/paged")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'DL', 'TL', 'WORKER')")
+    public ResponseEntity<ApiResponse<ArticlePageResponse>> getPagedArticles(
+            @AuthenticationPrincipal EmployeeUserDetails userDetails,
+            @ModelAttribute ArticleQueryRequest request
+    ) {
+        request.setRequesterId(userDetails.getEmployeeId());
+        request.setRequesterRole(userDetails.getAuthorities().iterator().next().getAuthority());
+        ArticlePageResponse page = knowledgeArticleQueryService.getPagedArticles(request);
+        return ResponseEntity.ok(ApiResponse.success("지식 문서 페이지 목록을 조회했습니다.", page));
     }
 
     /* 승인 대기 목록 조회 - 공통 articles 경로에서 status=pending 으로 분기 */
