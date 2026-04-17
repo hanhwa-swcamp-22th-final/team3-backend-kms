@@ -16,6 +16,7 @@ public class ArticleQueryRequest {
     private String sort;                // 정렬 (latest / popular)
     private String searchType;          // 검색 조건 (articleId / authorName / articleTitle)
     private String keyword;             // 검색어
+    private String tagName;             // 태그 필터
     private Long articleIdKeyword;      // articleId 검색용 숫자 변환 결과
     private Long requesterId;           // 인증 사용자 ID
     private String requesterRole;       // 인증 사용자 권한
