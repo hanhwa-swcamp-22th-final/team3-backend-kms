@@ -33,6 +33,17 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
+nlp:
+  google:
+    credentials-location: ${NLP_GOOGLE_CREDENTIALS_LOCATION:classpath:gcp-key.json}
+
+google:
+  ai:
+    credentials-location: ${NLP_GOOGLE_CREDENTIALS_LOCATION:${nlp.google.credentials-location}}
+    project-id: ${GOOGLE_AI_PROJECT_ID:}
+    location: ${GOOGLE_AI_LOCATION:global}
+    model: ${GOOGLE_AI_MODEL:gemini-3-flash-preview}
+
 kms:
   view-count:
     duplicate-window-minutes: 1440
