@@ -38,18 +38,18 @@ public class WorkerSkillGapQueryService {
     private final AdminClient adminClient;
     private final HrClient hrClient;
     private final KnowledgeArticleMapper knowledgeArticleMapper;
-    private final SkillGapAiReviewService skillGapAiReviewService;
+    private final SkillGapAiFacade skillGapAiFacade;
 
     public WorkerSkillGapQueryService(
             AdminClient adminClient,
             HrClient hrClient,
             KnowledgeArticleMapper knowledgeArticleMapper,
-            SkillGapAiReviewService skillGapAiReviewService
+            SkillGapAiFacade skillGapAiFacade
     ) {
         this.adminClient = adminClient;
         this.hrClient = hrClient;
         this.knowledgeArticleMapper = knowledgeArticleMapper;
-        this.skillGapAiReviewService = skillGapAiReviewService;
+        this.skillGapAiFacade = skillGapAiFacade;
     }
 
     public WorkerSkillGapResponse getSkillGap(Long employeeId) {
@@ -234,7 +234,7 @@ public class WorkerSkillGapQueryService {
             int totalGap,
             List<WorkerSkillGapResponse.RelatedArticle> relatedArticles
     ) {
-        SkillGapAiReviewResult aiReviewResult = skillGapAiReviewService.review(
+        SkillGapAiReviewResult aiReviewResult = skillGapAiFacade.review(
                 SkillGapAiReviewRequest.builder()
                         .currentTier(currentTier)
                         .targetTier(targetTier)

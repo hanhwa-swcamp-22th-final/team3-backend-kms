@@ -41,7 +41,7 @@ class WorkerSkillGapQueryServiceTest {
     private KnowledgeArticleMapper knowledgeArticleMapper;
 
     @Mock
-    private SkillGapAiReviewService skillGapAiReviewService;
+    private SkillGapAiFacade skillGapAiFacade;
 
     @Nested
     @DisplayName("getSkillGap()")
@@ -52,7 +52,7 @@ class WorkerSkillGapQueryServiceTest {
         void appliesAiReview() {
             // given
             givenBaseResponses();
-            given(skillGapAiReviewService.review(any()))
+            given(skillGapAiFacade.review(any()))
                     .willReturn(SkillGapAiReviewResult.builder()
                             .aiEnabled(true)
                             .summary("AI가 생성한 전체 스킬 갭 요약입니다.")
@@ -81,7 +81,7 @@ class WorkerSkillGapQueryServiceTest {
         void keepsFallbackWhenAiUnavailable() {
             // given
             givenBaseResponses();
-            given(skillGapAiReviewService.review(any()))
+            given(skillGapAiFacade.review(any()))
                     .willReturn(SkillGapAiReviewResult.disabled());
 
             // when
