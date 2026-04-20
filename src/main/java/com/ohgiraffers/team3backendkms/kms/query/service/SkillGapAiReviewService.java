@@ -7,19 +7,24 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.ohgiraffers.team3backendkms.kms.query.service.dto.SkillGapAiReviewRequest;
 import com.ohgiraffers.team3backendkms.kms.query.service.dto.SkillGapAiReviewResult;
+import jakarta.annotation.PostConstruct;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
+@Slf4j
 @Service
 public class SkillGapAiReviewService {
 
@@ -28,9 +33,17 @@ public class SkillGapAiReviewService {
     private static final String GLOBAL_VERTEX_AI_ENDPOINT =
             "https://aiplatform.googleapis.com/v1/projects/%s/locations/global/publishers/google/models/%s:generateContent";
     private static final String CLOUD_PLATFORM_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
+    private static final long TOKEN_REFRESH_BUFFER_SECONDS = 60L;
 
     private final ObjectMapper objectMapper;
     private final ResourceLoader resourceLoader;
+    private RestClient restClient;
+
+    private volatile GoogleCredentials cachedCredentials;
+    private volatile String cachedProjectId;
+    private volatile AccessToken cachedAccessToken;
+    private final Object credentialsLock = new Object();
+    private final Object tokenLock = new Object();
 
     @Value("${google.ai.credentials-location:${nlp.google.credentials-location:}}")
     private String credentialsLocation;
@@ -44,24 +57,45 @@ public class SkillGapAiReviewService {
     @Value("${google.ai.model:gemini-3-flash-preview}")
     private String googleAiModel;
 
+    @Value("${google.ai.timeout.connect-millis:2000}")
+    private int connectTimeoutMillis;
+
+    @Value("${google.ai.timeout.read-millis:5000}")
+    private int readTimeoutMillis;
+
     public SkillGapAiReviewService(ObjectMapper objectMapper, ResourceLoader resourceLoader) {
         this.objectMapper = objectMapper;
         this.resourceLoader = resourceLoader;
     }
 
+    @PostConstruct
+    void initializeRestClient() {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(connectTimeoutMillis);
+        requestFactory.setReadTimeout(readTimeoutMillis);
+        this.restClient = RestClient.builder()
+                .requestFactory(requestFactory)
+                .build();
+    }
+
     public SkillGapAiReviewResult review(SkillGapAiReviewRequest request) {
-        if (!StringUtils.hasText(credentialsLocation) || request == null || request.getTopGaps() == null
-                || request.getTopGaps().isEmpty()) {
+        if (request == null || request.getTopGaps() == null || request.getTopGaps().isEmpty()) {
+            log.warn("[SkillGap AI] fallback - request is empty");
+            return SkillGapAiReviewResult.disabled();
+        }
+
+        if (!StringUtils.hasText(credentialsLocation)) {
+            log.warn("[SkillGap AI] fallback - credentials location is missing");
             return SkillGapAiReviewResult.disabled();
         }
 
         try {
-            GoogleCredentials credentials = loadCredentials();
-            String projectId = resolveProjectId(credentials);
-            AccessToken token = credentials.refreshAccessToken();
+            GoogleCredentials credentials = getOrLoadCredentials();
+            String projectId = getOrResolveProjectId(credentials);
+            AccessToken token = getOrRefreshAccessToken(credentials);
             String endpoint = buildVertexAiEndpoint(projectId);
 
-            JsonNode response = RestClient.create()
+            JsonNode response = restClient
                     .post()
                     .uri(endpoint)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + token.getTokenValue())
@@ -70,9 +104,29 @@ public class SkillGapAiReviewService {
                     .retrieve()
                     .body(JsonNode.class);
 
+            log.info("[SkillGap AI] vertex response received - model={}, targetTier={}, gapCount={}",
+                    googleAiModel, request.getTargetTier(), request.getTopGaps().size());
             return parseResponse(response);
         } catch (Exception exception) {
+            log.error("[SkillGap AI] vertex call failed - fallback enabled", exception);
             return SkillGapAiReviewResult.disabled();
+        }
+    }
+
+    private GoogleCredentials getOrLoadCredentials() throws Exception {
+        if (cachedCredentials != null) {
+            return cachedCredentials;
+        }
+
+        synchronized (credentialsLock) {
+            if (cachedCredentials != null) {
+                return cachedCredentials;
+            }
+
+            log.info("[SkillGap AI] loading credentials from {}", credentialsLocation);
+            cachedCredentials = loadCredentials();
+            cachedProjectId = resolveProjectId(cachedCredentials);
+            return cachedCredentials;
         }
     }
 
@@ -81,6 +135,20 @@ public class SkillGapAiReviewService {
         try (InputStream inputStream = resource.getInputStream()) {
             return GoogleCredentials.fromStream(inputStream)
                     .createScoped(List.of(CLOUD_PLATFORM_SCOPE));
+        }
+    }
+
+    private String getOrResolveProjectId(GoogleCredentials credentials) {
+        if (StringUtils.hasText(cachedProjectId)) {
+            return cachedProjectId;
+        }
+
+        synchronized (credentialsLock) {
+            if (StringUtils.hasText(cachedProjectId)) {
+                return cachedProjectId;
+            }
+            cachedProjectId = resolveProjectId(credentials);
+            return cachedProjectId;
         }
     }
 
@@ -93,6 +161,31 @@ public class SkillGapAiReviewService {
             return serviceAccountCredentials.getProjectId();
         }
         throw new IllegalStateException("Google AI project id를 확인할 수 없습니다.");
+    }
+
+    private AccessToken getOrRefreshAccessToken(GoogleCredentials credentials) throws Exception {
+        AccessToken currentToken = cachedAccessToken;
+        if (isUsable(currentToken)) {
+            return currentToken;
+        }
+
+        synchronized (tokenLock) {
+            if (isUsable(cachedAccessToken)) {
+                return cachedAccessToken;
+            }
+
+            log.info("[SkillGap AI] refreshing access token");
+            cachedAccessToken = credentials.refreshAccessToken();
+            return cachedAccessToken;
+        }
+    }
+
+    private boolean isUsable(AccessToken token) {
+        if (token == null || token.getExpirationTime() == null) {
+            return false;
+        }
+        Instant expiration = token.getExpirationTime().toInstant();
+        return expiration.isAfter(Instant.now().plusSeconds(TOKEN_REFRESH_BUFFER_SECONDS));
     }
 
     private String buildVertexAiEndpoint(String projectId) {
@@ -164,6 +257,7 @@ public class SkillGapAiReviewService {
     private SkillGapAiReviewResult parseResponse(JsonNode response) {
         String text = extractResponseText(response);
         if (!StringUtils.hasText(text)) {
+            log.warn("[SkillGap AI] parse skipped - empty response text");
             return SkillGapAiReviewResult.disabled();
         }
 
@@ -184,15 +278,19 @@ public class SkillGapAiReviewService {
             }
 
             if (!StringUtils.hasText(summary) && recommendations.isEmpty()) {
+                log.warn("[SkillGap AI] parse fallback - summary and recommendations are empty");
                 return SkillGapAiReviewResult.disabled();
             }
 
+            log.info("[SkillGap AI] parse success - summaryLength={}, recommendationCount={}",
+                    summary.length(), recommendations.size());
             return SkillGapAiReviewResult.builder()
                     .aiEnabled(true)
                     .summary(summary)
                     .gapRecommendations(recommendations)
                     .build();
         } catch (Exception exception) {
+            log.error("[SkillGap AI] parse failed - fallback enabled", exception);
             return SkillGapAiReviewResult.disabled();
         }
     }

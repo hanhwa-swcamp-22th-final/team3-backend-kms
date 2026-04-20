@@ -43,6 +43,9 @@ google:
     project-id: ${GOOGLE_AI_PROJECT_ID:}
     location: ${GOOGLE_AI_LOCATION:global}
     model: ${GOOGLE_AI_MODEL:gemini-3-flash-preview}
+    timeout:
+      connect-millis: ${GOOGLE_AI_CONNECT_TIMEOUT_MILLIS:2000}
+      read-millis: ${GOOGLE_AI_READ_TIMEOUT_MILLIS:5000}
 
 kms:
   view-count:
