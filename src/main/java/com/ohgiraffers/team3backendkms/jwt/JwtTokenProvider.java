@@ -64,4 +64,8 @@ public class JwtTokenProvider {
     public String getRoleFromJWT(String token) {
         return getClaimsFromJWT(token).get("role", String.class);
     }
+
+    public String getLoginSessionIdFromJWT(String token) {
+        return getClaimsFromJWT(token).get("loginSessionId", String.class);
+    }
 }

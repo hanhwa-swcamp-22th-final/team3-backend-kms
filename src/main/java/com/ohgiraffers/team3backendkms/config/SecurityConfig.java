@@ -1,6 +1,7 @@
 package com.ohgiraffers.team3backendkms.config;
 
 
+import com.ohgiraffers.team3backendkms.jwt.AuthRepository;
 import com.ohgiraffers.team3backendkms.jwt.JwtAuthenticationFilter;
 import com.ohgiraffers.team3backendkms.jwt.JwtTokenProvider;
 import com.ohgiraffers.team3backendkms.jwt.RestAccessDeniedHandler;
@@ -30,6 +31,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final AuthRepository authRepository;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
@@ -71,7 +73,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .anyRequest().authenticated())
             .addFilterBefore(
-                    new JwtAuthenticationFilter(jwtTokenProvider),
+                    new JwtAuthenticationFilter(jwtTokenProvider, authRepository),
                     UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
