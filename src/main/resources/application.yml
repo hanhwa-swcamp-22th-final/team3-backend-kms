@@ -33,6 +33,20 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
+nlp:
+  google:
+    credentials-location: ${NLP_GOOGLE_CREDENTIALS_LOCATION:classpath:gcp-key.json}
+
+google:
+  ai:
+    credentials-location: ${NLP_GOOGLE_CREDENTIALS_LOCATION:${nlp.google.credentials-location}}
+    project-id: ${GOOGLE_AI_PROJECT_ID:}
+    location: ${GOOGLE_AI_LOCATION:global}
+    model: ${GOOGLE_AI_MODEL:gemini-3-flash-preview}
+    timeout:
+      connect-millis: ${GOOGLE_AI_CONNECT_TIMEOUT_MILLIS:2000}
+      read-millis: ${GOOGLE_AI_READ_TIMEOUT_MILLIS:5000}
+
 kms:
   view-count:
     duplicate-window-minutes: 1440
@@ -45,6 +59,20 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      skill-gap-ai:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 2
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - java.lang.Exception
 
 feign:
   admin:

@@ -8,6 +8,8 @@ import com.ohgiraffers.team3backendkms.infrastructure.client.dto.HrTierCriteriaI
 import com.ohgiraffers.team3backendkms.kms.query.dto.ArticleReadDto;
 import com.ohgiraffers.team3backendkms.kms.query.dto.WorkerSkillGapResponse;
 import com.ohgiraffers.team3backendkms.kms.query.mapper.KnowledgeArticleMapper;
+import com.ohgiraffers.team3backendkms.kms.query.service.dto.SkillGapAiReviewRequest;
+import com.ohgiraffers.team3backendkms.kms.query.service.dto.SkillGapAiReviewResult;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -19,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.util.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,15 +38,18 @@ public class WorkerSkillGapQueryService {
     private final AdminClient adminClient;
     private final HrClient hrClient;
     private final KnowledgeArticleMapper knowledgeArticleMapper;
+    private final SkillGapAiFacade skillGapAiFacade;
 
     public WorkerSkillGapQueryService(
             AdminClient adminClient,
             HrClient hrClient,
-            KnowledgeArticleMapper knowledgeArticleMapper
+            KnowledgeArticleMapper knowledgeArticleMapper,
+            SkillGapAiFacade skillGapAiFacade
     ) {
         this.adminClient = adminClient;
         this.hrClient = hrClient;
         this.knowledgeArticleMapper = knowledgeArticleMapper;
+        this.skillGapAiFacade = skillGapAiFacade;
     }
 
     public WorkerSkillGapResponse getSkillGap(Long employeeId) {
@@ -64,6 +70,9 @@ public class WorkerSkillGapQueryService {
         int targetOverall = average(skills.stream().map(WorkerSkillGapResponse.SkillGapSkill::getTarget).toList());
         int totalGap = Math.max(targetOverall - currentOverall, 0);
         SkillType weakestSkill = resolveWeakestSkill(currentScores);
+        List<WorkerSkillGapResponse.RelatedArticle> relatedArticles = buildRelatedArticles(weakestSkill);
+        WorkerSkillGapResponse.Report report = buildReport(skills, rawSkills, currentTier, targetTier, totalGap);
+        report = applyAiReview(report, skills, currentTier, targetTier, currentOverall, targetOverall, totalGap, relatedArticles);
 
         return WorkerSkillGapResponse.builder()
                 .currentTier(currentTier)
@@ -74,9 +83,9 @@ public class WorkerSkillGapQueryService {
                         .targetOverall(targetOverall)
                         .totalGap(totalGap)
                         .build())
-                .report(buildReport(skills, rawSkills, currentTier, targetTier, totalGap))
+                .report(report)
                 .courses(List.of())
-                .articles(buildRelatedArticles(weakestSkill))
+                .articles(relatedArticles)
                 .build();
     }
 
@@ -213,6 +222,90 @@ public class WorkerSkillGapQueryService {
                 + averageScoreRatio * 0.30;
 
         return CONFIDENCE_FORMAT.format(Math.min(1.0, confidence));
+    }
+
+    private WorkerSkillGapResponse.Report applyAiReview(
+            WorkerSkillGapResponse.Report report,
+            List<WorkerSkillGapResponse.SkillGapSkill> skills,
+            String currentTier,
+            String targetTier,
+            int currentOverall,
+            int targetOverall,
+            int totalGap,
+            List<WorkerSkillGapResponse.RelatedArticle> relatedArticles
+    ) {
+        SkillGapAiReviewResult aiReviewResult = skillGapAiFacade.review(
+                SkillGapAiReviewRequest.builder()
+                        .currentTier(currentTier)
+                        .targetTier(targetTier)
+                        .currentOverall(currentOverall)
+                        .targetOverall(targetOverall)
+                        .totalGap(totalGap)
+                        .confidence(report.getConfidence())
+                        .skills(skills.stream()
+                                .map(skill -> SkillGapAiReviewRequest.SkillSnapshot.builder()
+                                        .label(skill.getLabel())
+                                        .current(skill.getCurrent())
+                                        .target(skill.getTarget())
+                                        .gap(skill.getGap())
+                                        .build())
+                                .toList())
+                        .topGaps(report.getGaps().stream()
+                                .map(gap -> SkillGapAiReviewRequest.GapSnapshot.builder()
+                                        .priority(gap.getPriority())
+                                        .skillName(gap.getSkillName())
+                                        .current(gap.getCurrent())
+                                        .target(gap.getTarget())
+                                        .gap(gap.getGap())
+                                        .recommendation(gap.getRecommendation())
+                                        .build())
+                                .toList())
+                        .relatedArticleTitles(relatedArticles.stream()
+                                .map(WorkerSkillGapResponse.RelatedArticle::getTitle)
+                                .toList())
+                        .build()
+        );
+
+        if (!aiReviewResult.isAiEnabled()) {
+            return report;
+        }
+
+        String summary = StringUtils.hasText(aiReviewResult.getSummary())
+                ? aiReviewResult.getSummary()
+                : report.getSummary();
+        Map<String, String> recommendationBySkill = aiReviewResult.getGapRecommendations();
+
+        List<WorkerSkillGapResponse.GapItem> gaps = report.getGaps().stream()
+                .map(gap -> WorkerSkillGapResponse.GapItem.builder()
+                        .id(gap.getId())
+                        .priority(gap.getPriority())
+                        .priorityIcon(gap.getPriorityIcon())
+                        .color(gap.getColor())
+                        .skillName(gap.getSkillName())
+                        .current(gap.getCurrent())
+                        .target(gap.getTarget())
+                        .gap(gap.getGap())
+                        .recommendation(resolveAiRecommendation(gap, recommendationBySkill))
+                        .build())
+                .toList();
+
+        return WorkerSkillGapResponse.Report.builder()
+                .summary(summary)
+                .confidence(report.getConfidence())
+                .gaps(gaps)
+                .prediction(report.getPrediction())
+                .build();
+    }
+
+    private String resolveAiRecommendation(
+            WorkerSkillGapResponse.GapItem gap,
+            Map<String, String> recommendationBySkill
+    ) {
+        String aiRecommendation = recommendationBySkill.get(gap.getSkillName());
+        if (StringUtils.hasText(aiRecommendation)) {
+            return aiRecommendation;
+        }
+        return gap.getRecommendation();
     }
 
     private int average(List<Integer> values) {
